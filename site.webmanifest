@@ -1,0 +1,13 @@
+{
+  "name": "FFmpegLab — The FFmpeg-Native Video Editor",
+  "short_name": "FFmpegLab",
+  "description": "A power tool for FFmpeg specialists. Edit the raw render script, build custom filter-graph effects, and run the whole pipeline offline.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FC6D26",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

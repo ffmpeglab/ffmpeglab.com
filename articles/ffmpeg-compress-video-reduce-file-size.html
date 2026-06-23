@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Compress Video with FFmpeg (Reduce File Size, Keep Quality) — FFmpegLab</title>
+  <meta name="description" content="How to compress video and reduce file size with FFmpeg without wrecking quality: CRF explained, H.264 vs H.265/HEVC, two-pass bitrate encoding, target a file size, downscale resolution, and shrink audio." />
+  <meta name="keywords" content="ffmpeg compress video, reduce video file size, ffmpeg crf, ffmpeg h265, ffmpeg hevc, ffmpeg bitrate, two pass encoding, ffmpeg shrink video, compress mp4 ffmpeg, ffmpeg reduce size without losing quality" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-compress-video-reduce-file-size.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-compress-video-reduce-file-size.html" />
+  <meta property="og:title" content="How to Compress Video with FFmpeg (Reduce File Size, Keep Quality)" />
+  <meta property="og:description" content="CRF, H.265/HEVC, two-pass bitrate, target a size, downscale, and shrink audio — without wrecking quality." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Compress Video with FFmpeg (Reduce File Size, Keep Quality)",
+        "description": "How to compress video and reduce file size with FFmpeg: CRF, H.264 vs H.265/HEVC, two-pass bitrate encoding, target a file size, downscale, and shrink audio.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-compress-video-reduce-file-size.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Compress Video with FFmpeg" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Compress Video</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to compress video with FFmpeg without losing quality</h1>
+      <p class="dek">The right way to shrink a video file: understand <code>CRF</code>, choose between H.264 and H.265/HEVC, use two-pass encoding when you must hit a size, and downscale only when you need to.</p>
+      <div class="article-meta">FFmpeg tutorial · ~6 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>"How do I make this video smaller?" is the most common FFmpeg question there is. The short answer: re-encode with a modern codec and a sensible <strong>CRF</strong>. The long answer — which knobs actually move file size, and which just cost you quality — is below.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>CRF</strong> is the main quality/size dial — lower = better &amp; bigger, higher = smaller.</li>
+        <li><strong>H.265/HEVC</strong> (libx265) is ~40–50% smaller than H.264 at the same quality.</li>
+        <li>Use <strong>two-pass</strong> encoding only when you must hit an exact file size.</li>
+        <li><strong>Downscaling</strong> resolution and trimming audio bitrate shrink files further.</li>
+      </ul>
+    </div>
+
+    <h2>The one-liner that solves 80% of cases</h2>
+    <p>Constant Rate Factor (CRF) targets a perceptual quality and lets the bitrate float. For H.264, a CRF of 23 is the default; 18–28 is the useful range:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">compress.sh</span></div>
+      <pre class="mono">ffmpeg -i input.mp4 \
+  -c:v libx264 -crf 23 -preset slow \
+  -c:a aac -b:a 128k \
+  output.mp4</pre>
+    </div>
+    <p>A slower <code>-preset</code> (slow, slower, veryslow) squeezes out more size at the same quality — it just takes longer to encode.</p>
+
+    <h2>Go smaller with H.265 / HEVC</h2>
+    <p>For roughly half the size at the same visual quality, switch to <code>libx265</code>. Use a slightly higher CRF (28 ≈ x264's 23):</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">hevc.sh</span></div>
+      <pre class="mono">ffmpeg -i input.mp4 \
+  -c:v libx265 -crf 28 -preset slow \
+  -c:a aac -b:a 128k \
+  -tag:v hvc1 output.mp4</pre>
+    </div>
+    <p>The <code>-tag:v hvc1</code> keeps the file playable in QuickTime and Apple devices.</p>
+
+    <h2>Hit an exact file size with two-pass</h2>
+    <p>When a platform caps you (say, 8 MB), compute a target bitrate and encode in two passes for accurate sizing:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">two-pass.sh</span></div>
+      <pre class="mono">ffmpeg -y -i in.mp4 -c:v libx264 -b:v 2400k -pass 1 -an -f null /dev/null
+ffmpeg -i in.mp4 -c:v libx264 -b:v 2400k -pass 2 -c:a aac -b:a 128k out.mp4</pre>
+    </div>
+    <p>Target bitrate ≈ (target size in bits) ÷ (duration in seconds), minus your audio bitrate.</p>
+
+    <h2>Downscale resolution and shrink audio</h2>
+    <p>If the source is 4K but the output is for the web, halving resolution can cut size dramatically. Pair this with the <a href="ffmpeg-filter-complex-effects.html">scale filter</a>:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">downscale.sh</span></div>
+      <pre class="mono">ffmpeg -i in.mp4 -vf "scale=1280:-2" \
+  -c:v libx264 -crf 24 -c:a aac -b:a 96k out.mp4</pre>
+    </div>
+
+    <h2>Common mistakes</h2>
+    <ul>
+      <li><strong>Re-encoding when you could copy.</strong> If you only need to trim, use stream copy — see the <a href="ffmpeg-trim-cut-video.html">trim &amp; cut guide</a>.</li>
+      <li><strong>Chasing bitrate manually.</strong> CRF almost always beats hand-tuned <code>-b:v</code> for general use.</li>
+      <li><strong>Forgetting audio.</strong> A 320k audio track bloats a small clip; 96–128k AAC is plenty for most web video.</li>
+    </ul>
+
+    <h2>Compress without the command line</h2>
+    <p><a href="../index.html">FFmpegLab</a> runs the same encoder in your browser with a quality slider that maps to CRF, so you can preview size-vs-quality and export — all <a href="offline-private-video-editor.html">offline and private</a>, with 4K export a one-time $2.99.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, and codec choices.</span></a>
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Editing</span><span class="t">Trim &amp; cut video losslessly</span><span class="d">Fast, lossless clipping with -ss/-to.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">overlay, scale, color, chroma key.</span></a>
+        <a class="related-card" href="offline-private-video-editor.html"><span class="k">Privacy</span><span class="t">Offline, private editing</span><span class="d">Edit in-browser with zero uploads.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Compress, convert, and edit — privately, in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

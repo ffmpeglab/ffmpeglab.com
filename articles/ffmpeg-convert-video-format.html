@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Convert Video Formats with FFmpeg (MP4, WebM, MOV, GIF) — FFmpegLab</title>
+  <meta name="description" content="Convert between video formats with FFmpeg: MP4 to WebM, MOV to MP4, AVI and MKV, choosing the right codec, lossless remuxing vs re-encoding, extract audio to MP3, and turn a clip into a GIF." />
+  <meta name="keywords" content="ffmpeg convert video, mp4 to webm ffmpeg, mov to mp4 ffmpeg, ffmpeg mkv to mp4, ffmpeg remux, ffmpeg extract audio mp3, ffmpeg video to gif, change video format, ffmpeg codec, ffmpeg container" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-convert-video-format.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-convert-video-format.html" />
+  <meta property="og:title" content="How to Convert Video Formats with FFmpeg (MP4, WebM, MOV, GIF)" />
+  <meta property="og:description" content="MP4 to WebM, MOV to MP4, remux vs re-encode, extract audio, and video to GIF — codecs explained." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Convert Video Formats with FFmpeg (MP4, WebM, MOV, GIF)",
+        "description": "Convert between video formats with FFmpeg: MP4 to WebM, MOV to MP4, codec choices, remux vs re-encode, extract audio, and video to GIF.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-convert-video-format.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Convert Video Formats" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Convert Video Formats</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to convert video formats with FFmpeg</h1>
+      <p class="dek">MP4, WebM, MOV, MKV, AVI — and when you can skip re-encoding entirely. A practical guide to containers, codecs, remuxing, extracting audio, and exporting GIFs.</p>
+      <div class="article-meta">FFmpeg tutorial · ~6 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>"Convert video" hides two very different operations. Changing the <strong>container</strong> (the <code>.mp4</code>/<code>.mov</code>/<code>.mkv</code> wrapper) can often be done losslessly in seconds. Changing the <strong>codec</strong> (H.264, VP9, AV1) requires re-encoding and takes real time. Knowing which you need is the whole game.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Container ≠ codec.</strong> An MP4 can hold H.264, H.265, or AV1.</li>
+        <li><strong>Remux</strong> with <code>-c copy</code> when the codec is already compatible — it's instant and lossless.</li>
+        <li><strong>Re-encode</strong> only when the target needs a different codec (e.g. WebM/VP9).</li>
+        <li>FFmpeg also extracts audio and exports high-quality GIFs.</li>
+      </ul>
+    </div>
+
+    <h2>MOV to MP4 (usually lossless)</h2>
+    <p>iPhone and camera <code>.mov</code> files are typically already H.264/HEVC, so you can just rewrap into MP4 with no quality loss and no wait:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">remux.sh</span></div>
+      <pre class="mono">ffmpeg -i input.mov -c copy output.mp4</pre>
+    </div>
+    <p>If a player rejects it, the codec wasn't MP4-compatible — re-encode with <code>-c:v libx264 -c:a aac</code>.</p>
+
+    <h2>MP4 to WebM (re-encode required)</h2>
+    <p>WebM uses VP9 (or AV1) + Opus, so this always re-encodes. Great for open, royalty-free web delivery:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">to-webm.sh</span></div>
+      <pre class="mono">ffmpeg -i input.mp4 \
+  -c:v libvpx-vp9 -crf 32 -b:v 0 \
+  -c:a libopus -b:a 96k \
+  output.webm</pre>
+    </div>
+
+    <h2>MKV / AVI to MP4</h2>
+    <p>MKV often holds MP4-friendly streams, so try a remux first; fall back to re-encoding if a stream isn't supported:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">mkv-to-mp4.sh</span></div>
+      <pre class="mono"># try lossless first
+ffmpeg -i input.mkv -c copy output.mp4
+# fallback: re-encode
+ffmpeg -i input.mkv -c:v libx264 -crf 21 -c:a aac output.mp4</pre>
+    </div>
+
+    <h2>Extract audio to MP3</h2>
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">extract-audio.sh</span></div>
+      <pre class="mono">ffmpeg -i video.mp4 -vn -c:a libmp3lame -q:a 2 audio.mp3</pre>
+    </div>
+    <p>Working with the audio afterwards? See the <a href="ffmpeg-audio-mixing-amix-guide.html">amix audio mixing guide</a>.</p>
+
+    <h2>Video to a high-quality GIF</h2>
+    <p>Naive GIF exports look terrible. Use a two-step palette for clean colors:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">to-gif.sh</span></div>
+      <pre class="mono">ffmpeg -i in.mp4 -vf "fps=15,scale=480:-1:flags=lanczos,palettegen" palette.png
+ffmpeg -i in.mp4 -i palette.png -lavfi "fps=15,scale=480:-1:flags=lanczos[x];[x][1:v]paletteuse" out.gif</pre>
+    </div>
+
+    <h2>Convert visually, keep the control</h2>
+    <p><a href="../index.html">FFmpegLab</a> picks sensible codecs for your target format and shows the exact command it runs, so you can convert with a dropdown or drop into the script. It runs <a href="offline-private-video-editor.html">offline in the browser</a> — convert sensitive footage without uploading it anywhere. Need to shrink the result too? See the <a href="ffmpeg-compress-video-reduce-file-size.html">compression guide</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce file size</span><span class="d">CRF, H.265, two-pass, downscaling.</span></a>
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Editing</span><span class="t">Trim &amp; cut video losslessly</span><span class="d">Fast clipping with -ss and -to.</span></a>
+        <a class="related-card" href="ffmpeg-audio-mixing-amix-guide.html"><span class="k">Audio</span><span class="t">Mixing audio with amix</span><span class="d">Music, voiceover, ducking.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">overlay, scale, color, chroma key.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Convert any format — privately, in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

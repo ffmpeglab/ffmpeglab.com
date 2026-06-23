@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Add Text & Subtitles to Video with FFmpeg (drawtext, Captions) — FFmpegLab</title>
+  <meta name="description" content="Add text overlays and subtitles to video with FFmpeg: the drawtext filter for titles and lower-thirds, fonts, positioning and timing, burning in SRT/ASS subtitles, and soft (toggleable) subtitle tracks." />
+  <meta name="keywords" content="ffmpeg add text, ffmpeg drawtext, ffmpeg subtitles, burn subtitles ffmpeg, ffmpeg srt, ffmpeg ass subtitles, ffmpeg caption video, ffmpeg lower third, ffmpeg text overlay, hardcode subtitles ffmpeg" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-add-text-subtitles-video.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-add-text-subtitles-video.html" />
+  <meta property="og:title" content="How to Add Text & Subtitles to Video with FFmpeg" />
+  <meta property="og:description" content="drawtext titles and lower-thirds, fonts and timing, burning in SRT/ASS subtitles, and soft subtitle tracks." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Add Text & Subtitles to Video with FFmpeg",
+        "description": "Add text overlays and subtitles to video with FFmpeg: the drawtext filter, fonts, positioning and timing, burning in SRT/ASS subtitles, and soft subtitle tracks.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-add-text-subtitles-video.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Add Text & Subtitles" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Add Text &amp; Subtitles</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Add text &amp; subtitles to video with FFmpeg</h1>
+      <p class="dek">Titles, lower-thirds, and captions from the command line: the <code>drawtext</code> filter for on-screen text, plus burning in or attaching SRT/ASS subtitle files.</p>
+      <div class="article-meta">FFmpeg tutorial · ~6 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>There are two jobs people call "adding text": <strong>graphic text</strong> baked onto the frame (titles, watermarks, lower-thirds) via <code>drawtext</code>, and <strong>subtitles</strong> from an <code>.srt</code>/<code>.ass</code> file that can be burned in or kept as a toggleable track. This guide covers both.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>drawtext</code> renders custom on-screen text with full font and position control.</li>
+        <li>Time text with <code>enable='between(t,start,end)'</code>.</li>
+        <li>Burn subtitles with the <code>subtitles</code> filter (permanent, universal).</li>
+        <li>Attach <strong>soft subtitles</strong> with <code>-c:s mov_text</code> so viewers can toggle them.</li>
+      </ul>
+    </div>
+
+    <h2>A simple title with drawtext</h2>
+    <p>Draw centered white text with a semi-transparent box behind it:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">title.sh</span></div>
+      <pre class="mono">ffmpeg -i in.mp4 -vf "drawtext=\
+text='FFmpegLab':fontcolor=white:fontsize=64:\
+box=1:boxcolor=black@0.5:boxborderw=12:\
+x=(w-text_w)/2:y=h-160" -c:a copy out.mp4</pre>
+    </div>
+    <p>Point <code>fontfile=/path/to/Font.ttf</code> at a specific typeface if the default isn't what you want.</p>
+
+    <h2>Make text appear only for a few seconds</h2>
+    <p>The <code>enable</code> expression toggles the overlay on a time window — perfect for a lower-third that shows from 2s to 7s:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">timed-text.fg</span></div>
+      <pre class="mono">drawtext=text='Jane Doe — Director':
+  fontcolor=white:fontsize=40:
+  x=80:y=h-140:
+  enable='between(t,2,7)'</pre>
+    </div>
+
+    <h2>Burn in subtitles from an SRT file</h2>
+    <p>Burning ("hardcoding") makes subtitles permanent and guaranteed to display anywhere:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">burn-subs.sh</span></div>
+      <pre class="mono">ffmpeg -i in.mp4 -vf "subtitles=captions.srt" -c:a copy out.mp4</pre>
+    </div>
+    <p>Style them with an ASS file or inline force_style: <code>subtitles=captions.srt:force_style='Fontsize=24,PrimaryColour=&amp;Hffffff&amp;'</code>.</p>
+
+    <h2>Attach soft (toggleable) subtitles</h2>
+    <p>Soft subtitles ride along as a track viewers can turn on/off — no re-encode of the video:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">soft-subs.sh</span></div>
+      <pre class="mono">ffmpeg -i in.mp4 -i captions.srt \
+  -c copy -c:s mov_text \
+  -metadata:s:s:0 language=eng out.mp4</pre>
+    </div>
+
+    <h2>Combine with other effects</h2>
+    <p>Because <code>drawtext</code> is just another filter, it chains inside a <a href="ffmpeg-filter-complex-effects.html">filter_complex graph</a> alongside scaling, overlays, and color grading — one render, many effects.</p>
+
+    <h2>Caption visually, export anywhere</h2>
+    <p><a href="../index.html">FFmpegLab</a> lets you place titles and captions on a timeline and writes the matching <code>drawtext</code>/<code>subtitles</code> command for you. It runs <a href="offline-private-video-editor.html">offline and private</a>, so transcripts and footage stay on your machine. Then <a href="ffmpeg-compress-video-reduce-file-size.html">compress</a> and <a href="ffmpeg-convert-video-format.html">convert</a> for delivery.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">Chain text with overlays and color.</span></a>
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Editing</span><span class="t">Trim &amp; cut video</span><span class="d">Lossless clipping and splitting.</span></a>
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, GIF.</span></a>
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce size</span><span class="d">CRF, H.265, two-pass.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Add titles and captions — privately, in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

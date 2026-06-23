@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Self-Hosting a Video Editor with Docker (Bring Your Own Backend) — FFmpegLab</title>
+  <meta name="description" content="How to self-host an open-source video editor with Docker Compose: bring your own backend for storage, rendering, and sync, keep data on your own infrastructure, and run the whole pipeline behind your firewall. A guide for developers and sovereignty-minded teams." />
+  <meta name="keywords" content="self-hosted video editor, docker video editor, docker compose video editor, open source video editor, bring your own backend, on-premise video editing, self-host video editor, data sovereignty, video editor behind firewall, BYO backend, self-hostable editor" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/self-hosted-video-editor-docker.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/self-hosted-video-editor-docker.html" />
+  <meta property="og:title" content="Self-Hosting a Video Editor with Docker (Bring Your Own Backend)" />
+  <meta property="og:description" content="Self-host an open-source editor with Docker Compose — own storage, rendering, and sync on your infrastructure." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Self-Hosting a Video Editor with Docker (Bring Your Own Backend)",
+        "description": "How to self-host an open-source video editor with Docker Compose: own storage, rendering, and sync on your own infrastructure.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/self-hosted-video-editor-docker.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Self-Hosting with Docker" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Self-Hosting with Docker</div>
+      <span class="eyebrow">Self-Hosting</span>
+      <h1>Self-hosting a video editor with Docker</h1>
+      <p class="dek">For teams that need full control, an open-source, self-hostable editor lets you bring your own backend — storage, rendering, and sync — and run the entire pipeline on your own infrastructure with a single Docker Compose file.</p>
+      <div class="article-meta">Developer guide · ~7 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>SaaS video tools ask you to trust a vendor with your media, your uptime, and your data-residency obligations. A <strong>self-hosted video editor</strong> removes that dependency: the same app, running on hardware you control, behind your firewall, on your domain. For developers and sovereignty-minded teams, "bring your own backend" is the feature that matters most.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li>Self-hosting puts <strong>storage, rendering, and sync</strong> on your infrastructure.</li>
+        <li><strong>Docker Compose</strong> makes the deploy a single declarative file.</li>
+        <li>An <strong>offline-first</strong> client means the server is for sync, not for processing your footage.</li>
+        <li>Open source lets you <strong>audit, fork, and extend</strong> the stack.</li>
+      </ul>
+    </div>
+
+    <h2>Why bring your own backend</h2>
+    <ul>
+      <li><strong>Data sovereignty:</strong> keep footage in a specific region or on-premise to satisfy GDPR and client contracts.</li>
+      <li><strong>No vendor lock-in:</strong> your projects live in your storage, in open formats.</li>
+      <li><strong>Cost control:</strong> run on hardware you already own instead of per-seat cloud pricing.</li>
+      <li><strong>Security:</strong> place the whole system behind your VPN or firewall.</li>
+    </ul>
+
+    <h2>A minimal Docker Compose deploy</h2>
+    <p>The core of a self-host is one file. This brings up the server, mounts a local projects volume, and runs in offline mode so no data is sent anywhere external:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div>
+      <pre class="mono">services:
+  ffmpeglab:
+    image: ffmpeglab/server:latest
+    ports: ["8080:8080"]
+    volumes:
+      - ./projects:/data/projects
+    environment:
+      - FFMPEGLAB_OFFLINE=true
+# your machines. your footage. your rules.</pre>
+    </div>
+
+    <p>Bring it up with one command:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">terminal</span></div>
+      <pre class="mono">$ docker compose up -d
+$ docker compose logs -f ffmpeglab</pre>
+    </div>
+
+    <h2>Where the work actually happens</h2>
+    <p>Because the client is <a href="offline-private-video-editor.html">offline-first</a>, the rendering and effects processing run locally in the browser via WebAssembly — applying <a href="ffmpeg-xfade-transitions-guide.html">xfade transitions</a>, <a href="ffmpeg-filter-complex-effects.html">filter_complex effects</a>, and <a href="ffmpeg-audio-mixing-amix-guide.html">amix audio</a> on the editor's machine. The self-hosted backend is responsible for <strong>project sync and storage</strong>, not for ingesting raw footage into a cloud render farm. That keeps the server light and your media local.</p>
+
+    <h2>Putting it behind your domain</h2>
+    <p>Front the container with a reverse proxy (Caddy, Nginx, or Traefik) for TLS and your own hostname:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">Caddyfile</span></div>
+      <pre class="mono">edit.example.com {
+  reverse_proxy localhost:8080
+}</pre>
+    </div>
+
+    <h2>Production checklist</h2>
+    <ul>
+      <li>Back up the <code>./projects</code> volume on a schedule.</li>
+      <li>Pin the image to a version tag instead of <code>latest</code> for reproducible deploys.</li>
+      <li>Restrict access with your VPN, SSO proxy, or basic auth at the reverse proxy.</li>
+      <li>Audit the open-source code before deploying in regulated environments.</li>
+    </ul>
+
+    <h2>Open source, offline, yours</h2>
+    <p><a href="../index.html">FFmpegLab</a> is open source and offline-first by design: self-host the backend with Docker, keep footage on-device, and still get the full power-user FFmpeg toolset. Free to use; 4K export is a one-time $2.99 with no subscription. Start in the browser, then move it onto your own infrastructure when you're ready.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="offline-private-video-editor.html"><span class="k">Privacy</span><span class="t">Offline, private video editing</span><span class="d">Edit in-browser with zero uploads.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects guide</span><span class="d">overlay, scale, color, chroma key.</span></a>
+        <a class="related-card" href="ffmpeg-xfade-transitions-guide.html"><span class="k">Transitions</span><span class="t">xfade transitions guide</span><span class="d">30+ presets and crossfades.</span></a>
+        <a class="related-card" href="ffmpeg-audio-mixing-amix-guide.html"><span class="k">Audio</span><span class="t">Mixing audio with amix</span><span class="d">Music, voiceover, ducking.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Run the whole editing pipeline on your own infrastructure.</h2>
+      <p>Open source and offline-first. Free in your browser to start.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

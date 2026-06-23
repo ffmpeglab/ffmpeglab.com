@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FFmpeg filter_complex Effects: Overlay, Scale, Crop & Color (With Examples) — FFmpegLab</title>
+  <meta name="description" content="Learn FFmpeg filter_complex by example: overlay watermarks and picture-in-picture, scale and pad, crop, color correction with curves and colorchannelmixer, chroma key, and how to chain custom video effects into one filter graph." />
+  <meta name="keywords" content="ffmpeg filter_complex, ffmpeg overlay, ffmpeg scale, ffmpeg crop, ffmpeg color correction, colorchannelmixer, ffmpeg chroma key, ffmpeg picture in picture, ffmpeg watermark, custom video effects, filter graph, ffmpeg pad" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-filter-complex-effects.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-filter-complex-effects.html" />
+  <meta property="og:title" content="FFmpeg filter_complex Effects: Overlay, Scale, Crop & Color" />
+  <meta property="og:description" content="Build custom video effects with FFmpeg filter graphs — overlay, scale, crop, color correction, chroma key, and chaining." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "FFmpeg filter_complex Effects: Overlay, Scale, Crop & Color",
+        "description": "Learn FFmpeg filter_complex by example: overlay, scale, crop, color correction, chroma key, and chaining custom video effects into one filter graph.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-filter-complex-effects.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "filter_complex Effects Guide" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="self-hosted-video-editor-docker.html">Self-Hosting</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / filter_complex Effects</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>FFmpeg filter_complex effects, by example</h1>
+      <p class="dek">The <code>filter_complex</code> flag is where FFmpeg becomes a full video-effects engine. This guide walks through overlay, scale, pad, crop, color correction, and chroma key — then shows how to chain them into one custom filter graph.</p>
+      <div class="article-meta">FFmpeg tutorial · ~8 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>Simple FFmpeg commands use <code>-vf</code> (a single linear chain). The moment you need <strong>multiple inputs</strong> or <strong>branching</strong> — a watermark, picture-in-picture, a split-and-recombine color grade — you graduate to <code>filter_complex</code>. It describes a directed graph of filters connected by named labels like <code>[base]</code> and <code>[v]</code>.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>filter_complex</code> connects filters with named pads: <code>[in]filter[out]</code>.</li>
+        <li><code>overlay</code> composites one stream over another — watermarks, PiP, logos.</li>
+        <li><code>scale</code>, <code>pad</code>, and <code>crop</code> reshape the frame; <code>setsar=1</code> avoids stretch.</li>
+        <li>Color tools: <code>eq</code>, <code>curves</code>, <code>colorchannelmixer</code>, <code>colorbalance</code>.</li>
+        <li>Chain filters with <code>,</code> and separate branches with <code>;</code>.</li>
+      </ul>
+    </div>
+
+    <h2>Reading a filter graph</h2>
+    <p>Two rules unlock the whole syntax. A <strong>comma</strong> chains filters on the same stream; a <strong>semicolon</strong> ends one branch and starts another. Labels in square brackets name the inputs and outputs so branches can reconnect:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">overlay.fg</span></div>
+      <pre class="mono">[0:v]scale=1920:-2,setsar=1[base];
+[1:v]format=rgba,
+  colorchannelmixer=aa=0.6[ov];
+[base][ov]overlay=(W-w)/2:(H-h)/2[v]</pre>
+    </div>
+    <p>That graph scales the main clip to 1080p, makes the second input 60% opaque, and centers it as an overlay — a watermark or logo in three lines.</p>
+
+    <h2>Overlay: watermarks and picture-in-picture</h2>
+    <p>The <code>overlay</code> filter takes a base and an overlay stream and positions the second using <code>x:y</code>. The variables <code>W/H</code> (base size) and <code>w/h</code> (overlay size) make alignment easy:</p>
+    <ul>
+      <li><strong>Top-left logo:</strong> <code>overlay=20:20</code></li>
+      <li><strong>Bottom-right:</strong> <code>overlay=W-w-20:H-h-20</code></li>
+      <li><strong>Centered:</strong> <code>overlay=(W-w)/2:(H-h)/2</code></li>
+    </ul>
+    <p>For picture-in-picture, scale the overlay down first: <code>[1:v]scale=480:-1[pip];[0:v][pip]overlay=W-w-30:30</code>.</p>
+
+    <h2>Scale, pad, and crop</h2>
+    <p>Resizing is the most common operation, and the most common source of squashed video. Always pair <code>scale</code> with <code>setsar=1</code>, and use <code>-2</code> to keep dimensions even:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">reframe.fg</span></div>
+      <pre class="mono"># fit 16:9 into a 1:1 square with padding
+[0:v]scale=1080:-2,setsar=1,
+  pad=1080:1080:0:(oh-ih)/2:black[v]
+
+# crop a 1080x1080 center square
+[0:v]crop=ih:ih:(iw-ih)/2:0[v]</pre>
+    </div>
+
+    <h2>Color correction and grading</h2>
+    <p>FFmpeg ships a deep color toolkit. <code>eq</code> handles quick brightness/contrast/saturation; <code>curves</code> gives you per-channel control; <code>colorchannelmixer</code> and <code>colorbalance</code> let you push tones precisely:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">grade.fg</span></div>
+      <pre class="mono">[0:v]eq=contrast=1.1:saturation=1.15:brightness=0.02,
+  curves=preset=lighter,
+  colorbalance=rs=0.05:bs=-0.05[v]</pre>
+    </div>
+
+    <h2>Chroma key (green screen)</h2>
+    <p>Composite a subject over a new background with <code>chromakey</code>, then <code>overlay</code> the result:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">greenscreen.fg</span></div>
+      <pre class="mono">[1:v]chromakey=0x00FF00:0.30:0.10[key];
+[0:v][key]overlay[v]</pre>
+    </div>
+
+    <h2>Chaining it all into one render</h2>
+    <p>Real edits combine these. Here a clip is scaled, color-graded, watermarked, and handed off — a single reproducible command you can version-control:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">render.sh</span></div>
+      <pre class="mono">ffmpeg -i main.mp4 -i logo.png -filter_complex "
+  [0:v]scale=1920:-2,setsar=1,
+    eq=contrast=1.08:saturation=1.1[base];
+  [1:v]format=rgba,colorchannelmixer=aa=0.5[ov];
+  [base][ov]overlay=W-w-30:H-h-30[v]
+" -map "[v]" -map 0:a -c:a copy out.mp4</pre>
+    </div>
+
+    <h2>From filter graphs to a real timeline</h2>
+    <p><a href="../index.html">FFmpegLab</a> is built around exactly this idea: a visual timeline on top, the live <code>filter_complex</code> graph underneath. Build effects with controls, then open the generated script and tweak the graph by hand — every effect is a real, forkable FFmpeg filter chain. Combine it with <a href="ffmpeg-xfade-transitions-guide.html">xfade transitions</a> and <a href="ffmpeg-audio-mixing-amix-guide.html">amix audio</a>, all running <a href="offline-private-video-editor.html">privately and offline</a> in the browser.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-xfade-transitions-guide.html"><span class="k">Transitions</span><span class="t">xfade transitions guide</span><span class="d">30+ presets, duration, offset, crossfades.</span></a>
+        <a class="related-card" href="ffmpeg-audio-mixing-amix-guide.html"><span class="k">Audio</span><span class="t">Mixing audio with amix</span><span class="d">Combine unlimited audio channels.</span></a>
+        <a class="related-card" href="offline-private-video-editor.html"><span class="k">Privacy</span><span class="t">Offline, private video editing</span><span class="d">Edit in-browser with zero uploads.</span></a>
+        <a class="related-card" href="self-hosted-video-editor-docker.html"><span class="k">Self-hosting</span><span class="t">Self-host with Docker</span><span class="d">Own the whole editing pipeline.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Build effects visually. Keep the FFmpeg power.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

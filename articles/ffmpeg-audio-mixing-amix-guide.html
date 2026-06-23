@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mixing Audio in FFmpeg with amix & amerge (Music, Voiceover, Ducking) — FFmpegLab</title>
+  <meta name="description" content="How to mix multiple audio tracks in FFmpeg: combine music, voiceover, and effects with amix, control levels with volume and weights, merge channels with amerge, sidechain ducking with sidechaincompress, and crossfade audio with acrossfade." />
+  <meta name="keywords" content="ffmpeg amix, ffmpeg audio mixing, ffmpeg merge audio, amerge, ffmpeg add background music, ffmpeg voiceover, sidechaincompress ducking, ffmpeg volume, ffmpeg acrossfade, mix audio tracks command line" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-audio-mixing-amix-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-audio-mixing-amix-guide.html" />
+  <meta property="og:title" content="Mixing Audio in FFmpeg with amix & amerge" />
+  <meta property="og:description" content="Combine music, voiceover, and effects with amix, control levels, merge channels with amerge, and duck with sidechaincompress." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Mixing Audio in FFmpeg with amix & amerge",
+        "description": "How to mix multiple audio tracks in FFmpeg with amix, control levels, merge channels with amerge, sidechain ducking, and crossfade audio.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-audio-mixing-amix-guide.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Audio Mixing with amix" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Audio Mixing with amix</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Mixing audio in FFmpeg with amix</h1>
+      <p class="dek">Layer background music under a voiceover, blend sound effects, and balance levels — all from the command line. This guide covers <code>amix</code>, <code>amerge</code>, per-track <code>volume</code>, sidechain ducking, and audio crossfades.</p>
+      <div class="article-meta">FFmpeg tutorial · ~6 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>Video is only half the edit. Whether you are adding <strong>background music</strong> under a <strong>voiceover</strong>, layering sound effects, or combining several microphones, FFmpeg's <code>amix</code> filter mixes any number of audio streams into one — and it lives in the same <a href="ffmpeg-filter-complex-effects.html">filter_complex graph</a> as your video effects.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>amix</code> sums multiple audio inputs into a single track.</li>
+        <li>Set <code>inputs=N</code> and balance with <code>weights</code> or per-input <code>volume</code>.</li>
+        <li><code>amerge</code> combines tracks into multi-channel audio (not a level mix).</li>
+        <li><code>sidechaincompress</code> ducks music under a voiceover automatically.</li>
+        <li>Use <code>acrossfade</code> to blend between two songs.</li>
+      </ul>
+    </div>
+
+    <h2>The simplest mix</h2>
+    <p>Mix a video's original audio with a music file. <code>amix</code> normalizes by the number of inputs, so quieter is expected — we fix levels next:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">mix.sh</span></div>
+      <pre class="mono">ffmpeg -i video.mp4 -i music.mp3 -filter_complex "
+  [0:a][1:a]amix=inputs=2:duration=longest[a]
+" -map 0:v -map "[a]" -c:v copy out.mp4</pre>
+    </div>
+
+    <h2>Balancing levels with volume and weights</h2>
+    <p>To keep dialog up front and music underneath, drop the music's <code>volume</code> before mixing, or use <code>amix</code>'s <code>weights</code>:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">balanced.fg</span></div>
+      <pre class="mono"># music at 25% under full-volume voice
+[1:a]volume=0.25[bg];
+[0:a][bg]amix=inputs=2:duration=first[a]
+
+# or weight the mix directly
+[0:a][1:a]amix=inputs=2:weights=1 0.3[a]</pre>
+    </div>
+    <p>Use <code>duration=first</code> so the render ends with your narration, not a trailing music tail.</p>
+
+    <h2>Automatic ducking with sidechaincompress</h2>
+    <p>The professional move: have the music <strong>duck</strong> automatically whenever the voice is talking. <code>sidechaincompress</code> uses the voice track as a trigger to compress the music:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">duck.fg</span></div>
+      <pre class="mono">[1:a][0:a]sidechaincompress=
+  threshold=0.03:ratio=8:attack=20:release=300[duck];
+[0:a][duck]amix=inputs=2[a]</pre>
+    </div>
+
+    <h2>amix vs amerge</h2>
+    <p>They are easy to confuse. <strong><code>amix</code></strong> sums signals into one track at the same channel layout — a true level mix. <strong><code>amerge</code></strong> stacks inputs into a multi-channel stream (e.g. two mono mics into a stereo file). Reach for <code>amerge</code> when you want to <em>preserve</em> separate channels, and <code>amix</code> when you want them blended.</p>
+
+    <h2>Crossfading between songs</h2>
+    <p>To transition from one track to another, use <code>acrossfade</code> — the audio counterpart to the <a href="ffmpeg-xfade-transitions-guide.html">video xfade transition</a>:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">song-crossfade.sh</span></div>
+      <pre class="mono">ffmpeg -i song_a.mp3 -i song_b.mp3 -filter_complex "
+  [0:a][1:a]acrossfade=d=4:c1=tri:c2=tri[a]
+" -map "[a]" mix.mp3</pre>
+    </div>
+
+    <h2>Unlimited channels, visually</h2>
+    <p><a href="../index.html">FFmpegLab</a> exposes unlimited audio channels in a real timeline and mixes them with <code>amix</code> under the hood — drop in music, narration, and effects, set levels, and read the exact generated command. It runs <a href="offline-private-video-editor.html">offline and private</a> in your browser and is <a href="self-hosted-video-editor-docker.html">self-hostable with Docker</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-xfade-transitions-guide.html"><span class="k">Transitions</span><span class="t">xfade transitions guide</span><span class="d">30+ presets, duration, offset, crossfades.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects guide</span><span class="d">overlay, scale, color, chroma key.</span></a>
+        <a class="related-card" href="offline-private-video-editor.html"><span class="k">Privacy</span><span class="t">Offline, private video editing</span><span class="d">Edit in-browser with zero uploads.</span></a>
+        <a class="related-card" href="self-hosted-video-editor-docker.html"><span class="k">Self-hosting</span><span class="t">Self-host with Docker</span><span class="d">Own the whole editing pipeline.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Mix audio without the command-line guesswork.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

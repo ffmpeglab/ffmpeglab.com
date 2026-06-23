@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FFmpeg xfade Transitions: The Complete Guide (30+ Examples) — FFmpegLab</title>
+  <meta name="description" content="A complete guide to FFmpeg xfade video transitions: syntax, duration and offset, all 30+ transition presets, crossfades, audio crossfade with acrossfade, and how to build custom transitions in a filter_complex graph." />
+  <meta name="keywords" content="ffmpeg xfade, ffmpeg transitions, ffmpeg crossfade, video transition ffmpeg, xfade duration offset, acrossfade, filter_complex transition, ffmpeg dissolve, ffmpeg fade between clips, video editing command line" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-xfade-transitions-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-xfade-transitions-guide.html" />
+  <meta property="og:title" content="FFmpeg xfade Transitions: The Complete Guide (30+ Examples)" />
+  <meta property="og:description" content="Syntax, duration/offset, all 30+ presets, crossfades, audio crossfade, and custom transitions in filter_complex." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "FFmpeg xfade Transitions: The Complete Guide (30+ Examples)",
+        "description": "A complete guide to FFmpeg xfade video transitions: syntax, duration and offset, all 30+ presets, crossfades, audio crossfade, and custom transitions in a filter_complex graph.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-xfade-transitions-guide.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "FFmpeg xfade Transitions Guide" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="self-hosted-video-editor-docker.html">Self-Hosting</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / FFmpeg xfade Transitions</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>FFmpeg xfade transitions: the complete guide</h1>
+      <p class="dek">Everything you need to add smooth transitions between video clips with FFmpeg's <code>xfade</code> filter — syntax, timing, all 30+ presets, audio crossfades, and how to compose your own inside a <code>filter_complex</code> graph.</p>
+      <div class="article-meta">FFmpeg tutorial · ~7 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>The <strong>FFmpeg xfade filter</strong> is the modern, built-in way to create a transition between two video streams — a crossfade, wipe, slide, or dissolve — entirely from the command line. Before <code>xfade</code> existed you had to hand-build dissolves with <code>blend</code> and <code>fade</code>; today a single filter does the job, and it ships with more than 30 transition presets out of the box.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>xfade</code> blends two clips over a set <strong>duration</strong> at a chosen <strong>offset</strong>.</li>
+        <li>There are <strong>30+ transition presets</strong> — fade, wipeleft, slideup, circleopen, pixelize, and more.</li>
+        <li>Use <code>acrossfade</code> to crossfade the <strong>audio</strong> at the same time.</li>
+        <li>Everything composes inside a <code>filter_complex</code> graph, so transitions chain across many clips.</li>
+      </ul>
+    </div>
+
+    <h2>The basic xfade syntax</h2>
+    <p>At minimum, <code>xfade</code> needs a <code>transition</code> type, a <code>duration</code> (how long the blend lasts, in seconds), and an <code>offset</code> (when the transition starts on the first clip's timeline). Here is a one-second crossfade that begins four seconds into <code>clip_a</code>:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">crossfade.sh</span></div>
+      <pre class="mono">ffmpeg -i clip_a.mp4 -i clip_b.mp4 \
+  -filter_complex \
+  "[0:v][1:v]xfade=transition=fade:duration=1:offset=4[v]" \
+  -map "[v]" out.mp4</pre>
+    </div>
+
+    <p>The <code>offset</code> almost always trips people up: it is measured from the start of the <em>first</em> input, and it should equal the first clip's length minus the transition duration. If <code>clip_a</code> is 5 seconds long and you want a 1-second blend, set <code>offset=4</code> so the fade ends exactly as the clip does.</p>
+
+    <h2>All 30+ xfade transition presets</h2>
+    <p>Swap the <code>transition=</code> value for any of these. They fall into a few families:</p>
+    <ul>
+      <li><strong>Dissolves:</strong> <code>fade</code>, <code>fadeblack</code>, <code>fadewhite</code>, <code>fadegrays</code>, <code>dissolve</code>, <code>pixelize</code></li>
+      <li><strong>Wipes:</strong> <code>wipeleft</code>, <code>wiperight</code>, <code>wipeup</code>, <code>wipedown</code>, <code>wipetl</code>, <code>wipetr</code>, <code>wipebl</code>, <code>wipebr</code></li>
+      <li><strong>Slides:</strong> <code>slideleft</code>, <code>slideright</code>, <code>slideup</code>, <code>slidedown</code></li>
+      <li><strong>Shapes:</strong> <code>circleopen</code>, <code>circleclose</code>, <code>circlecrop</code>, <code>rectcrop</code>, <code>diagtl</code>, <code>diagtr</code>, <code>diagbl</code>, <code>diagbr</code></li>
+      <li><strong>Reveals &amp; effects:</strong> <code>radial</code>, <code>smoothleft</code>, <code>smoothright</code>, <code>squeezeh</code>, <code>squeezev</code>, <code>hlslice</code>, <code>vuslice</code>, <code>distance</code>, <code>hblur</code></li>
+    </ul>
+    <p>For example, a slick <code>circleopen</code> reveal that takes three quarters of a second:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">transition.fg</span></div>
+      <pre class="mono">[0:v][1:v]xfade=
+  transition=circleopen:
+  duration=0.75:
+  offset=3.0[v]</pre>
+    </div>
+
+    <h2>Crossfading the audio too with acrossfade</h2>
+    <p>A video transition with a hard audio cut feels broken. Pair <code>xfade</code> with <code>acrossfade</code> so the soundtrack blends across the same window:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">av-crossfade.sh</span></div>
+      <pre class="mono">ffmpeg -i clip_a.mp4 -i clip_b.mp4 -filter_complex "
+  [0:v][1:v]xfade=transition=fade:duration=1:offset=4[v];
+  [0:a][1:a]acrossfade=d=1[a]
+" -map "[v]" -map "[a]" out.mp4</pre>
+    </div>
+    <p>If you are mixing more than two audio sources rather than crossfading, reach for <code>amix</code> instead — we cover that in the <a href="ffmpeg-filter-complex-effects.html">filter_complex effects guide</a>.</p>
+
+    <h2>Chaining transitions across many clips</h2>
+    <p>Because every <code>xfade</code> outputs a labeled stream, you can feed that output into the next transition. Three clips, two transitions:</p>
+
+    <div class="code-window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">multi-clip.sh</span></div>
+      <pre class="mono">ffmpeg -i a.mp4 -i b.mp4 -i c.mp4 -filter_complex "
+  [0:v][1:v]xfade=transition=slideleft:duration=1:offset=4[ab];
+  [ab][2:v]xfade=transition=wipeup:duration=1:offset=9[v]
+" -map "[v]" out.mp4</pre>
+    </div>
+    <p>Note the second <code>offset</code> is cumulative: it is measured against the combined <code>[ab]</code> timeline, not clip C alone.</p>
+
+    <h2>Common pitfalls</h2>
+    <ul>
+      <li><strong>Mismatched resolution or SAR.</strong> <code>xfade</code> requires both inputs to share size, pixel format, and frame rate. Normalize first with <code>scale</code>, <code>setsar=1</code>, and <code>fps</code>.</li>
+      <li><strong>Wrong offset.</strong> Too large and the second clip never appears; too small and clips overlap early. Compute it from the first clip's real duration.</li>
+      <li><strong>Black flash.</strong> Usually a frame-rate mismatch — force a constant <code>fps</code> on both inputs.</li>
+    </ul>
+
+    <h2>Doing this without memorizing flags</h2>
+    <p>Hand-writing <code>filter_complex</code> graphs is powerful but unforgiving. <a href="../index.html">FFmpegLab</a> gives you a visual timeline on top and the <em>real</em> FFmpeg render script underneath: drag clips, pick from the 30+ <code>xfade</code> presets with a duration slider, and the exact command is generated for you — fully editable when you want to drop down to the graph. It runs <a href="offline-private-video-editor.html">offline in your browser</a>, so your footage never leaves your machine, and the whole stack is <a href="self-hosted-video-editor-docker.html">self-hostable with Docker</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects guide</span><span class="d">overlay, scale, color filters, and custom graphs.</span></a>
+        <a class="related-card" href="ffmpeg-audio-mixing-amix-guide.html"><span class="k">Audio</span><span class="t">Mixing audio with amix</span><span class="d">Combine unlimited audio channels in one render.</span></a>
+        <a class="related-card" href="offline-private-video-editor.html"><span class="k">Privacy</span><span class="t">Offline, private video editing</span><span class="d">Edit in-browser with zero uploads.</span></a>
+        <a class="related-card" href="self-hosted-video-editor-docker.html"><span class="k">Self-hosting</span><span class="t">Self-host with Docker</span><span class="d">Own the whole editing pipeline.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Stop memorizing FFmpeg flags. Start editing.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FFmpegLab — The FFmpeg-Native Video Editor</title>
+
+  <!-- Primary meta -->
+  <meta name="description" content="FFmpegLab is a power tool for FFmpeg specialists: edit the raw render script, build custom filter-graph effects, and run the whole pipeline offline. Open source, private, and self-hostable." />
+  <meta name="keywords" content="FFmpeg video editor, filter_complex editor, xfade transitions, amix audio, offline video editor, private video editor, self-hosted video editor, open source video editor, WebAssembly video editing, OPFS" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#FC6D26" />
+  <meta name="color-scheme" content="light" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="canonical" href="https://ffmpeglab.com/" />
+
+  <!-- Icons & manifest -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:url" content="https://ffmpeglab.com/" />
+  <meta property="og:title" content="FFmpegLab — The FFmpeg-Native Video Editor" />
+  <meta property="og:description" content="Video editing, down to the FFmpeg command. Edit the raw render script, build custom xfade/amix effects, and run it all offline — your footage never leaves your machine." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="FFmpegLab — the FFmpeg-native video editor" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FFmpegLab — The FFmpeg-Native Video Editor" />
+  <meta name="twitter:description" content="Video editing, down to the FFmpeg command. Edit the raw render script, build custom xfade/amix effects, and run it all offline — your footage never leaves your machine." />
+  <meta name="twitter:image" content="https://ffmpeglab.com/og-image.png" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "FFmpegLab",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web, Windows, macOS, Linux",
+        "description": "A power tool for FFmpeg specialists. Edit the raw render script, build custom filter-graph effects, and run the whole pipeline offline. Open source, private, and self-hostable.",
+        "url": "https://ffmpeglab.com/",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "offers": [
+          { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" },
+          { "@type": "Offer", "price": "2.99", "priceCurrency": "USD", "name": "Plus — 4K & full-resolution export (one-time)" }
+        ],
+        "featureList": [
+          "Edit the raw FFmpeg render script and filter_complex graph",
+          "30+ xfade transitions plus custom filter-graph effects",
+          "Unlimited audio channels mixed with amix",
+          "Offline-first pipeline via OPFS + WebAssembly",
+          "End-to-end encrypted P2P sync",
+          "Self-hostable with Docker Compose"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "name": "FFmpegLab",
+        "url": "https://ffmpeglab.com/"
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ---------- Reset & base ---------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #FC6D26;
+      --ink: #1B1730;
+      --muted: #4A4566;
+      --muted-2: #6B6685;
+      --faint: #7A7490;
+    }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: "Kanit", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: #fff;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+    a { text-decoration: none; color: inherit; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .container { width: 100%; max-width: 80rem; margin-inline: auto; padding-inline: 1.5rem; }
+    .balance { text-wrap: balance; }
+
+    /* ---------- Buttons ---------- */
+    .btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.375rem; font-weight: 600; transition: all .15s ease; }
+    .btn-primary { background: var(--orange); color: #fff; padding: 0.75rem 1.5rem; font-size: 1rem; }
+    .btn-primary:hover { background: #ef5f17; }
+    .btn-primary.sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+    .btn-ghost { border: 1px solid #D7D2E3; background: #fff; color: var(--ink); padding: 0.75rem 1.5rem; font-size: 1rem; }
+    .btn-ghost:hover { border-color: var(--ink); }
+    .btn-white { background: #fff; color: var(--ink); padding: 0.875rem 1.75rem; font-size: 1rem; }
+    .btn-white:hover { transform: translateY(-1px); }
+
+    /* ---------- Wordmark ---------- */
+    .mark { display: inline-flex; align-items: center; gap: 0.5rem; }
+    .mark .glyph { display: grid; place-items: center; height: 1.75rem; width: 1.75rem; border-radius: 0.375rem; font-weight: 700; font-size: 1rem; line-height: 1; color: #fff; background: linear-gradient(135deg, var(--orange), #E24329); }
+    .mark .word { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); }
+    .mark .word .lab { color: var(--orange); }
+
+    /* ---------- Header ---------- */
+    header.site { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #ECE9F3; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); }
+    header.site .bar { display: flex; align-items: center; justify-content: space-between; padding-block: 1rem; }
+    header.site nav { display: none; align-items: center; gap: 2rem; }
+    header.site nav a { font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: color .15s; }
+    header.site nav a:hover { color: var(--ink); }
+    .header-actions { display: flex; align-items: center; gap: 1rem; }
+    .signin { display: none; font-size: 0.875rem; font-weight: 600; color: var(--ink); }
+
+    /* ---------- Code window ---------- */
+    .code-window { overflow: hidden; border-radius: 0.75rem; border: 1px solid #2C2741; background: #15121F; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.45); }
+    .code-window .titlebar { display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid #2C2741; padding: 0.75rem 1rem; }
+    .dot { height: 0.75rem; width: 0.75rem; border-radius: 9999px; }
+    .dot.r { background: #FF5F56; } .dot.y { background: #FFBD2E; } .dot.g { background: #27C93F; }
+    .code-window .fname { margin-left: 0.75rem; font-size: 0.75rem; color: var(--faint); }
+    .code-window pre { overflow-x: auto; padding: 1.25rem; font-size: 0.82rem; line-height: 1.7; color: #D6D2E6; }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; overflow: hidden; background: #fff; }
+    .hero .glow { pointer-events: none; position: absolute; right: -10rem; top: -10rem; height: 40rem; width: 40rem; border-radius: 9999px; opacity: 0.6; filter: blur(64px); background: radial-gradient(circle at center, #FFD9C2 0%, #FFB48A 35%, #FC6D2655 60%, transparent 75%); }
+    .hero .grid { position: relative; display: grid; gap: 3rem; align-items: center; padding-block: 5rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; }
+    .hero .lede { margin-top: 1.5rem; max-width: 36rem; font-size: 1.125rem; line-height: 1.7; color: var(--muted); }
+    .hero .cta-row { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; }
+    .hero .meta { margin-top: 1.5rem; font-size: 0.75rem; color: var(--faint); }
+
+    /* ---------- Features ---------- */
+    .features { background: #fff; }
+    .features .inner { padding-block: 6rem; }
+    .features h2 { max-width: 48rem; font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; }
+    .features .sub { margin-top: 1rem; max-width: 42rem; font-size: 1.125rem; color: var(--muted); }
+    .feature-rows { margin-top: 4rem; display: flex; flex-direction: column; gap: 6rem; }
+    .feature-row { display: grid; gap: 3rem; align-items: center; }
+    .icon-chip { display: inline-flex; height: 2.75rem; width: 2.75rem; align-items: center; justify-content: center; border-radius: 0.5rem; background: #FFEFE6; color: var(--orange); }
+    .icon-chip svg { height: 1.5rem; width: 1.5rem; }
+    .feature-row h3 { margin-top: 1.25rem; font-size: 1.875rem; font-weight: 700; letter-spacing: -0.02em; }
+    .feature-row .body { margin-top: 1rem; font-size: 1.125rem; line-height: 1.7; color: var(--muted); }
+    .bullets { margin-top: 1.5rem; list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+    .bullets li { display: flex; align-items: flex-start; gap: 0.75rem; color: var(--ink); }
+    .bullets li svg { margin-top: 0.25rem; height: 1.25rem; width: 1.25rem; flex-shrink: 0; color: var(--orange); }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .stat-card { border-radius: 0.75rem; border: 1px solid #ECE9F3; background: #FAF8FD; padding: 1.5rem; }
+    .stat-card .v { font-size: 1.875rem; font-weight: 800; color: var(--ink); }
+    .stat-card .k { margin-top: 0.25rem; font-size: 0.875rem; color: var(--muted-2); }
+
+    /* ---------- Stats band ---------- */
+    .stats-band { background: #1B1730; }
+    .stats-band .inner { padding-block: 5rem; }
+    .stats-band h2 { max-width: 42rem; font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+    .stats-band .row { margin-top: 3rem; display: grid; gap: 2rem; grid-template-columns: 1fr; }
+    .stats-band .item { border-left: 2px solid #3A3556; padding-left: 1.25rem; }
+    .stats-band .item .v { font-size: 2.25rem; font-weight: 800; color: #fff; }
+    .stats-band .item .k { margin-top: 0.5rem; font-size: 0.875rem; line-height: 1.6; color: #A9A4C2; }
+
+    /* ---------- Self-host ---------- */
+    .selfhost { background: #FAF8FD; }
+    .selfhost .grid { display: grid; gap: 3rem; align-items: center; padding-block: 6rem; }
+    .selfhost h2 { margin-top: 1.25rem; font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; }
+    .selfhost p { margin-top: 1rem; font-size: 1.125rem; line-height: 1.7; color: var(--muted); }
+    .selfhost .cta-row { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; }
+
+    /* ---------- Closing CTA ---------- */
+    .closing { position: relative; overflow: hidden; background: linear-gradient(120deg, #FC6D26 0%, #F2542D 45%, #E24329 100%); }
+    .closing .inner { padding-block: 6rem; text-align: center; }
+    .closing h2 { margin-inline: auto; max-width: 48rem; font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+    .closing p { margin: 1.25rem auto 0; max-width: 36rem; font-size: 1.125rem; color: rgba(255,255,255,0.9); }
+    .closing .cta-row { margin-top: 2rem; display: flex; justify-content: center; }
+
+    /* ---------- Footer ---------- */
+    footer.site { background: #15121F; }
+    footer.site .cols { display: grid; gap: 3rem; padding-block: 4rem; grid-template-columns: 1fr; }
+    footer.site .blurb { margin-top: 1rem; max-width: 18rem; font-size: 0.875rem; line-height: 1.7; color: #8C87A3; }
+    footer.site .mark .word { color: #fff; font-size: 1.2rem; }
+    footer.site .colhead { font-size: 0.875rem; font-weight: 600; color: #fff; }
+    footer.site ul { list-style: none; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    footer.site ul a { font-size: 0.875rem; color: #8C87A3; transition: color .15s; }
+    footer.site ul a:hover { color: #fff; }
+    .footer-bottom { border-top: 1px solid #2C2741; }
+    .footer-bottom .row { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 0.75rem; padding-block: 1.5rem; }
+    .footer-bottom p { font-size: 0.75rem; color: #6F6A87; }
+    .footer-bottom .built { display: flex; align-items: center; gap: 0.5rem; }
+    .footer-bottom .built svg { height: 0.875rem; width: 0.875rem; }
+
+    /* ---------- Guides ---------- */
+    .guides { background: #FAF8FD; border-top: 1px solid #ECE9F3; }
+    .guides .inner { padding-block: 5rem; }
+    .guides h2 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; }
+    .guides .sub { margin-top: 0.75rem; font-size: 1.125rem; color: var(--muted); max-width: 40rem; }
+    .guides-grid { margin-top: 2.5rem; display: grid; gap: 1rem; grid-template-columns: 1fr; }
+    .guide-card { display: block; border: 1px solid #ECE9F3; background: #fff; border-radius: 0.75rem; padding: 1.5rem; transition: border-color .15s; }
+    .guide-card:hover { border-color: var(--orange); }
+    .guide-card .k { font-family: ui-monospace, monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--orange); }
+    .guide-card .t { margin-top: 0.5rem; font-size: 1.15rem; font-weight: 700; color: var(--ink); }
+    .guide-card .d { margin-top: 0.4rem; font-size: 0.95rem; color: var(--muted-2); line-height: 1.6; }
+
+    /* ---------- Responsive ---------- */
+    @media (min-width: 640px) {
+      .signin { display: block; }
+      .stats-band .row { grid-template-columns: repeat(2, 1fr); }
+      .footer-bottom .row { flex-direction: row; }
+      .guides-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 768px) {
+      header.site nav { display: flex; }
+      footer.site .cols { grid-template-columns: 1.5fr 1fr 1fr 1fr; }
+    }
+    @media (min-width: 1024px) {
+      .hero .grid { grid-template-columns: 1fr 1fr; padding-block: 7rem; }
+      .hero h1 { font-size: 3.75rem; }
+      .feature-row { grid-template-columns: 1fr 1fr; }
+      .feature-row.flip .text { order: 2; }
+      .feature-row.flip .visual { order: 1; }
+      .stats-band .row { grid-template-columns: repeat(4, 1fr); }
+      .selfhost .grid { grid-template-columns: 1fr 1fr; }
+      .closing h2 { font-size: 3rem; }
+      .guides-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header class="site">
+    <div class="container bar">
+      <span class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></span>
+      <nav>
+        <a href="#">Product</a>
+        <a href="articles/ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="articles/self-hosted-video-editor-docker.html">Self-Hosting</a>
+        <a href="#guides">Docs</a>
+        <a href="#">Pricing</a>
+      </nav>
+      <div class="header-actions">
+        <a class="signin" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Sign in</a>
+        <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+      <div class="glow"></div>
+      <div class="container grid">
+        <div>
+          <h1 class="balance">Video editing, down to the FFmpeg command.</h1>
+          <p class="lede">FFmpegLab is a power tool for FFmpeg specialists. Edit the raw render script, build custom filter-graph effects, and run the whole pipeline offline — your footage never leaves your machine.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a>
+            <a class="btn btn-ghost" href="#docs">Read the docs</a>
+          </div>
+          <p class="mono meta">open-source · xfade · amix · OPFS · WebAssembly · self-hostable</p>
+        </div>
+        <div class="code-window">
+          <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">render.sh — FFmpegLab</span></div>
+          <pre class="mono">$ ffmpeg \
+  -i clip_a.mp4 -i clip_b.mp4 \
+  -filter_complex "
+    [0:v][1:v]xfade=transition=
+      circleopen:duration=1:offset=4[v];
+    [0:a][1:a]amix=inputs=2[a]
+  " \
+  -map "[v]" -map "[a]" \
+  out.mp4
+
+# edit the graph. own every frame.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section class="features">
+      <div class="container inner">
+        <h2 class="balance">Built for people who actually write FFmpeg</h2>
+        <p class="sub">A real timeline on top, the real command underneath. Switch between them whenever you want.</p>
+        <div class="feature-rows">
+
+          <!-- Feature 1 -->
+          <div class="feature-row">
+            <div class="text">
+              <span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg></span>
+              <h3>Edit the raw render script</h3>
+              <p class="body">FFmpegLab never hides the engine. Drop into the actual FFmpeg rendering script, chain filters by hand, and keep full control over every render — no proprietary black box between you and the output.</p>
+              <ul class="bullets">
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Direct access to the FFmpeg command and filter_complex graph</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Live preview as you tune parameters</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Reproducible, scriptable renders you can version</span></li>
+              </ul>
+            </div>
+            <div class="visual">
+              <div class="code-window">
+                <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">filter_complex</span></div>
+                <pre class="mono">[0:v]scale=1920:-2,
+  setsar=1[base];
+[1:v]format=rgba,
+  colorchannelmixer=aa=0.6[ov];
+[base][ov]overlay=
+  (W-w)/2:(H-h)/2[v]</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 2 (flipped) -->
+          <div class="feature-row flip">
+            <div class="text">
+              <span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg></span>
+              <h3>Build custom effects from filter graphs</h3>
+              <p class="body">Start from 30+ built-in xfade transitions, then compose your own. Every effect is a real FFmpeg filter graph you can fork, tweak, and reuse across projects.</p>
+              <ul class="bullets">
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>30+ xfade transitions, tuned with a duration slider</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Unlimited audio channels mixed with amix</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Time, padding, crop, and color-filter effects out of the box</span></li>
+              </ul>
+            </div>
+            <div class="visual">
+              <div class="code-window">
+                <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">transition.fg</span></div>
+                <pre class="mono">xfade=transition=
+  wipeleft:
+  duration=0.75:
+  offset=3.0
+
+# 30+ presets,
+# or write your own.</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="feature-row">
+            <div class="text">
+              <span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+              <h3>Offline-first and fully private</h3>
+              <p class="body">The whole pipeline runs locally on the browser file system and WebAssembly. Nothing is uploaded; sharing happens over encrypted peer-to-peer links you control.</p>
+              <ul class="bullets">
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Runs locally via OPFS + WebAssembly — works fully offline</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>End-to-end encrypted P2P sync across your devices</span></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>No tracking, no analytics, no data leaves your machine</span></li>
+              </ul>
+            </div>
+            <div class="visual">
+              <div class="stat-grid">
+                <div class="stat-card"><div class="v">0 bytes</div><div class="k">Uploaded</div></div>
+                <div class="stat-card"><div class="v">100%</div><div class="k">Runs offline</div></div>
+                <div class="stat-card"><div class="v">30+</div><div class="k">Transitions</div></div>
+                <div class="stat-card"><div class="v">E2E</div><div class="k">Encryption</div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Stats band ===== -->
+    <section class="stats-band">
+      <div class="container inner">
+        <h2 class="balance">One tool, from rough cut to render script</h2>
+        <div class="row">
+          <div class="item"><div class="v">30+</div><div class="k">xfade transitions, plus your own</div></div>
+          <div class="item"><div class="v">0</div><div class="k">bytes of footage uploaded</div></div>
+          <div class="item"><div class="v">100%</div><div class="k">offline-capable pipeline</div></div>
+          <div class="item"><div class="v">$2.99</div><div class="k">one-time for 4K — no subscription</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Self-host ===== -->
+    <section class="selfhost" id="docs">
+      <div class="container grid">
+        <div>
+          <span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg></span>
+          <h2 class="balance">Run it on your own infrastructure</h2>
+          <p>FFmpegLab is open source and offline-first. Bring your own backend with a Docker Compose setup and own the entire editing pipeline — storage, rendering, and sync — end to end.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="https://github.com/ffmpeglab">View on GitHub</a>
+            <a class="btn btn-ghost" href="articles/self-hosted-video-editor-docker.html">Self-hosting guide</a>
+          </div>
+        </div>
+        <div class="code-window">
+          <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div>
+          <pre class="mono">services:
+  ffmpeglab:
+    image: ffmpeglab/server:latest
+    ports: ["8080:8080"]
+    volumes:
+      - ./projects:/data/projects
+    environment:
+      - FFMPEGLAB_OFFLINE=true
+# your machines. your footage. your rules.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Guides ===== -->
+    <section class="guides" id="guides">
+      <div class="container inner">
+        <h2 class="balance">FFmpeg guides &amp; tutorials</h2>
+        <p class="sub">Practical, copy-pasteable walkthroughs for the FFmpeg techniques behind every edit.</p>
+        <div class="guides-grid">
+          <a class="guide-card" href="articles/ffmpeg-xfade-transitions-guide.html">
+            <div class="k">Transitions</div>
+            <div class="t">FFmpeg xfade transitions guide</div>
+            <div class="d">Syntax, duration &amp; offset, all 30+ presets, audio crossfades, and chaining transitions across clips.</div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-filter-complex-effects.html">
+            <div class="k">Effects</div>
+            <div class="t">filter_complex effects, by example</div>
+            <div class="d">Overlay, scale, pad, crop, color correction, and chroma key — chained into one custom filter graph.</div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-audio-mixing-amix-guide.html">
+            <div class="k">Audio</div>
+            <div class="t">Mixing audio with amix</div>
+            <div class="d">Layer music, voiceover, and effects; balance levels; duck with sidechaincompress; crossfade tracks.</div>
+          </a>
+          <a class="guide-card" href="articles/offline-private-video-editor.html">
+            <div class="k">Privacy</div>
+            <div class="t">The offline, private video editor</div>
+            <div class="d">How OPFS + WebAssembly editing keeps footage on-device, with encrypted P2P sync and zero tracking.</div>
+          </a>
+          <a class="guide-card" href="articles/self-hosted-video-editor-docker.html">
+            <div class="k">Self-hosting</div>
+            <div class="t">Self-host with Docker</div>
+            <div class="d">Bring your own backend for storage, rendering, and sync with a single Docker Compose file.</div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-compress-video-reduce-file-size.html">
+            <div class="k">Compress</div>
+            <div class="t">Compress video &amp; reduce file size</div>
+            <div class="d">CRF explained, H.264 vs H.265/HEVC, two-pass bitrate, downscaling, and shrinking audio.</div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-convert-video-format.html">
+            <div class="k">Convert</div>
+            <div class="t">Convert video formats</div>
+            <div class="d">MP4, WebM, MOV, MKV — remux vs re-encode, extract audio, and export high-quality GIFs.</div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-trim-cut-video.html">
+            <div class="k">Editing</div>
+            <div class="t">Trim, cut &amp; split video</div>
+            <div class="d">Lossless clipping with -ss/-to, frame-accurate cuts, splitting, and joining with concat.</div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-add-text-subtitles-video.html">
+            <div class="k">Text</div>
+            <div class="t">Add text &amp; subtitles</div>
+            <div class="d">drawtext titles and lower-thirds, plus burning in or attaching SRT/ASS subtitles.</div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Closing CTA ===== -->
+    <section class="closing">
+      <div class="container inner">
+        <h2 class="balance">Open the editor. Read the render script. Ship the cut.</h2>
+        <p>Free in your browser — nothing to install, nothing uploaded.</p>
+        <div class="cta-row">
+          <a class="btn btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site">
+    <div class="container cols">
+      <div>
+        <span class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></span>
+        <p class="blurb">The FFmpeg-native video editor. Offline-first, private, and open source.</p>
+      </div>
+      <div>
+        <div class="colhead">Product</div>
+        <ul><li><a href="#">Editor</a></li><li><a href="#">Effects</a></li><li><a href="#">Self-hosting</a></li><li><a href="#">Pricing</a></li></ul>
+      </div>
+      <div>
+        <div class="colhead">Resources</div>
+        <ul><li><a href="articles/ffmpeg-xfade-transitions-guide.html">xfade transitions</a></li><li><a href="articles/ffmpeg-filter-complex-effects.html">filter_complex effects</a></li><li><a href="articles/ffmpeg-audio-mixing-amix-guide.html">Audio mixing</a></li><li><a href="articles/self-hosted-video-editor-docker.html">Self-hosting</a></li></ul>
+      </div>
+      <div>
+        <div class="colhead">Company</div>
+        <ul><li><a href="#">About</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li><li><a href="#">Support</a></li></ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container row">
+        <p>© 2026 FFmpegLab. All rights reserved.</p>
+        <p class="mono built"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg> built on open-source FFmpeg</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
