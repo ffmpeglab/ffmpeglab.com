@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Extract Frames & Thumbnails from Video with FFmpeg — FFmpegLab</title>
+  <meta name="description" content="Extract frames and thumbnails from video with FFmpeg: grab a single frame at a timestamp, export every Nth frame or one image per second, pull all frames, and auto-pick a representative thumbnail with the thumbnail filter." />
+  <meta name="keywords" content="ffmpeg extract frames, ffmpeg thumbnail, ffmpeg screenshot, ffmpeg single frame, ffmpeg frame per second, ffmpeg export images, ffmpeg get frame at time, ffmpeg thumbnail filter, ffmpeg jpg from video, ffmpeg poster image" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-extract-frames-thumbnails.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-extract-frames-thumbnails.html" />
+  <meta property="og:title" content="How to Extract Frames & Thumbnails from Video with FFmpeg" />
+  <meta property="og:description" content="Single frame at a timestamp, every Nth frame, one per second, all frames, and auto thumbnails." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Extract Frames & Thumbnails from Video with FFmpeg",
+        "description": "Extract frames and thumbnails with FFmpeg: a single frame at a timestamp, every Nth frame or one per second, all frames, and auto thumbnails.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-extract-frames-thumbnails.html",
+        "datePublished": "2026-06-24",
+        "dateModified": "2026-06-24"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Extract Frames & Thumbnails" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Extract Frames &amp; Thumbnails</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Extract frames &amp; thumbnails from video with FFmpeg</h1>
+      <p class="dek">Grab a single still, export a contact sheet of frames, pull one image per second, or let FFmpeg auto-pick a representative thumbnail.</p>
+      <div class="article-meta">FFmpeg tutorial · ~5 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>Pulling images out of a video is one of FFmpeg's most useful tricks — for poster frames, thumbnails, dataset frames, or just grabbing a clean still. The key levers are <strong>seeking</strong> (<code>-ss</code>), <strong>how many frames</strong> to take (<code>-frames:v</code> or <code>fps</code>), and an output filename <strong>pattern</strong>.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li>Use <code>-ss</code> to seek to a timestamp, <code>-frames:v 1</code> for a single still.</li>
+        <li><code>fps=1</code> exports one frame per second; <code>fps=1/5</code> one every five.</li>
+        <li>Output a numbered pattern like <code>frame_%04d.jpg</code> for sequences.</li>
+        <li>The <code>thumbnail</code> filter auto-selects a representative frame.</li>
+      </ul>
+    </div>
+
+    <h2>A single frame at a timestamp</h2>
+    <p>Seek to 10 seconds and write exactly one high-quality JPEG:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -ss 00:00:10 -i in.mp4 -frames:v 1 -q:v 2 frame.jpg</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>Putting <code>-ss</code> before <code>-i</code> seeks fast. Lower <code>-q:v</code> means higher quality (2 is excellent for JPEG).</p>
+
+    <h2>One image per second</h2>
+    <p>The <code>fps</code> filter controls sampling rate. This writes a numbered sequence, one frame per second:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "fps=1" frame_%04d.jpg</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>For one frame every 5 seconds use <code>fps=1/5</code>; for 2 per second use <code>fps=2</code>.</p>
+
+    <h2>Every Nth frame</h2>
+    <p>To keep, say, every 30th frame regardless of frame rate, use <code>select</code>:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "select=not(mod(n\,30))" \
+  -vsync vfr frame_%04d.png</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Extract every single frame</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 frame_%06d.png</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>Use a wide counter (<code>%06d</code>) so frames sort correctly for long clips.</p>
+
+    <h2>Auto-pick a representative thumbnail</h2>
+    <p>The <code>thumbnail</code> filter analyzes a batch of frames and chooses the most representative one — great for an automatic poster image:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "thumbnail=n=100,scale=640:-1" \
+  -frames:v 1 thumb.jpg</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Make a contact sheet (tiled grid)</h2>
+    <p>The <code>tile</code> filter packs frames into a single montage image:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "fps=1/10,scale=320:-1,tile=4x4" \
+  -frames:v 1 sheet.png</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Grab stills on a timeline</h2>
+    <p><a href="../index.html">FFmpegLab</a> lets you scrub to any point and export a still, generating the exact seek command behind the scenes — and because it runs <a href="offline-private-video-editor.html">offline</a>, frames from sensitive footage never leave your device. Need to cut first? See the <a href="ffmpeg-trim-cut-video.html">trim &amp; cut guide</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, and video to GIF.</span></a>
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Editing</span><span class="t">Trim &amp; cut video</span><span class="d">Lossless clipping with -ss/-to.</span></a>
+        <a class="related-card" href="ffmpeg-speed-up-slow-down-video.html"><span class="k">Speed</span><span class="t">Speed up &amp; slow down</span><span class="d">setpts, atempo, timelapse, slow-mo.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">overlay, scale, color, chroma key.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Scrub, grab a frame, export — privately.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Fade Video & Audio In and Out with FFmpeg (fade, afade) — FFmpegLab</title>
+  <meta name="description" content="Add fade in and fade out to video and audio with FFmpeg: fade from black at the start, fade to black at the end, fade audio with afade, and combine video and audio fades in one command." />
+  <meta name="keywords" content="ffmpeg fade in, ffmpeg fade out, ffmpeg fade to black, ffmpeg fade filter, ffmpeg afade, ffmpeg audio fade, ffmpeg fade in out, ffmpeg crossfade, video fade ffmpeg, fade from black ffmpeg" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-fade-in-out.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-fade-in-out.html" />
+  <meta property="og:title" content="How to Fade Video & Audio In and Out with FFmpeg (fade, afade)" />
+  <meta property="og:description" content="Fade from black, fade to black, fade audio with afade, and combine video + audio fades in one command." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Fade Video & Audio In and Out with FFmpeg (fade, afade)",
+        "description": "Add fade in and fade out to video and audio with FFmpeg: fade from black, fade to black, fade audio with afade, and combine both.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-fade-in-out.html",
+        "datePublished": "2026-06-24",
+        "dateModified": "2026-06-24"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Fade In & Out" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Fade In &amp; Out</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to fade video &amp; audio in and out with FFmpeg</h1>
+      <p class="dek">Open from black, end on black, and ramp the soundtrack up and down — using the <code>fade</code> filter for video and <code>afade</code> for audio.</p>
+      <div class="article-meta">FFmpeg tutorial · ~5 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>A fade is just an opacity (or volume) ramp over a time window. FFmpeg gives you <code>fade</code> for picture and <code>afade</code> for sound. Each takes a <strong>type</strong> (<code>in</code> or <code>out</code>), a <strong>start time</strong>, and a <strong>duration</strong>.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>fade=t=in:st=0:d=2</code> fades the video up from black over 2 seconds.</li>
+        <li><code>fade=t=out</code> needs a start time near the end of the clip.</li>
+        <li><code>afade</code> mirrors the same syntax for audio.</li>
+        <li>Combine video and audio fades in one <code>filter_complex</code>.</li>
+      </ul>
+    </div>
+
+    <h2>Fade the video in from black</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "fade=t=in:st=0:d=2" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p><code>st</code> is the start time and <code>d</code> the duration, both in seconds.</p>
+
+    <h2>Fade the video out to black</h2>
+    <p>A fade-out starts late, so you need the clip length. If the video is 30s and you want a 3s fade, start at 27:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "fade=t=out:st=27:d=3" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Fade in and out together</h2>
+    <p>Chain two <code>fade</code> filters with a comma — one in at the head, one out at the tail:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf \
+  "fade=t=in:st=0:d=2,fade=t=out:st=27:d=3" \
+  -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Fade the audio with afade</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -af \
+  "afade=t=in:st=0:d=2,afade=t=out:st=27:d=3" \
+  -c:v copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Fade picture and sound in one command</h2>
+    <p>Use <code>filter_complex</code> to ramp both streams and map them to the output:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -filter_complex "
+  [0:v]fade=t=in:st=0:d=2,fade=t=out:st=27:d=3[v];
+  [0:a]afade=t=in:st=0:d=2,afade=t=out:st=27:d=3[a]
+" -map "[v]" -map "[a]" out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Fade to a color other than black</h2>
+    <p>Add <code>color=white</code> (or any color) to fade to white instead:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "fade=t=out:st=27:d=3:color=white" out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Or fade on a timeline</h2>
+    <p><a href="../index.html">FFmpegLab</a> adds fades with handles on the clip and writes the matching <code>fade</code>/<code>afade</code> command for you. For blends <em>between</em> two clips rather than to black, use an <a href="ffmpeg-xfade-transitions-guide.html">xfade transition</a>; to balance the fading soundtrack against other tracks, see <a href="ffmpeg-audio-mixing-amix-guide.html">audio mixing with amix</a>. Everything runs <a href="offline-private-video-editor.html">offline in the browser</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-xfade-transitions-guide.html"><span class="k">Transitions</span><span class="t">xfade transitions guide</span><span class="d">Blend between clips, not just to black.</span></a>
+        <a class="related-card" href="ffmpeg-audio-mixing-amix-guide.html"><span class="k">Audio</span><span class="t">Mixing audio with amix</span><span class="d">Music, voiceover, ducking.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">overlay, scale, color, chroma key.</span></a>
+        <a class="related-card" href="ffmpeg-speed-up-slow-down-video.html"><span class="k">Speed</span><span class="t">Speed up &amp; slow down</span><span class="d">setpts, atempo, timelapse, slow-mo.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Polish openings and endings — visually.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

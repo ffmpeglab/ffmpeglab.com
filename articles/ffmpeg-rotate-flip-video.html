@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Rotate & Flip Video with FFmpeg (transpose, hflip, vflip) — FFmpegLab</title>
+  <meta name="description" content="Rotate and flip video with FFmpeg: turn 90, 180, or 270 degrees with transpose, mirror with hflip and vflip, fix sideways phone footage, and rotate losslessly by changing orientation metadata." />
+  <meta name="keywords" content="ffmpeg rotate video, ffmpeg flip video, ffmpeg transpose, ffmpeg hflip, ffmpeg vflip, ffmpeg rotate 90, ffmpeg rotate 180, fix sideways video ffmpeg, ffmpeg mirror video, ffmpeg rotate metadata lossless" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-rotate-flip-video.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-rotate-flip-video.html" />
+  <meta property="og:title" content="How to Rotate & Flip Video with FFmpeg (transpose, hflip, vflip)" />
+  <meta property="og:description" content="Rotate 90/180/270 with transpose, mirror with hflip/vflip, and rotate losslessly via metadata." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Rotate & Flip Video with FFmpeg (transpose, hflip, vflip)",
+        "description": "Rotate and flip video with FFmpeg: transpose for 90/180/270, hflip and vflip to mirror, and lossless rotation via orientation metadata.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-rotate-flip-video.html",
+        "datePublished": "2026-06-24",
+        "dateModified": "2026-06-24"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Rotate & Flip Video" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Rotate &amp; Flip Video</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to rotate &amp; flip video with FFmpeg</h1>
+      <p class="dek">Fix sideways phone footage, turn a clip 90 or 180 degrees, or mirror it left-to-right — with <code>transpose</code>, <code>hflip</code>, and <code>vflip</code>, plus a lossless metadata-only option.</p>
+      <div class="article-meta">FFmpeg tutorial · ~4 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>There are two ways to "rotate" a video. You can <strong>re-encode</strong> with the <code>transpose</code> filter, which actually rewrites the pixels, or you can flip an <strong>orientation flag</strong> in the metadata, which is instant and lossless but relies on the player honoring it. Both have their place.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>transpose=1</code> rotates 90° clockwise; <code>2</code> is 90° counter-clockwise.</li>
+        <li>Rotate 180° by chaining two transposes or using <code>hflip,vflip</code>.</li>
+        <li><code>hflip</code> mirrors horizontally; <code>vflip</code> vertically.</li>
+        <li>A metadata <code>rotate</code> tag rotates losslessly, but support varies by player.</li>
+      </ul>
+    </div>
+
+    <h2>Rotate 90° (clockwise / counter-clockwise)</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># 90° clockwise
+ffmpeg -i in.mp4 -vf "transpose=1" -c:a copy out.mp4
+
+# 90° counter-clockwise
+ffmpeg -i in.mp4 -vf "transpose=2" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>The values: <code>0</code> = 90° CCW + vertical flip, <code>1</code> = 90° CW, <code>2</code> = 90° CCW, <code>3</code> = 90° CW + vertical flip.</p>
+
+    <h2>Rotate 180°</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "transpose=2,transpose=2" -c:a copy out.mp4
+# equivalent, often faster:
+ffmpeg -i in.mp4 -vf "hflip,vflip" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Mirror (flip) a video</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># horizontal mirror (selfie-style)
+ffmpeg -i in.mp4 -vf "hflip" -c:a copy out.mp4
+
+# vertical flip (upside down)
+ffmpeg -i in.mp4 -vf "vflip" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Fix sideways phone video losslessly</h2>
+    <p>Phones often record sideways and set a rotation flag. To re-tag without re-encoding the pixels — instant and lossless — set the orientation metadata instead:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -metadata:s:v rotate=90 -c copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>If a player ignores the flag, fall back to a real <code>transpose</code> re-encode above.</p>
+
+    <h2>Rotate visually instead</h2>
+    <p><a href="../index.html">FFmpegLab</a> rotates and flips with a click and writes the matching <code>transpose</code>/<code>hflip</code> command, so you can fix orientation without remembering filter values — running <a href="offline-private-video-editor.html">fully offline</a>. Then <a href="ffmpeg-compress-video-reduce-file-size.html">compress</a> or <a href="ffmpeg-convert-video-format.html">convert</a> for delivery.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">overlay, scale, crop, color.</span></a>
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce size</span><span class="d">CRF, H.265, two-pass.</span></a>
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, GIF.</span></a>
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Editing</span><span class="t">Trim &amp; cut video</span><span class="d">Lossless clipping with -ss/-to.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Rotate, flip, and fix orientation — in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>
