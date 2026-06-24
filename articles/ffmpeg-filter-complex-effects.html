@@ -88,13 +88,10 @@
     <h2>Reading a filter graph</h2>
     <p>Two rules unlock the whole syntax. A <strong>comma</strong> chains filters on the same stream; a <strong>semicolon</strong> ends one branch and starts another. Labels in square brackets name the inputs and outputs so branches can reconnect:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">overlay.fg</span></div>
-      <pre class="mono">[0:v]scale=1920:-2,setsar=1[base];
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">[0:v]scale=1920:-2,setsar=1[base];
 [1:v]format=rgba,
   colorchannelmixer=aa=0.6[ov];
-[base][ov]overlay=(W-w)/2:(H-h)/2[v]</pre>
-    </div>
+[base][ov]overlay=(W-w)/2:(H-h)/2[v]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>That graph scales the main clip to 1080p, makes the second input 60% opaque, and centers it as an overlay — a watermark or logo in three lines.</p>
 
     <h2>Overlay: watermarks and picture-in-picture</h2>
@@ -109,47 +106,35 @@
     <h2>Scale, pad, and crop</h2>
     <p>Resizing is the most common operation, and the most common source of squashed video. Always pair <code>scale</code> with <code>setsar=1</code>, and use <code>-2</code> to keep dimensions even:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">reframe.fg</span></div>
-      <pre class="mono"># fit 16:9 into a 1:1 square with padding
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># fit 16:9 into a 1:1 square with padding
 [0:v]scale=1080:-2,setsar=1,
   pad=1080:1080:0:(oh-ih)/2:black[v]
 
 # crop a 1080x1080 center square
-[0:v]crop=ih:ih:(iw-ih)/2:0[v]</pre>
-    </div>
+[0:v]crop=ih:ih:(iw-ih)/2:0[v]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Color correction and grading</h2>
     <p>FFmpeg ships a deep color toolkit. <code>eq</code> handles quick brightness/contrast/saturation; <code>curves</code> gives you per-channel control; <code>colorchannelmixer</code> and <code>colorbalance</code> let you push tones precisely:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">grade.fg</span></div>
-      <pre class="mono">[0:v]eq=contrast=1.1:saturation=1.15:brightness=0.02,
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">[0:v]eq=contrast=1.1:saturation=1.15:brightness=0.02,
   curves=preset=lighter,
-  colorbalance=rs=0.05:bs=-0.05[v]</pre>
-    </div>
+  colorbalance=rs=0.05:bs=-0.05[v]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Chroma key (green screen)</h2>
     <p>Composite a subject over a new background with <code>chromakey</code>, then <code>overlay</code> the result:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">greenscreen.fg</span></div>
-      <pre class="mono">[1:v]chromakey=0x00FF00:0.30:0.10[key];
-[0:v][key]overlay[v]</pre>
-    </div>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">[1:v]chromakey=0x00FF00:0.30:0.10[key];
+[0:v][key]overlay[v]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Chaining it all into one render</h2>
     <p>Real edits combine these. Here a clip is scaled, color-graded, watermarked, and handed off — a single reproducible command you can version-control:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">render.sh</span></div>
-      <pre class="mono">ffmpeg -i main.mp4 -i logo.png -filter_complex "
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i main.mp4 -i logo.png -filter_complex "
   [0:v]scale=1920:-2,setsar=1,
     eq=contrast=1.08:saturation=1.1[base];
   [1:v]format=rgba,colorchannelmixer=aa=0.5[ov];
   [base][ov]overlay=W-w-30:H-h-30[v]
-" -map "[v]" -map 0:a -c:a copy out.mp4</pre>
-    </div>
+" -map "[v]" -map 0:a -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>From filter graphs to a real timeline</h2>
     <p><a href="../index.html">FFmpegLab</a> is built around exactly this idea: a visual timeline on top, the live <code>filter_complex</code> graph underneath. Build effects with controls, then open the generated script and tweak the graph by hand — every effect is a real, forkable FFmpeg filter chain. Combine it with <a href="ffmpeg-xfade-transitions-guide.html">xfade transitions</a> and <a href="ffmpeg-audio-mixing-amix-guide.html">amix audio</a>, all running <a href="offline-private-video-editor.html">privately and offline</a> in the browser.</p>

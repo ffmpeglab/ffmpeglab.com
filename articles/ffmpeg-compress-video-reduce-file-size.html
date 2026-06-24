@@ -87,45 +87,33 @@
     <h2>The one-liner that solves 80% of cases</h2>
     <p>Constant Rate Factor (CRF) targets a perceptual quality and lets the bitrate float. For H.264, a CRF of 23 is the default; 18–28 is the useful range:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">compress.sh</span></div>
-      <pre class="mono">ffmpeg -i input.mp4 \
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mp4 \
   -c:v libx264 -crf 23 -preset slow \
   -c:a aac -b:a 128k \
-  output.mp4</pre>
-    </div>
+  output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>A slower <code>-preset</code> (slow, slower, veryslow) squeezes out more size at the same quality — it just takes longer to encode.</p>
 
     <h2>Go smaller with H.265 / HEVC</h2>
     <p>For roughly half the size at the same visual quality, switch to <code>libx265</code>. Use a slightly higher CRF (28 ≈ x264's 23):</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">hevc.sh</span></div>
-      <pre class="mono">ffmpeg -i input.mp4 \
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mp4 \
   -c:v libx265 -crf 28 -preset slow \
   -c:a aac -b:a 128k \
-  -tag:v hvc1 output.mp4</pre>
-    </div>
+  -tag:v hvc1 output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>The <code>-tag:v hvc1</code> keeps the file playable in QuickTime and Apple devices.</p>
 
     <h2>Hit an exact file size with two-pass</h2>
     <p>When a platform caps you (say, 8 MB), compute a target bitrate and encode in two passes for accurate sizing:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">two-pass.sh</span></div>
-      <pre class="mono">ffmpeg -y -i in.mp4 -c:v libx264 -b:v 2400k -pass 1 -an -f null /dev/null
-ffmpeg -i in.mp4 -c:v libx264 -b:v 2400k -pass 2 -c:a aac -b:a 128k out.mp4</pre>
-    </div>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -y -i in.mp4 -c:v libx264 -b:v 2400k -pass 1 -an -f null /dev/null
+ffmpeg -i in.mp4 -c:v libx264 -b:v 2400k -pass 2 -c:a aac -b:a 128k out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>Target bitrate ≈ (target size in bits) ÷ (duration in seconds), minus your audio bitrate.</p>
 
     <h2>Downscale resolution and shrink audio</h2>
     <p>If the source is 4K but the output is for the web, halving resolution can cut size dramatically. Pair this with the <a href="ffmpeg-filter-complex-effects.html">scale filter</a>:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">downscale.sh</span></div>
-      <pre class="mono">ffmpeg -i in.mp4 -vf "scale=1280:-2" \
-  -c:v libx264 -crf 24 -c:a aac -b:a 96k out.mp4</pre>
-    </div>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "scale=1280:-2" \
+  -c:v libx264 -crf 24 -c:a aac -b:a 96k out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Common mistakes</h2>
     <ul>

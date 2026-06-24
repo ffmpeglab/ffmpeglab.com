@@ -87,44 +87,32 @@
     <h2>A simple title with drawtext</h2>
     <p>Draw centered white text with a semi-transparent box behind it:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">title.sh</span></div>
-      <pre class="mono">ffmpeg -i in.mp4 -vf "drawtext=\
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "drawtext=\
 text='FFmpegLab':fontcolor=white:fontsize=64:\
 box=1:boxcolor=black@0.5:boxborderw=12:\
-x=(w-text_w)/2:y=h-160" -c:a copy out.mp4</pre>
-    </div>
+x=(w-text_w)/2:y=h-160" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>Point <code>fontfile=/path/to/Font.ttf</code> at a specific typeface if the default isn't what you want.</p>
 
     <h2>Make text appear only for a few seconds</h2>
     <p>The <code>enable</code> expression toggles the overlay on a time window — perfect for a lower-third that shows from 2s to 7s:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">timed-text.fg</span></div>
-      <pre class="mono">drawtext=text='Jane Doe — Director':
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">drawtext=text='Jane Doe — Director':
   fontcolor=white:fontsize=40:
   x=80:y=h-140:
-  enable='between(t,2,7)'</pre>
-    </div>
+  enable='between(t,2,7)'</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Burn in subtitles from an SRT file</h2>
     <p>Burning ("hardcoding") makes subtitles permanent and guaranteed to display anywhere:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">burn-subs.sh</span></div>
-      <pre class="mono">ffmpeg -i in.mp4 -vf "subtitles=captions.srt" -c:a copy out.mp4</pre>
-    </div>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "subtitles=captions.srt" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>Style them with an ASS file or inline force_style: <code>subtitles=captions.srt:force_style='Fontsize=24,PrimaryColour=&amp;Hffffff&amp;'</code>.</p>
 
     <h2>Attach soft (toggleable) subtitles</h2>
     <p>Soft subtitles ride along as a track viewers can turn on/off — no re-encode of the video:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">soft-subs.sh</span></div>
-      <pre class="mono">ffmpeg -i in.mp4 -i captions.srt \
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -i captions.srt \
   -c copy -c:s mov_text \
-  -metadata:s:s:0 language=eng out.mp4</pre>
-    </div>
+  -metadata:s:s:0 language=eng out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Combine with other effects</h2>
     <p>Because <code>drawtext</code> is just another filter, it chains inside a <a href="ffmpeg-filter-complex-effects.html">filter_complex graph</a> alongside scaling, overlays, and color grading — one render, many effects.</p>

@@ -87,13 +87,10 @@
     <h2>The basic xfade syntax</h2>
     <p>At minimum, <code>xfade</code> needs a <code>transition</code> type, a <code>duration</code> (how long the blend lasts, in seconds), and an <code>offset</code> (when the transition starts on the first clip's timeline). Here is a one-second crossfade that begins four seconds into <code>clip_a</code>:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">crossfade.sh</span></div>
-      <pre class="mono">ffmpeg -i clip_a.mp4 -i clip_b.mp4 \
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i clip_a.mp4 -i clip_b.mp4 \
   -filter_complex \
   "[0:v][1:v]xfade=transition=fade:duration=1:offset=4[v]" \
-  -map "[v]" out.mp4</pre>
-    </div>
+  -map "[v]" out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <p>The <code>offset</code> almost always trips people up: it is measured from the start of the <em>first</em> input, and it should equal the first clip's length minus the transition duration. If <code>clip_a</code> is 5 seconds long and you want a 1-second blend, set <code>offset=4</code> so the fade ends exactly as the clip does.</p>
 
@@ -108,36 +105,27 @@
     </ul>
     <p>For example, a slick <code>circleopen</code> reveal that takes three quarters of a second:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">transition.fg</span></div>
-      <pre class="mono">[0:v][1:v]xfade=
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">[0:v][1:v]xfade=
   transition=circleopen:
   duration=0.75:
-  offset=3.0[v]</pre>
-    </div>
+  offset=3.0[v]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Crossfading the audio too with acrossfade</h2>
     <p>A video transition with a hard audio cut feels broken. Pair <code>xfade</code> with <code>acrossfade</code> so the soundtrack blends across the same window:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">av-crossfade.sh</span></div>
-      <pre class="mono">ffmpeg -i clip_a.mp4 -i clip_b.mp4 -filter_complex "
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i clip_a.mp4 -i clip_b.mp4 -filter_complex "
   [0:v][1:v]xfade=transition=fade:duration=1:offset=4[v];
   [0:a][1:a]acrossfade=d=1[a]
-" -map "[v]" -map "[a]" out.mp4</pre>
-    </div>
+" -map "[v]" -map "[a]" out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>If you are mixing more than two audio sources rather than crossfading, reach for <code>amix</code> instead — we cover that in the <a href="ffmpeg-filter-complex-effects.html">filter_complex effects guide</a>.</p>
 
     <h2>Chaining transitions across many clips</h2>
     <p>Because every <code>xfade</code> outputs a labeled stream, you can feed that output into the next transition. Three clips, two transitions:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">multi-clip.sh</span></div>
-      <pre class="mono">ffmpeg -i a.mp4 -i b.mp4 -i c.mp4 -filter_complex "
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i a.mp4 -i b.mp4 -i c.mp4 -filter_complex "
   [0:v][1:v]xfade=transition=slideleft:duration=1:offset=4[ab];
   [ab][2:v]xfade=transition=wipeup:duration=1:offset=9[v]
-" -map "[v]" out.mp4</pre>
-    </div>
+" -map "[v]" out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>Note the second <code>offset</code> is cumulative: it is measured against the combined <code>[ab]</code> timeline, not clip C alone.</p>
 
     <h2>Common pitfalls</h2>

@@ -88,36 +88,27 @@
     <h2>The simplest mix</h2>
     <p>Mix a video's original audio with a music file. <code>amix</code> normalizes by the number of inputs, so quieter is expected — we fix levels next:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">mix.sh</span></div>
-      <pre class="mono">ffmpeg -i video.mp4 -i music.mp3 -filter_complex "
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i video.mp4 -i music.mp3 -filter_complex "
   [0:a][1:a]amix=inputs=2:duration=longest[a]
-" -map 0:v -map "[a]" -c:v copy out.mp4</pre>
-    </div>
+" -map 0:v -map "[a]" -c:v copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Balancing levels with volume and weights</h2>
     <p>To keep dialog up front and music underneath, drop the music's <code>volume</code> before mixing, or use <code>amix</code>'s <code>weights</code>:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">balanced.fg</span></div>
-      <pre class="mono"># music at 25% under full-volume voice
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># music at 25% under full-volume voice
 [1:a]volume=0.25[bg];
 [0:a][bg]amix=inputs=2:duration=first[a]
 
 # or weight the mix directly
-[0:a][1:a]amix=inputs=2:weights=1 0.3[a]</pre>
-    </div>
+[0:a][1:a]amix=inputs=2:weights=1 0.3[a]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
     <p>Use <code>duration=first</code> so the render ends with your narration, not a trailing music tail.</p>
 
     <h2>Automatic ducking with sidechaincompress</h2>
     <p>The professional move: have the music <strong>duck</strong> automatically whenever the voice is talking. <code>sidechaincompress</code> uses the voice track as a trigger to compress the music:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">duck.fg</span></div>
-      <pre class="mono">[1:a][0:a]sidechaincompress=
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">[1:a][0:a]sidechaincompress=
   threshold=0.03:ratio=8:attack=20:release=300[duck];
-[0:a][duck]amix=inputs=2[a]</pre>
-    </div>
+[0:a][duck]amix=inputs=2[a]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>amix vs amerge</h2>
     <p>They are easy to confuse. <strong><code>amix</code></strong> sums signals into one track at the same channel layout — a true level mix. <strong><code>amerge</code></strong> stacks inputs into a multi-channel stream (e.g. two mono mics into a stereo file). Reach for <code>amerge</code> when you want to <em>preserve</em> separate channels, and <code>amix</code> when you want them blended.</p>
@@ -125,12 +116,9 @@
     <h2>Crossfading between songs</h2>
     <p>To transition from one track to another, use <code>acrossfade</code> — the audio counterpart to the <a href="ffmpeg-xfade-transitions-guide.html">video xfade transition</a>:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">song-crossfade.sh</span></div>
-      <pre class="mono">ffmpeg -i song_a.mp3 -i song_b.mp3 -filter_complex "
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i song_a.mp3 -i song_b.mp3 -filter_complex "
   [0:a][1:a]acrossfade=d=4:c1=tri:c2=tri[a]
-" -map "[a]" mix.mp3</pre>
-    </div>
+" -map "[a]" mix.mp3</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
 
     <h2>Unlimited channels, visually</h2>
     <p><a href="../index.html">FFmpegLab</a> exposes unlimited audio channels in a real timeline and mixes them with <code>amix</code> under the hood — drop in music, narration, and effects, set levels, and read the exact generated command. It runs <a href="offline-private-video-editor.html">offline and private</a> in your browser and is <a href="self-hosted-video-editor-docker.html">self-hostable with Docker</a>.</p>

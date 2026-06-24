@@ -198,6 +198,42 @@
     .footer-bottom .built { display: flex; align-items: center; gap: 0.5rem; }
     .footer-bottom .built svg { height: 0.875rem; width: 0.875rem; }
 
+    /* ---------- Editor mock (hero) ---------- */
+    .editor-mock { overflow: hidden; border-radius: 0.9rem; border: 1px solid #2C2741; background: #15121F; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.55); }
+    .em-toolbar { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.7rem; border-bottom: 1px solid #2C2741; }
+    .em-back { width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: #2A2540; flex: 0 0 auto; }
+    .em-spacer { flex: 1; }
+    .em-pill { font-family: ui-monospace, monospace; font-size: 0.6rem; color: #A9A4C2; background: #221E33; border: 1px solid #322C49; border-radius: 9999px; padding: 0.28rem 0.55rem; white-space: nowrap; }
+    .em-pill.active { color: #fff; background: #2E3A66; border-color: #3C4F8A; }
+    .em-icon { width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: #221E33; border: 1px solid #322C49; flex: 0 0 auto; }
+    .em-tabs { display: flex; gap: 1.3rem; padding: 0.55rem 0.9rem 0; border-bottom: 1px solid #2C2741; }
+    .em-tab { font-family: ui-monospace, monospace; font-size: 0.64rem; color: #6F6A87; padding-bottom: 0.5rem; }
+    .em-tab.active { color: #fff; box-shadow: inset 0 -2px 0 0 var(--orange); }
+    .em-body { display: flex; }
+    .em-code { flex: 1 1 auto; margin: 0; padding: 0.85rem 0.95rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; line-height: 1.65; color: #D6D2E6; white-space: pre; overflow-x: auto; }
+    .hero-mock .em-code { font-size: 0.62rem; overflow: hidden; max-height: 18rem; }
+    @media (max-width: 639px) { .em-preview { display: none; } }
+    .em-code .ef { color: #7FB0E0; }   /* flag */
+    .em-code .ek { color: #C79CF0; }   /* keyword */
+    .em-code .en { color: #FCA46B; }   /* number */
+    .em-code .el { color: #8FCF9B; }   /* label */
+    .em-preview { flex: 0 0 34%; border-left: 1px solid #2C2741; background: #0F0D17; padding: 0.7rem; display: flex; flex-direction: column; gap: 0.55rem; }
+    .em-screen { flex: 1; min-height: 7rem; border-radius: 0.45rem; background: linear-gradient(160deg, #221E33, #15121F); display: grid; place-items: center; }
+    .em-play { width: 2.1rem; height: 2.1rem; border-radius: 9999px; background: rgba(255,255,255,0.12); color: #fff; display: grid; place-items: center; font-size: 0.7rem; }
+    .em-prev-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .sk { background: #221E33; border-radius: 9999px; }
+    .sk-line { height: 0.5rem; }
+    .sk-pill { height: 1.05rem; width: 3.4rem; border-radius: 0.4rem; background: #221E33; }
+    .em-timeline { border-top: 1px solid #2C2741; background: #0F0D17; padding: 0.6rem 0.75rem 0.8rem; }
+    .em-ruler { display: flex; align-items: flex-end; gap: 0.42rem; height: 0.9rem; opacity: 0.45; }
+    .em-ruler span { width: 1px; background: #5A5476; height: 45%; }
+    .em-ruler span:nth-child(5n+1) { height: 100%; }
+    .em-track { margin-top: 0.5rem; display: flex; gap: 0.5rem; }
+    .em-clip { height: 1.4rem; border-radius: 0.35rem; }
+    .em-clip.a { width: 42%; background: linear-gradient(90deg, #5B3FA0, #8557D6); }
+    .em-clip.b { width: 26%; background: #2A2540; }
+    .em-clip.c { width: 18%; background: #2A2540; }
+
     /* ---------- Guides ---------- */
     .guides { background: #FAF8FD; border-top: 1px solid #ECE9F3; }
     .guides .inner { padding-block: 5rem; }
@@ -267,19 +303,52 @@
           </div>
           <p class="mono meta">open-source · xfade · amix · OPFS · WebAssembly · self-hostable</p>
         </div>
-        <div class="code-window">
-          <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">render.sh — FFmpegLab</span></div>
-          <pre class="mono">$ ffmpeg \
-  -i clip_a.mp4 -i clip_b.mp4 \
-  -filter_complex "
-    [0:v][1:v]xfade=transition=
-      circleopen:duration=1:offset=4[v];
-    [0:a][1:a]amix=inputs=2[a]
-  " \
-  -map "[v]" -map "[a]" \
-  out.mp4
-
-# edit the graph. own every frame.</pre>
+        <div class="editor-mock hero-mock">
+          <div class="em-toolbar">
+            <span class="em-back"></span>
+            <span class="em-spacer"></span>
+            <span class="em-pill">Share</span>
+            <span class="em-pill">Renders</span>
+            <span class="em-pill active">{ } Code</span>
+            <span class="em-pill">Config</span>
+            <span class="em-icon"></span>
+          </div>
+          <div class="em-tabs">
+            <span class="em-tab active">Generated Code</span>
+            <span class="em-tab">Logs</span>
+            <span class="em-tab">Customize</span>
+          </div>
+          <div class="em-body">
+            <pre class="em-code"><span class="ef">-i</span> a4e260ec-e185-4165-b5b8-e6356a66ad4b.output.0.mp4
+<span class="ef">-i</span> cf99446f-6827-4048-9278-fbfb2f84eab4.output.0.mp4
+<span class="ef">-filter_complex</span>
+[<span class="en">0</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
+[<span class="en">1</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
+[<span class="el">v0?</span>][<span class="el">v1?</span>]<span class="ek">concat</span>=n=<span class="en">2</span>:v=<span class="en">1</span>:a=<span class="en">0</span>,<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">c1?</span>];
+[<span class="el">c1?</span>]<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">v_layer0</span>];
+[<span class="el">v_layer0</span>]<span class="ek">split</span>[<span class="el">v_main</span>][<span class="el">v_overlay</span>];[<span class="el">v_main</span>]<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">v_concat</span>];[<span class="el">v_overlay</span>]<span class="ek">nullsink</span>
+<span class="ek">aevalsrc</span>=<span class="en">0</span>:d=<span class="en">5</span>[<span class="el">s0</span>];[<span class="el">s0</span>]<span class="ek">adelay</span>=delays=<span class="en">0</span>|<span class="en">0</span>,<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a0?</span>];
+<span class="ek">aevalsrc</span>=<span class="en">0</span>:d=<span class="en">5</span>[<span class="el">s1</span>];[<span class="el">s1</span>]<span class="ek">adelay</span>=delays=<span class="en">5000</span>|<span class="en">5000</span>,<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a1?</span>];
+[<span class="el">a0?</span>][<span class="el">a1?</span>]<span class="ek">amix</span>=inputs=<span class="en">2</span>:duration=longest[<span class="el">a_concat</span>]
+<span class="ef">-aspect</span> <span class="en">16</span>/<span class="en">9</span>
+<span class="ef">-movflags</span> +faststart
+<span class="ef">-map</span> [<span class="el">v_concat</span>]
+<span class="ef">-map</span> [<span class="el">a_concat</span>]
+<span class="ef">-r</span> <span class="en">30</span>
+<span class="ef">-ss</span> <span class="en">00:00:00</span>
+<span class="ef">-to</span> <span class="en">00:00:10</span>
+<span class="ef">-y</span> aec78afd-12e2-4d9c_render_.output.mp4</pre>
+            <div class="em-preview">
+              <div class="em-screen"><span class="em-play">&#9654;</span></div>
+              <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+              <span class="sk sk-line" style="width:70%"></span>
+              <span class="sk sk-line" style="width:55%"></span>
+            </div>
+          </div>
+          <div class="em-timeline">
+            <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div>
+          </div>
         </div>
       </div>
     </section>
@@ -304,15 +373,12 @@
               </ul>
             </div>
             <div class="visual">
-              <div class="code-window">
-                <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">filter_complex</span></div>
-                <pre class="mono">[0:v]scale=1920:-2,
+              <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">[0:v]scale=1920:-2,
   setsar=1[base];
 [1:v]format=rgba,
   colorchannelmixer=aa=0.6[ov];
 [base][ov]overlay=
-  (W-w)/2:(H-h)/2[v]</pre>
-              </div>
+  (W-w)/2:(H-h)/2[v]</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
             </div>
           </div>
 
@@ -329,16 +395,13 @@
               </ul>
             </div>
             <div class="visual">
-              <div class="code-window">
-                <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">transition.fg</span></div>
-                <pre class="mono">xfade=transition=
+              <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">xfade=transition=
   wipeleft:
   duration=0.75:
   offset=3.0
 
 # 30+ presets,
-# or write your own.</pre>
-              </div>
+# or write your own.</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
             </div>
           </div>
 
@@ -389,13 +452,11 @@
           <h2 class="balance">Run it on your own infrastructure</h2>
           <p>FFmpegLab is open source and offline-first. Bring your own backend with a Docker Compose setup and own the entire editing pipeline — storage, rendering, and sync — end to end.</p>
           <div class="cta-row">
-            <a class="btn btn-primary" href="https://github.com/ffmpeglab">View on GitHub</a>
-            <a class="btn btn-ghost" href="articles/self-hosted-video-editor-docker.html">Self-hosting guide</a>
+            <a class="btn btn-primary" href="https://github.com/starp-tech">View on GitHub</a>
+            <a class="btn btn-ghost" href="https://docs.docker.com/compose/">Self-hosting guide</a>
           </div>
         </div>
-        <div class="code-window">
-          <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div>
-          <pre class="mono">services:
+        <div class="code-window"><div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div><pre class="mono">services:
   ffmpeglab:
     image: ffmpeglab/server:latest
     ports: ["8080:8080"]
@@ -403,8 +464,7 @@
       - ./projects:/data/projects
     environment:
       - FFMPEGLAB_OFFLINE=true
-# your machines. your footage. your rules.</pre>
-        </div>
+# your machines. your footage. your rules.</pre></div>
       </div>
     </section>
 

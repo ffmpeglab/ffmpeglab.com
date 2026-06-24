@@ -95,9 +95,7 @@
     <h2>A minimal Docker Compose deploy</h2>
     <p>The core of a self-host is one file. This brings up the server, mounts a local projects volume, and runs in offline mode so no data is sent anywhere external:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div>
-      <pre class="mono">services:
+    <div class="code-window"><div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div><pre class="mono">services:
   ffmpeglab:
     image: ffmpeglab/server:latest
     ports: ["8080:8080"]
@@ -105,16 +103,12 @@
       - ./projects:/data/projects
     environment:
       - FFMPEGLAB_OFFLINE=true
-# your machines. your footage. your rules.</pre>
-    </div>
+# your machines. your footage. your rules.</pre></div>
 
     <p>Bring it up with one command:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">terminal</span></div>
-      <pre class="mono">$ docker compose up -d
-$ docker compose logs -f ffmpeglab</pre>
-    </div>
+    <div class="code-window"><div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">terminal</span></div><pre class="mono">$ docker compose up -d
+$ docker compose logs -f ffmpeglab</pre></div>
 
     <h2>Where the work actually happens</h2>
     <p>Because the client is <a href="offline-private-video-editor.html">offline-first</a>, the rendering and effects processing run locally in the browser via WebAssembly — applying <a href="ffmpeg-xfade-transitions-guide.html">xfade transitions</a>, <a href="ffmpeg-filter-complex-effects.html">filter_complex effects</a>, and <a href="ffmpeg-audio-mixing-amix-guide.html">amix audio</a> on the editor's machine. The self-hosted backend is responsible for <strong>project sync and storage</strong>, not for ingesting raw footage into a cloud render farm. That keeps the server light and your media local.</p>
@@ -122,12 +116,9 @@ $ docker compose logs -f ffmpeglab</pre>
     <h2>Putting it behind your domain</h2>
     <p>Front the container with a reverse proxy (Caddy, Nginx, or Traefik) for TLS and your own hostname:</p>
 
-    <div class="code-window">
-      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">Caddyfile</span></div>
-      <pre class="mono">edit.example.com {
+    <div class="code-window"><div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">Caddyfile</span></div><pre class="mono">edit.example.com {
   reverse_proxy localhost:8080
-}</pre>
-    </div>
+}</pre></div>
 
     <h2>Production checklist</h2>
     <ul>
