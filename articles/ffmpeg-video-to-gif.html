@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Convert Video to GIF with FFmpeg (high quality, palettegen) — FFmpegLab</title>
+  <meta name="description" content="Convert video to GIF with FFmpeg: a quick one-liner, plus the high-quality palettegen/paletteuse method that fixes banding and dithering, with control over fps, size, and file size." />
+  <meta name="keywords" content="ffmpeg video to gif, ffmpeg mp4 to gif, ffmpeg gif palettegen, ffmpeg high quality gif, ffmpeg paletteuse, ffmpeg gif fps, ffmpeg reduce gif size" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-video-to-gif.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-video-to-gif.html" />
+  <meta property="og:title" content="How to Convert Video to GIF with FFmpeg (high quality, palettegen)" />
+  <meta property="og:description" content="A quick one-liner plus the palettegen/paletteuse method for crisp, banding-free GIFs." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Convert Video to GIF with FFmpeg (high quality, palettegen)",
+        "description": "Convert video to GIF with FFmpeg: a quick one-liner and the high-quality palettegen/paletteuse two-step that removes banding, with fps, size, and file-size control.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-video-to-gif.html",
+        "datePublished": "2026-06-25",
+        "dateModified": "2026-06-25"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Video to GIF" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Video to GIF</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to convert video to GIF with FFmpeg</h1>
+      <p class="dek">Start with a quick one-liner, then use the <code>palettegen</code> / <code>paletteuse</code> two-step for crisp, banding-free GIFs — with control over frame rate, width, and file size.</p>
+      <div class="article-meta">FFmpeg tutorial · ~5 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>GIF only supports 256 colors per frame, so the quality of the conversion comes down to <em>which</em> 256 colors get picked. The naive one-liner lets FFmpeg guess and you get banding. The high-quality approach generates a custom palette from your clip first, then maps the video onto it — the single biggest quality win available.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li>GIFs are capped at 256 colors; a custom palette is what makes them look good.</li>
+        <li><code>palettegen</code> builds the palette, <code>paletteuse</code> applies it with dithering.</li>
+        <li>Lower <code>fps</code> and a smaller <code>scale</code> are the main file-size levers.</li>
+        <li>Trim the clip first — GIF size grows fast with length.</li>
+      </ul>
+    </div>
+
+    <h2>Quick one-liner</h2>
+    <p>Good enough for a rough preview — scale down and cap the frame rate so it isn't enormous:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "fps=12,scale=480:-1:flags=lanczos" out.gif</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>High-quality GIF (palettegen + paletteuse)</h2>
+    <p>Generate a palette tuned to your clip, then reuse it. This removes most banding and keeps colors true:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># step 1: build a palette from the clip
+ffmpeg -i in.mp4 -vf "fps=15,scale=480:-1:flags=lanczos,palettegen" palette.png
+
+# step 2: render the GIF using that palette
+ffmpeg -i in.mp4 -i palette.png -filter_complex \
+  "fps=15,scale=480:-1:flags=lanczos[x];[x][1:v]paletteuse" out.gif</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Shrink the GIF</h2>
+    <p>If the file is still too big, pull the three levers: shorter clip, lower fps, smaller width. A single-palette pass with light dithering also helps:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># 3-second clip, 10 fps, 360px wide, lighter dithering
+ffmpeg -ss 0 -t 3 -i in.mp4 -i palette.png -filter_complex \
+  "fps=10,scale=360:-1[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3" small.gif</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Export GIFs visually instead</h2>
+    <p><a href="../index.html">FFmpegLab</a> exports a GIF straight from the timeline with the palette step handled for you, so you get clean colors without running two passes — all <a href="offline-private-video-editor.html">offline</a>. <a href="ffmpeg-trim-cut-video.html">Trim</a> to the exact moment first, or <a href="ffmpeg-crop-video.html">crop</a> to frame it before exporting.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Editing</span><span class="t">Trim &amp; cut video</span><span class="d">Grab the exact moment.</span></a>
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, GIF.</span></a>
+        <a class="related-card" href="ffmpeg-resize-scale-video.html"><span class="k">Resize</span><span class="t">Resize &amp; scale</span><span class="d">Shrink the dimensions.</span></a>
+        <a class="related-card" href="ffmpeg-extract-frames-thumbnails.html"><span class="k">Frames</span><span class="t">Extract frames</span><span class="d">Stills and contact sheets.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Turn clips into clean GIFs — in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

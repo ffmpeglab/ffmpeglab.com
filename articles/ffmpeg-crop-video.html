@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Crop Video with FFmpeg (crop filter, aspect ratios, centering) — FFmpegLab</title>
+  <meta name="description" content="Crop video with FFmpeg: cut to an exact width and height, center the crop, crop to 1:1 or 9:16 for social, remove black bars, and preview the crop before rendering." />
+  <meta name="keywords" content="ffmpeg crop video, ffmpeg crop filter, ffmpeg crop to square, ffmpeg crop 9:16, ffmpeg remove black bars, ffmpeg center crop, ffmpeg crop aspect ratio" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-crop-video.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-crop-video.html" />
+  <meta property="og:title" content="How to Crop Video with FFmpeg (crop filter, aspect ratios, centering)" />
+  <meta property="og:description" content="Crop to exact dimensions, center it, make squares and 9:16 verticals, and strip black bars." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Crop Video with FFmpeg (crop filter, aspect ratios, centering)",
+        "description": "Crop video with FFmpeg using the crop filter: exact dimensions, centered crops, square and vertical aspect ratios, and removing black bars.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-crop-video.html",
+        "datePublished": "2026-06-25",
+        "dateModified": "2026-06-25"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Crop Video" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Crop Video</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to crop video with FFmpeg</h1>
+      <p class="dek">Cut a clip down to an exact region with the <code>crop</code> filter — center it, reframe to a square or vertical aspect ratio, or strip black bars off the edges.</p>
+      <div class="article-meta">FFmpeg tutorial · ~4 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>The <code>crop</code> filter takes <code>crop=w:h:x:y</code> — the output width and height, then the top-left corner where the crop begins. The corner is optional; leave it off and FFmpeg centers the crop automatically. Every value can use the input dimensions <code>iw</code> and <code>ih</code> as variables, which is what makes centering and aspect-ratio crops clean.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>crop=w:h:x:y</code> sets size then top-left origin; omit <code>x:y</code> to center.</li>
+        <li>Use <code>iw</code>/<code>ih</code> to crop relative to the source size.</li>
+        <li>Square: <code>crop=ih:ih</code>. Vertical 9:16: <code>crop=ih*9/16:ih</code>.</li>
+        <li>Cropping re-encodes video; copy audio with <code>-c:a copy</code>.</li>
+      </ul>
+    </div>
+
+    <h2>Crop to an exact size, centered</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># 1280x720 region, centered automatically
+ffmpeg -i in.mp4 -vf "crop=1280:720" -c:a copy out.mp4
+
+# exact region starting 100px from left, 50px from top
+ffmpeg -i in.mp4 -vf "crop=1280:720:100:50" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Crop to a square (1:1) or vertical (9:16)</h2>
+    <p>Reframing for Instagram or TikTok is the most common reason to crop. Drive the math off the input height so it works on any source resolution:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># square, centered
+ffmpeg -i in.mp4 -vf "crop=ih:ih" -c:a copy square.mp4
+
+# vertical 9:16 from a landscape source, centered
+ffmpeg -i in.mp4 -vf "crop=ih*9/16:ih" -c:a copy vertical.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Remove black bars (letterboxing)</h2>
+    <p>If a clip has baked-in black bars, the <code>cropdetect</code> filter inspects the frames and prints a suggested crop you can paste straight into a second pass:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># step 1: detect the content region
+ffmpeg -i in.mp4 -vf cropdetect -f null -
+
+# step 2: apply the crop=... it printed
+ffmpeg -i in.mp4 -vf "crop=1920:800:0:140" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Crop visually instead</h2>
+    <p><a href="../index.html">FFmpegLab</a> lets you drag a crop box over the preview and writes the matching <code>crop=w:h:x:y</code> for you — no guessing pixel offsets — and it runs <a href="offline-private-video-editor.html">fully offline</a>. Pair it with <a href="ffmpeg-resize-scale-video.html">scaling</a> to hit an exact export resolution, or <a href="ffmpeg-compress-video-reduce-file-size.html">compress</a> the result for delivery.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-resize-scale-video.html"><span class="k">Resize</span><span class="t">Resize &amp; scale video</span><span class="d">Change resolution, keep aspect.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">Overlay, scale, crop, color.</span></a>
+        <a class="related-card" href="ffmpeg-rotate-flip-video.html"><span class="k">Rotate</span><span class="t">Rotate &amp; flip video</span><span class="d">transpose, hflip, vflip.</span></a>
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce size</span><span class="d">CRF, H.265, two-pass.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Crop and reframe video — in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Add a Watermark or Logo to Video with FFmpeg (overlay) — FFmpegLab</title>
+  <meta name="description" content="Add a watermark or logo to video with FFmpeg: overlay a PNG in any corner, control padding and transparency, scale the logo to the footage, and add a text watermark." />
+  <meta name="keywords" content="ffmpeg watermark, ffmpeg add logo to video, ffmpeg overlay png, ffmpeg watermark corner, ffmpeg transparent watermark, ffmpeg text watermark, ffmpeg image overlay" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-add-watermark-logo.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-add-watermark-logo.html" />
+  <meta property="og:title" content="How to Add a Watermark or Logo to Video with FFmpeg (overlay)" />
+  <meta property="og:description" content="Overlay a PNG logo in any corner, control padding and transparency, and add a text watermark." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Add a Watermark or Logo to Video with FFmpeg (overlay)",
+        "description": "Add a watermark or logo to video with FFmpeg's overlay filter: corner placement, padding, transparency, scaling to footage, and text watermarks.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-add-watermark-logo.html",
+        "datePublished": "2026-06-25",
+        "dateModified": "2026-06-25"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Add Watermark / Logo" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Add Watermark / Logo</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to add a watermark or logo with FFmpeg</h1>
+      <p class="dek">Drop a PNG logo into any corner with the <code>overlay</code> filter, control padding and transparency, scale it to the footage, or burn in a text watermark.</p>
+      <div class="article-meta">FFmpeg tutorial · ~5 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>A watermark is just a second image layered on top of the video. The <code>overlay</code> filter takes an <code>x:y</code> position, and because it understands the main video width <code>W</code>/<code>H</code> and the logo width <code>w</code>/<code>h</code>, you can pin it to a corner with simple math that works at any resolution. Use a transparent PNG so only the logo shows.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>overlay=x:y</code> positions the second input over the first.</li>
+        <li>Corner formulas use <code>W</code>/<code>H</code> (video) and <code>w</code>/<code>h</code> (logo).</li>
+        <li>A transparent PNG keeps the background invisible.</li>
+        <li>Lower logo opacity with <code>format=rgba,colorchannelmixer=aa=0.5</code>.</li>
+      </ul>
+    </div>
+
+    <h2>Logo in a corner with padding</h2>
+    <p>Pin it bottom-right with 20px of margin — swap the formula for any corner:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># bottom-right, 20px margin
+ffmpeg -i in.mp4 -i logo.png -filter_complex \
+  "overlay=W-w-20:H-h-20" -c:a copy out.mp4
+
+# corners:  top-left 20:20   top-right W-w-20:20
+#           bottom-left 20:H-h-20</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Scale the logo and lower its opacity</h2>
+    <p>Resize the logo relative to the video width so it looks right on any footage, and dial its transparency down so it doesn't dominate:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -i logo.png -filter_complex \
+  "[1:v]scale=iw*0.15:-1,format=rgba,colorchannelmixer=aa=0.6[wm]; \
+   [0:v][wm]overlay=W-w-20:H-h-20" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Text watermark (no image needed)</h2>
+    <p>For a quick credit or handle, <code>drawtext</code> burns text directly — semi-transparent white in the bottom-right:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf \
+  "drawtext=text='@yourhandle':fontcolor=white@0.7:fontsize=28:\
+   x=W-tw-20:y=H-th-20" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Add a watermark visually instead</h2>
+    <p><a href="../index.html">FFmpegLab</a> lets you drag a logo onto the preview, resize it, and set opacity — then writes the matching <code>overlay</code> command behind the scenes, <a href="offline-private-video-editor.html">fully offline</a>. Layer it alongside other <a href="ffmpeg-filter-complex-effects.html">filter_complex effects</a>, then <a href="ffmpeg-compress-video-reduce-file-size.html">compress</a> for delivery.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">Overlay, scale, crop, color.</span></a>
+        <a class="related-card" href="ffmpeg-add-text-subtitles-video.html"><span class="k">Text</span><span class="t">Add text &amp; subtitles</span><span class="d">drawtext titles, SRT/ASS.</span></a>
+        <a class="related-card" href="ffmpeg-resize-scale-video.html"><span class="k">Resize</span><span class="t">Resize &amp; scale</span><span class="d">Match logo to footage.</span></a>
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce size</span><span class="d">CRF, H.265, two-pass.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Brand your videos — in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Resize & Scale Video with FFmpeg (scale filter, keep aspect ratio) — FFmpegLab</title>
+  <meta name="description" content="Resize video with FFmpeg: scale to a fixed width or height, keep the aspect ratio automatically, downscale to 1080p or 720p, upscale, and pad to an exact size." />
+  <meta name="keywords" content="ffmpeg resize video, ffmpeg scale filter, ffmpeg keep aspect ratio, ffmpeg downscale 1080p, ffmpeg resize 720p, ffmpeg change resolution, ffmpeg scale width height" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-resize-scale-video.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-resize-scale-video.html" />
+  <meta property="og:title" content="How to Resize & Scale Video with FFmpeg (scale filter, keep aspect ratio)" />
+  <meta property="og:description" content="Scale to a fixed width or height, keep aspect ratio, downscale to 1080p/720p, upscale, and pad." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Resize & Scale Video with FFmpeg (scale filter, keep aspect ratio)",
+        "description": "Resize video with FFmpeg's scale filter: fixed width or height, automatic aspect ratio, downscaling, upscaling, and padding to exact dimensions.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-resize-scale-video.html",
+        "datePublished": "2026-06-25",
+        "dateModified": "2026-06-25"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Resize & Scale Video" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Resize &amp; Scale Video</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to resize &amp; scale video with FFmpeg</h1>
+      <p class="dek">Change resolution with the <code>scale</code> filter — lock to a width or height while keeping the aspect ratio, downscale to 1080p or 720p, upscale, or pad to an exact frame size.</p>
+      <div class="article-meta">FFmpeg tutorial · ~4 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>The <code>scale</code> filter takes <code>scale=w:h</code>. The trick that prevents stretched, squashed video is the special value <code>-1</code> (or <code>-2</code>): set one dimension and let FFmpeg compute the other from the source aspect ratio. Use <code>-2</code> in practice — it rounds to an even number, which most codecs require.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><code>scale=1280:-2</code> sets width to 1280 and keeps aspect ratio (even height).</li>
+        <li><code>scale=-2:720</code> locks height to 720 instead.</li>
+        <li>Downscaling shrinks file size; upscaling can't add real detail.</li>
+        <li>Use <code>force_original_aspect_ratio</code> + <code>pad</code> to fit an exact frame.</li>
+      </ul>
+    </div>
+
+    <h2>Resize to a width or height, keep aspect ratio</h2>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># lock width to 1280, height auto (even)
+ffmpeg -i in.mp4 -vf "scale=1280:-2" -c:a copy out.mp4
+
+# lock height to 720, width auto
+ffmpeg -i in.mp4 -vf "scale=-2:720" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Downscale to 1080p or 720p</h2>
+    <p>Capping the long edge is the safest way to hit a target like 1080p without forcing an aspect ratio. <code>min()</code> avoids upscaling clips that are already smaller:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># downscale so width never exceeds 1920, never upscale
+ffmpeg -i in.mp4 -vf "scale='min(1920,iw)':-2" -c:a copy out.mp4
+
+# quick 720p
+ffmpeg -i in.mp4 -vf "scale=-2:720" -c:a copy out_720p.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Fit an exact frame size with padding</h2>
+    <p>When you need a precise output (say 1080×1080) without cropping, scale to fit and pad the empty space with a background color:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf \
+  "scale=1080:1080:force_original_aspect_ratio=decrease,\
+   pad=1080:1080:(ow-iw)/2:(oh-ih)/2:black" \
+  -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Resize visually instead</h2>
+    <p><a href="../index.html">FFmpegLab</a> exposes resolution presets and a custom size field, then writes the matching <code>scale</code> command behind the scenes — running <a href="offline-private-video-editor.html">fully offline</a>. Combine it with <a href="ffmpeg-crop-video.html">cropping</a> to reframe first, then <a href="ffmpeg-compress-video-reduce-file-size.html">compress</a> to finish.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-crop-video.html"><span class="k">Crop</span><span class="t">Crop video</span><span class="d">Reframe to square or 9:16.</span></a>
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce size</span><span class="d">CRF, H.265, two-pass.</span></a>
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, GIF.</span></a>
+        <a class="related-card" href="ffmpeg-change-frame-rate-fps.html"><span class="k">Frame rate</span><span class="t">Change frame rate</span><span class="d">Set fps, drop or duplicate.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Resize and export video — in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Stabilize Shaky Video with FFmpeg (vidstab, deshake) — FFmpegLab</title>
+  <meta name="description" content="Stabilize shaky video with FFmpeg: the two-pass vidstabdetect/vidstabtransform workflow for smooth results, tuning smoothing and zoom, and a quick single-pass deshake option." />
+  <meta name="keywords" content="ffmpeg stabilize video, ffmpeg vidstab, ffmpeg vidstabdetect, ffmpeg vidstabtransform, ffmpeg deshake, ffmpeg shaky video fix, ffmpeg smooth video" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-stabilize-shaky-video.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-stabilize-shaky-video.html" />
+  <meta property="og:title" content="How to Stabilize Shaky Video with FFmpeg (vidstab, deshake)" />
+  <meta property="og:description" content="The two-pass vidstab workflow for smooth results, plus a quick single-pass deshake option." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How to Stabilize Shaky Video with FFmpeg (vidstab, deshake)",
+        "description": "Stabilize shaky video with FFmpeg: the two-pass vidstabdetect/vidstabtransform workflow, smoothing and zoom tuning, and a quick single-pass deshake.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-stabilize-shaky-video.html",
+        "datePublished": "2026-06-25",
+        "dateModified": "2026-06-25"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Stabilize Shaky Video" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Stabilize Shaky Video</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>How to stabilize shaky video with FFmpeg</h1>
+      <p class="dek">Smooth out handheld wobble with the two-pass <code>vidstab</code> workflow — analyze the motion, then apply the correction — plus a quick single-pass <code>deshake</code> fallback.</p>
+      <div class="article-meta">FFmpeg tutorial · ~5 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>The best results come from <code>vidstab</code>, which works in two passes. The first pass (<code>vidstabdetect</code>) analyzes camera motion across the whole clip and writes it to a transforms file. The second pass (<code>vidstabtransform</code>) uses that data to counter-move each frame. Two passes means it can plan smoothing using future frames, not just past ones.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li>Pass 1: <code>vidstabdetect</code> measures motion into a <code>.trf</code> file.</li>
+        <li>Pass 2: <code>vidstabtransform</code> applies the correction.</li>
+        <li>Higher <code>smoothing</code> = steadier but more cropping at the edges.</li>
+        <li><code>deshake</code> is a single-pass fallback when vidstab isn't available.</li>
+      </ul>
+    </div>
+
+    <h2>Two-pass stabilization (vidstab)</h2>
+    <p>Run detection first, then the transform. <code>vidstab</code> requires an FFmpeg build compiled with <code>--enable-libvidstab</code>:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># pass 1: analyze motion -> transforms.trf
+ffmpeg -i in.mp4 -vf vidstabdetect=shakiness=5:accuracy=15 -f null -
+
+# pass 2: apply the correction
+ffmpeg -i in.mp4 -vf \
+  "vidstabtransform=smoothing=30:input=transforms.trf,unsharp=5:5:0.8" \
+  -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Tune smoothing and hide the edges</h2>
+    <p>Stabilization shifts frames, exposing empty borders. Raise <code>smoothing</code> for steadier motion and let <code>vidstabtransform</code> zoom in slightly to crop the edges out:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf \
+  "vidstabtransform=smoothing=50:zoom=5:optzoom=0:input=transforms.trf" \
+  -c:a copy steady.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Quick single-pass deshake</h2>
+    <p>If your build lacks vidstab or you just need a fast pass, the built-in <code>deshake</code> filter works in one go — less smooth, but no setup:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i in.mp4 -vf "deshake" -c:a copy out.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h2>Stabilize visually instead</h2>
+    <p><a href="../index.html">FFmpegLab</a> runs both stabilization passes for you behind a single toggle and previews the smoothed result before you commit — all <a href="offline-private-video-editor.html">offline</a>, so raw footage never leaves your device. After stabilizing, <a href="ffmpeg-crop-video.html">crop</a> any leftover edges or <a href="ffmpeg-compress-video-reduce-file-size.html">compress</a> for delivery.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-crop-video.html"><span class="k">Crop</span><span class="t">Crop video</span><span class="d">Trim stabilized edges.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex effects</span><span class="d">Sharpen, color, overlay.</span></a>
+        <a class="related-card" href="ffmpeg-change-frame-rate-fps.html"><span class="k">Frame rate</span><span class="t">Change frame rate</span><span class="d">Smooth or retime motion.</span></a>
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce size</span><span class="d">CRF, H.265, two-pass.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Smooth out shaky footage — in your browser.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>
