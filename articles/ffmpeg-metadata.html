@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metadata Preservation in FFmpeg – Timecode, Reel Names & EXIF</title>
+  <meta name="description" content="Master metadata preservation in FFmpeg. Learn to keep timecode, reel names, camera metadata, and EXIF data through transcoding, remuxing, and rewrapping." />
+  <meta name="keywords" content="ffmpeg metadata preservation, ffmpeg timecode, ffmpeg reel name, ffmpeg map_metadata, ffmpeg movflags use_metadata_tags, ffmpeg exif, ffmpeg metadata" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-metadata-preservation.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-metadata-preservation.html" />
+  <meta property="og:title" content="Metadata Preservation in FFmpeg – Timecode, Reel Names & EXIF" />
+  <meta property="og:description" content="Master metadata preservation in FFmpeg. Learn to keep timecode, reel names, camera metadata, and EXIF data through transcoding, remuxing, and rewrapping." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Metadata Preservation in FFmpeg – Timecode, Reel Names & EXIF",
+      "description": "Master metadata preservation in FFmpeg. Learn to keep timecode, reel names, camera metadata, and EXIF data through transcoding, remuxing, and rewrapping.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-metadata-preservation.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Metadata Preservation</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Metadata Preservation – Timecode, Reel Names &amp; EXIF</h1>
+      <p class="dek">Keep timecode, reel names, camera metadata, and EXIF data through transcoding, remuxing, and rewrapping. Master <code>-map_metadata</code>, <code>-movflags</code>, and the ffmetadata workflow.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: The Silent Loss of Critical Data</a></li>
+        <li><a href="#the-symptom">The Symptom: "Where Did My Timecode Go?"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Is Metadata?</a></li>
+        <li><a href="#method-map_metadata">Method 1: <code>-map_metadata</code> – The Workhorse</a></li>
+        <li><a href="#method-movflags">Method 2: <code>-movflags use_metadata_tags</code></a></li>
+        <li><a href="#method-ffmetadata">Method 3: The ffmetadata Workflow</a></li>
+        <li><a href="#timecode-reel">Timecode &amp; Reel Names – The Professional Essentials</a></li>
+        <li><a href="#stripping">Stripping Metadata – Privacy and Security</a></li>
+        <li><a href="#debugging">Debugging Common Metadata Issues</a></li>
+        <li><a href="#ide">Inspect Metadata Visually with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Metadata is the invisible backbone of professional video production. Timecode, reel names, camera settings, EXIF data, and custom tags tell the story of <em>how</em> and <em>when</em> your footage was created. Lose this data, and you lose context, organization, and often the ability to work efficiently in post‑production.</p>
+
+    <p>Yet FFmpeg's metadata handling is one of its most misunderstood features. The documentation is scattered across multiple pages, and the behavior varies dramatically between containers. Most users don't realize that simply running <code>ffmpeg -i input.mp4 output.mp4</code> can silently strip critical metadata.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>-map_metadata 0</code></strong> copies all possible metadata from the first input to the output.</li>
+        <li><strong><code>-movflags use_metadata_tags</code></strong> preserves additional MOV/MP4 tags that would otherwise be lost.</li>
+        <li><strong>Timecode and reel names</strong> are often stored in dedicated tracks—copying them requires explicit mapping.</li>
+        <li><strong>Not all metadata is preserved</strong> across containers (e.g., EXIF/GPS is often lost in MP4).</li>
+        <li><strong><code>-map_metadata -1</code></strong> strips all metadata—essential for privacy and PII protection.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: The Silent Loss of Critical Data</h2>
+
+    <p>The FFmpeg documentation explains <code>-map_metadata</code> in a few paragraphs, but it doesn't warn you about the <em>many</em> ways metadata can be lost. Different containers store metadata differently. MOV files have timecode tracks. MXF files have reel_name and UMID fields. MP4 files have tags. And FFmpeg's default behavior is to <em>not</em> preserve everything.</p>
+
+    <p>As one user put it on the FFmpeg mailing list: <em>"for preservation we're trying to keep as much of the source 'as-is'"</em>[reference:0]. But without the right flags, that's nearly impossible.</p>
+
+    <p>The gap is <strong>practical knowledge</strong>—knowing which flags to use, when to use them, and which metadata types are container‑specific. This guide fills that gap.</p>
+
+    <h2 id="the-symptom">The Symptom: "Where Did My Timecode Go?"</h2>
+
+    <p>You've just transcoded a batch of MXF files from a professional camera. You open the output in your editing software—and the timecode is gone. The reel names are missing. The camera metadata is nowhere to be found.</p>
+
+    <p>This is a classic symptom of <strong>metadata loss during transcoding or remuxing</strong>. As documented in an FFmpeg bug report, copying or remuxing an MXF file can cause <em>"some (most) of the stream metadata"</em> to be lost[reference:1]. The original file had <code>reel_name</code>, <code>timecode</code>, and <code>track_name</code>—the copied file had only the bare minimum[reference:2].</p>
+
+    <p>This isn't a bug—it's the default behavior. You need to explicitly tell FFmpeg to preserve metadata.</p>
+
+    <h2 id="core-concepts">Core Concepts: What Is Metadata?</h2>
+
+    <p>In FFmpeg, metadata exists at three levels:</p>
+
+    <ul>
+      <li><strong>Global metadata</strong> — applies to the entire file (e.g., title, artist, creation date)</li>
+      <li><strong>Stream metadata</strong> — applies to a specific stream (e.g., timecode track, language, reel name)</li>
+      <li><strong>Frame metadata</strong> — applies to individual frames (e.g., HDR metadata, GOP structure)</li>
+    </ul>
+
+    <p>FFmpeg's metadata model is <strong>flat, not hierarchical</strong>—there are no subtags[reference:3]. Keys are unique; you can't have two tags with the same key[reference:4].</p>
+
+    <p>Different containers handle metadata differently:</p>
+
+    <table>
+      <thead>
+        <tr><th>Container</th><th>Metadata Support</th><th>Common Issues</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>MOV / QuickTime</strong></td><td>Timecode tracks (tmcd), reel_name, extensive tags</td><td>Timecode can be lost if not explicitly mapped[reference:5]</td></tr>
+        <tr><td><strong>MXF</strong></td><td>reel_name, UMID, file_package_name, timecode[reference:6]</td><td>Most stream metadata is lost during copy[reference:7]</td></tr>
+        <tr><td><strong>MP4</strong></td><td>Tags (title, artist, etc.), but limited EXIF/GPS support</td><td>EXIF/GPS metadata is usually not preserved[reference:8]</td></tr>
+        <tr><td><strong>MKV</strong></td><td>Extensive tag support, but timecode becomes metadata, not a track[reference:9]</td><td>Timecode track is converted to metadata during MKV creation</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="method-map_metadata">Method 1: <code>-map_metadata</code> – The Workhorse</h2>
+
+    <p>The <code>-map_metadata</code> option is your primary tool for copying metadata from input to output[reference:10]. The simplest form copies all metadata from the first input:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Copy all metadata from the first input to the output
+ffmpeg -i input.mov -map_metadata 0 -c copy output.mov</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As the FFmpeg mailing list confirms: <em>"you can use '-map_metadata 0'. It copies all possible metadata from input to output"</em>[reference:11][reference:12].</p>
+
+    <p><strong>But there's a catch:</strong> <code>-map_metadata 0</code> copies <em>global</em> metadata. For <em>per‑stream</em> metadata (like timecode tracks or reel names), you need additional flags.</p>
+
+    <p>To copy metadata from a specific stream:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Copy metadata from video stream 0 to video stream 0
+ffmpeg -i input.mov -map_metadata:s:v 0:s:v -c copy output.mov</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>For multiple streams, you may need <code>-map_metadata:s</code> per stream[reference:13].</p>
+
+    <h2 id="method-movflags">Method 2: <code>-movflags use_metadata_tags</code></h2>
+
+    <p>For MOV and MP4 containers, <code>-movflags use_metadata_tags</code> preserves additional tags that would otherwise be lost[reference:14].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Preserve MOV/MP4 tags with use_metadata_tags
+ffmpeg -i input.mp4 -map_metadata 0 -movflags use_metadata_tags -c copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As noted on Super User: <em>"-map_metadata and -movflags can be used in conjunction to preserve more metadata"</em>[reference:15]. This flag ensures that custom tags (like those added by non‑FFmpeg tools) are preserved in the output.</p>
+
+    <h2 id="method-ffmetadata">Method 3: The ffmetadata Workflow</h2>
+
+    <p>FFmpeg can dump metadata to a simple UTF‑8‑encoded INI‑like text file and load it back later[reference:16]. This is useful for backup, batch editing, or transferring metadata between different workflows.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Dump metadata to a file
+ffmpeg -i input.mov -f ffmetadata metadata.txt
+
+# Load metadata from a file during encoding
+ffmpeg -i input.mov -i metadata.txt -map_metadata 1 -c copy output.mov</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This workflow is particularly valuable when you need to <strong>preserve metadata across codec changes</strong> or when working with tools that don't support FFmpeg's native metadata handling.</p>
+
+    <h2 id="timecode-reel">Timecode &amp; Reel Names – The Professional Essentials</h2>
+
+    <p>Timecode and reel names are the most critical metadata for professional post‑production. They allow editors to sync footage, log clips, and maintain a consistent workflow across the entire pipeline.</p>
+
+    <h3>Preserving Timecode</h3>
+
+    <p>Timecode is stored differently depending on the container:</p>
+
+    <ul>
+      <li><strong>In MOV files</strong>, timecode is stored in a dedicated <code>tmcd</code> (timecode) track[reference:17]. FFmpeg copies timecode information from the video stream[reference:18], but the <code>tmcd</code> track itself may not be preserved unless explicitly mapped.</li>
+      <li><strong>In MKV files</strong>, FFmpeg stores the initial timecode value as a piece of metadata, not as a timecode track[reference:19]. Transcoding back to a format that supports timecode tracks (like v210) can "recover" the timecode track[reference:20].</li>
+      <li><strong>In MXF files</strong>, timecode is part of the stream metadata[reference:21]. Recent patches have improved preservation, but issues can still occur[reference:22].</li>
+    </ul>
+
+    <p>To explicitly set timecode during encoding:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Set timecode manually (SMPTE format: HH:MM:SS:FF)
+ffmpeg -i input.mov -timecode 01:02:03:04 -c copy output.mov
+
+# Note: Setting timecode while copying may not work in all containers[reference:23]</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Important:</strong> Setting <code>-timecode</code> while using <code>-c copy</code> may not work in all containers[reference:24]. For best results, re‑encode or use the ffmetadata workflow.</p>
+
+    <h3>Preserving Reel Names</h3>
+
+    <p>Reel names are essential for identifying source tapes or camera cards. In MXF files, reel names are stored as stream metadata[reference:25]. Recent patches to FFmpeg have improved reel name preservation during copy operations[reference:26].</p>
+
+    <p>To set or modify a reel name:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Set reel name metadata (MOV/MP4)
+ffmpeg -i input.mov -metadata reel_name="B002C0006_230803_1932" -c copy output.mov</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>However, as noted in an FFmpeg bug report, setting <code>-metadata reel_name</code> while using <code>-c copy</code> may not work in all containers[reference:27]. For reliable reel name preservation, consider using the ffmetadata workflow or re‑encoding.</p>
+
+    <h2 id="stripping">Stripping Metadata – Privacy and Security</h2>
+
+    <p>Metadata can contain sensitive information—camera models, GPS coordinates, codec comments, and timestamps[reference:28]. For privacy‑conscious workflows, stripping metadata is essential.</p>
+
+    <p>To strip <em>all</em> metadata from a file:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Strip all metadata from global, video, and audio streams
+ffmpeg -i input.mov -map_metadata:g -1:g -map_metadata:s:v -1:g -map_metadata:s:a -1:g -c copy output.mov</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As documented in the FFmpeg mailing list: <em>"The -map_metadata argument allows copying global/stream metadata from input to output. If you use -1 as the input file it will strip the specified metadata"</em>[reference:29].</p>
+
+    <p>For even simpler stripping, <code>-map_metadata -1</code> removes all metadata from the file[reference:30]. However, be cautious—this also removes critical metadata like timecode and reel names.</p>
+
+    <p>As hoop.dev notes: <em>"Always strip non-essential tags before writing new files. Use -map_metadata -1 to remove all metadata from containers"</em>[reference:31]. This is especially important when processing media in shared or cloud environments[reference:32].</p>
+
+    <h2 id="debugging">Debugging Common Metadata Issues</h2>
+
+    <p>Here are the most frequent metadata problems and their solutions.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Timecode is missing from output</strong></td>
+          <td>The <code>tmcd</code> track wasn't copied or was converted to metadata</td>
+          <td>Use <code>-map 0 -c:d copy</code> to copy data tracks; or re‑encode to a format that supports timecode tracks[reference:33]</td>
+        </tr>
+        <tr>
+          <td><strong>Reel name is lost during copy</strong></td>
+          <td>Container-specific metadata isn't preserved by default</td>
+          <td>Use <code>-map_metadata 0</code> and, for MXF, ensure you're using a recent FFmpeg version with the patch[reference:34]</td>
+        </tr>
+        <tr>
+          <td><strong>EXIF/GPS data is missing</strong></td>
+          <td>MP4 containers don't support EXIF/GPS metadata[reference:35]</td>
+          <td>Use a different container (e.g., MOV) or extract metadata with <code>exiftool</code> before transcoding[reference:36]</td>
+        </tr>
+        <tr>
+          <td><strong>Custom tags are lost</strong></td>
+          <td>FFmpeg doesn't copy all tags by default</td>
+          <td>Use <code>-movflags use_metadata_tags</code> for MOV/MP4 containers[reference:37]</td>
+        </tr>
+        <tr>
+          <td><strong>Tagged date is overwritten</strong></td>
+          <td>FFmpeg uses "encoded date" for multiple fields</td>
+          <td>Manually set the desired metadata with <code>-metadata</code>[reference:38]</td>
+        </tr>
+        <tr>
+          <td><strong>File system timestamps are lost</strong></td>
+          <td>FFmpeg doesn't preserve file system metadata by default[reference:39]</td>
+          <td>Use <code>stat</code> to capture timestamps and add them with <code>-metadata</code>[reference:40]</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ide">Inspect Metadata Visually with the FFmpegLab IDE</h2>
+
+    <p>Metadata preservation is <strong>much easier to debug</strong> with visual inspection. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>View all metadata</strong> from your input files in a structured, searchable format</li>
+      <li><strong>Compare before and after</strong> metadata—see exactly what was preserved and what was lost</li>
+      <li><strong>Inspect timecode tracks</strong> and reel names at a glance</li>
+      <li><strong>Toggle metadata stripping</strong> and see the effect on the output</li>
+      <li><strong>Generate the exact ffmetadata file</strong> for backup or batch processing</li>
+    </ul>
+
+    <p>Here's how metadata inspection looks in the FFmpegLab IDE.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📁 input.mov (1.2 GB)</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🕐 Timecode: 00:06:15:21</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🎬 Reel: B002C0006_230803_1932</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#34d399;">✅ 23 metadata fields detected</span>
+        </div>
+        <div style="background:#1e1e2e; border-radius:6px; padding:8px; margin-bottom:12px; font-family:monospace; font-size:0.75rem; color:#a1a1aa; max-height:120px; overflow-y:auto;">
+          <div style="color:#34d399;">[global]</div>
+          <div>  creation_time   = 2023-08-03T19:32:00Z</div>
+          <div>  major_brand     = qt</div>
+          <div style="color:#fbbf24;">[stream:0 (video)]</div>
+          <div>  timecode        = 00:06:15:21</div>
+          <div>  reel_name       = B002C0006_230803_1932 (1)</div>
+          <div>  file_package_name = B002C0006_230803_1932_000001 (0)</div>
+          <div style="color:#fbbf24;">[stream:1 (audio)]</div>
+          <div>  language        = eng</div>
+          <div>  title           = Stereo Mix</div>
+        </div>
+        <pre class="em-code"># Visual metadata inspection with before/after comparison
+# Drag and drop files to compare metadata preservation across transcodes</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div style="display:flex; gap:12px; padding:8px 0; font-size:0.8rem; color:#6b7280; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">📋 <span style="color:#fff;">Metadata: 23 fields</span></span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Timecode preserved</span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Reel name preserved</span>
+        </div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what metadata exists in your input, what will be preserved in the output, and what might be lost. You can experiment with different flags and see the results in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between <code>-map_metadata</code> and <code>-metadata</code>?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>-map_metadata</code> <strong>copies</strong> metadata from an input to the output[reference:41]. <code>-metadata</code> <strong>sets</strong> or <strong>overrides</strong> specific metadata keys in the output[reference:42]. Use <code>-map_metadata</code> for preservation; use <code>-metadata</code> for modification.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why does my MP4 file lose EXIF/GPS metadata?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">MP4 containers have limited support for EXIF and GPS metadata[reference:43]. For best results, use the MOV container or extract metadata with <code>exiftool</code> before transcoding[reference:44].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does <code>-map_metadata 0</code> copy <em>all</em> metadata?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">It copies <em>all possible</em> metadata[reference:45]. However, some metadata is container‑specific and may not transfer between containers. Additionally, color information and some technical metadata are not part of FFmpeg's metadata model and must be set manually[reference:46].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I preserve timecode when transcoding to MKV?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">FFmpeg stores timecode as metadata in MKV files, not as a dedicated timecode track[reference:47]. If you need a timecode track, transcode back to a format that supports it (like MOV or v210)[reference:48]. For most workflows, the metadata‑based timecode is sufficient.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I copy metadata from one file to another?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Use the ffmetadata workflow: dump metadata from the source file with <code>-f ffmetadata</code>, then load it into the destination file with <code>-map_metadata 1</code>[reference:49]. This works across different containers and codecs.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I remove sensitive metadata from a video file?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use <code>-map_metadata -1</code> to strip all metadata[reference:50]. For more granular control, use <code>-map_metadata:g -1:g</code> for global metadata and <code>-map_metadata:s:v -1:g</code> for video stream metadata[reference:51]. Always inspect the output with <code>ffprobe</code> to confirm that sensitive data has been removed.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Metadata preservation is one of FFmpeg's most misunderstood features—and one of the most critical for professional workflows. Whether you're archiving footage, delivering to a client, or protecting privacy, understanding how to preserve (or strip) metadata is essential.</p>
+
+    <p>The key is knowing your container: MOV files need <code>-map_metadata 0</code> and <code>-movflags use_metadata_tags</code>. MXF files need special attention to reel_name and timecode streams. MP4 files have limited EXIF support. And for maximum control, the ffmetadata workflow is your best friend.</p>
+
+    <p>With the FFmpegLab IDE's visual metadata inspection, you can see exactly what's in your files, experiment with preservation flags, and verify the results—all without the guesswork.</p>
+
+    <p>Metadata is invisible—until it's gone. Preserve it wisely.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-color-spaces-hdr-tone-mapping.html">Color Spaces, HDR, and Tone Mapping</a></li>
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
