@@ -97,12 +97,10 @@
 
     <div class="code-window"><div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div><pre class="mono">services:
   ffmpeglab:
-    image: ffmpeglab/server:latest
+    image: ffmpeglab/ide:main
     ports: ["8080:8080"]
-    volumes:
-      - ./projects:/data/projects
     environment:
-      - FFMPEGLAB_OFFLINE=true
+      - FFMPEGLAB_HOST="http://localhost:8080/webapp/?"
 # your machines. your footage. your rules.</pre></div>
 
     <p>Bring it up with one command:</p>
