@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mask Overlay & Advanced Compositing in FFmpeg – Complete Guide</title>
+  <meta name="description" content="Master mask overlay in FFmpeg. Learn to blur faces, create split screens, and composite videos using alpha channels, alphamerge, and maskedmerge filters." />
+  <meta name="keywords" content="ffmpeg mask overlay, ffmpeg alphamerge, ffmpeg maskedmerge, ffmpeg chroma key, ffmpeg selective blur, ffmpeg split screen, ffmpeg compositing" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-mask-overlay-compositing.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-mask-overlay-compositing.html" />
+  <meta property="og:title" content="Mask Overlay & Advanced Compositing in FFmpeg" />
+  <meta property="og:description" content="Master mask overlay in FFmpeg. Learn to blur faces, create split screens, and composite videos using alpha channels, alphamerge, and maskedmerge filters." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Mask Overlay & Advanced Compositing in FFmpeg",
+      "description": "Master mask overlay in FFmpeg. Learn to blur faces, create split screens, and composite videos using alpha channels, alphamerge, and maskedmerge filters.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-mask-overlay-compositing.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Mask Overlay &amp; Compositing</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Mask Overlay &amp; Advanced Compositing in FFmpeg</h1>
+      <p class="dek">Blur faces, create split screens, and composite videos like a pro. Master <code>alphamerge</code>, <code>maskedmerge</code>, and the <code>overlay</code> filter with grayscale masks.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Scattered Documentation, Minimal Examples</a></li>
+        <li><a href="#the-symptom">The Symptom: "Why Isn't My Overlay Working?"</a></li>
+        <li><a href="#core-concepts">Core Concepts: Masks, Alpha Channels, and Blending</a></li>
+        <li><a href="#method-overlay">Method 1: The Classic <code>overlay</code> Filter</a></li>
+        <li><a href="#method-alphamerge">Method 2: <code>alphamerge</code> + <code>overlay</code> (Separate Mask)</a></li>
+        <li><a href="#method-maskedmerge">Method 3: Advanced Compositing with <code>maskedmerge</code></a></li>
+        <li><a href="#use-cases">Practical Use Cases</a></li>
+        <li><a href="#debugging">Debugging Common Masking Errors</a></li>
+        <li><a href="#ide">Compose Visually with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Mask overlay is one of the most powerful—and most poorly documented—techniques in FFmpeg. It lets you control exactly <em>where</em> and <em>how</em> two video streams blend together, opening the door to everything from blurring faces to creating complex Hollywood-style composites.</p>
+
+    <p>But the documentation is scattered. You'll find fragmentary examples on Stack Overflow, cryptic references in the FFmpeg docs, and isolated blog posts that cover one specific use case. There's no cohesive guide that explains the <em>why</em> and <em>how</em> of mask overlay—until now.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Masks are grayscale images</strong> where <strong>white</strong> = visible/opaque and <strong>black</strong> = hidden/transparent.</li>
+        <li><strong><code>overlay</code></strong> works with inputs that have an alpha channel (RGBA).</li>
+        <li><strong><code>alphamerge</code></strong> combines a video with a grayscale mask to <em>create</em> an alpha channel on the fly.</li>
+        <li><strong><code>maskedmerge</code></strong> is the most advanced—it blends two streams using a third stream as weights (perfect for crossfades and gradients).</li>
+        <li><strong>PNG</strong> is the best format for masks because it preserves alpha and compression is lossless.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Scattered Documentation, Minimal Examples</h2>
+
+    <p>The FFmpeg documentation for <code>overlay</code>, <code>alphamerge</code>, and <code>maskedmerge</code> lists the parameters but rarely shows <em>how</em> they work together. You'll find examples for green screen chroma keying, but not for selective blurring. You'll see commands for split screens, but not for custom wipes.</p>
+
+    <p>This guide bridges the gap by walking you through the <strong>three core methods</strong> of mask overlay, showing real-world examples, and explaining how to debug common issues.</p>
+
+    <h2 id="the-symptom">The Symptom: "Why Isn't My Overlay Working?"</h2>
+
+    <p>You've probably tried something like this:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># This won't do what you expect—the mask is ignored
+ffmpeg -i video.mp4 -i mask.png -filter_complex "[0:v][1:v]overlay=0:0" -c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>
+    </div>
+
+    <p>The mask is loaded, but <code>overlay</code> treats it as a <em>video</em> stream, not as an alpha channel. The result? The mask image itself is overlayed on top of your video, completely ignoring its grayscale values.</p>
+
+    <p>To use a mask properly, you need to understand the three fundamental methods of mask overlay in FFmpeg.</p>
+
+    <h2 id="core-concepts">Core Concepts: Masks, Alpha Channels, and Blending</h2>
+
+    <p>Before diving into the code, let's clarify a few terms:</p>
+
+    <ul>
+      <li><strong>Mask:</strong> A grayscale image where white (255) means "show this pixel" and black (0) means "hide this pixel."</li>
+      <li><strong>Alpha Channel:</strong> A fourth channel (RGBA) that stores transparency information. White = opaque, black = transparent.</li>
+      <li><strong>Blending:</strong> The process of combining two pixel values based on the alpha channel.</li>
+    </ul>
+
+    <p>There are <strong>three ways</strong> to apply a mask in FFmpeg, each suited for different scenarios:</p>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Filter(s)</th><th>Best for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>1. Built-in Alpha</strong></td><td><code>overlay</code></td><td>When your overlay already has an alpha channel (e.g., a PNG with transparency)</td></tr>
+        <tr><td><strong>2. Separate Mask</strong></td><td><code>alphamerge</code> + <code>overlay</code></td><td>When you have a video and a separate grayscale mask image</td></tr>
+        <tr><td><strong>3. Weighted Blending</strong></td><td><code>maskedmerge</code></td><td>When you want to blend two full videos using a third as weights (gradients, crossfades)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="method-overlay">Method 1: The Classic <code>overlay</code> Filter (Built-in Alpha)</h2>
+
+    <p>If your overlay already has an alpha channel, <code>overlay</code> works out of the box. This is common when using <strong>PNG images with transparency</strong>.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Overlay a PNG with built-in transparency on top of a video
+ffmpeg -i background.mp4 -i logo.png \
+-filter_complex "[0:v][1:v]overlay=10:10" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>
+    </div>
+
+    <p><strong>Key insight:</strong> The <code>overlay</code> filter automatically reads the alpha channel from the second input and uses it to composite the two videos. No additional filters are needed.</p>
+
+    <p><strong>Limitation:</strong> This only works if your overlay <em>already has</em> an alpha channel. Most video formats (like MP4) don't. For those, you need Method 2.</p>
+
+    <h2 id="method-alphamerge">Method 2: <code>alphamerge</code> + <code>overlay</code> (Separate Mask)</h2>
+
+    <p>When you have a video and a <strong>separate grayscale mask</strong>, you need to <em>create</em> an alpha channel on the fly using <code>alphamerge</code>.</p>
+
+    <p>The pipeline looks like this:</p>
+
+    <ol>
+      <li>Take the video stream (RGB/YUV).</li>
+      <li>Take the mask stream (grayscale).</li>
+      <li>Use <code>alphamerge</code> to combine them into an RGBA video.</li>
+      <li>Use <code>overlay</code> to composite it onto the background.</li>
+    </ol>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Create an alpha channel from a grayscale mask, then overlay
+ffmpeg -i background.mp4 -i video_to_mask.mp4 -i mask.png \
+-filter_complex "[1:v][2:v]alphamerge[alpha];[0:v][alpha]overlay=0:0" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>
+    </div>
+
+    <p><strong>What's happening here?</strong></p>
+
+    <ul>
+      <li><code>[1:v]</code> is the video you want to mask (the "foreground").</li>
+      <li><code>[2:v]</code> is the grayscale mask (white = visible, black = transparent).</li>
+      <li><code>alphamerge</code> takes the video stream's RGB channels and replaces its alpha channel with the mask's grayscale values.</li>
+      <li>The result is an RGBA stream that <code>overlay</code> can composite correctly.</li>
+    </ul>
+
+    <p><strong>Pro tip:</strong> If your mask is inverted (white hides and black shows), use the <code>negate</code> filter on the mask stream before passing it to <code>alphamerge</code>: <code>[2:v]negate[negmask];[1:v][negmask]alphamerge</code>.</p>
+
+    <h2 id="method-maskedmerge">Method 3: Advanced Compositing with <code>maskedmerge</code></h2>
+
+    <p>For the most advanced compositing, FFmpeg provides <code>maskedmerge</code>. This filter blends <strong>two video streams</strong> using a <strong>third stream as weights</strong> (the mask).</p>
+
+    <p>Instead of treating the mask as an alpha channel, <code>maskedmerge</code> uses it as a <em>weight</em> for each pixel. At 0% weight, only the first stream is visible. At 100% weight, only the second stream is visible. At 50%, they're blended equally.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Blend two videos using a gradient mask (perfect for crossfades)
+ffmpeg -i video1.mp4 -i video2.mp4 -i gradient_mask.png \
+-filter_complex "[0:v][1:v][2:v]maskedmerge" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>
+    </div>
+
+    <p><strong>When to use <code>maskedmerge</code>:</strong></p>
+    <ul>
+      <li><strong>Crossfades:</strong> Blend two videos together using a moving mask (e.g., a gradient that slides across the screen).</li>
+      <li><strong>Custom transitions:</strong> Create wipes, dissolves, and other transitions that aren't available in <code>xfade</code>.</li>
+      <li><strong>Multi-layer compositing:</strong> Combine more than two videos with different weights.</li>
+    </ul>
+
+    <p><strong>Limitation:</strong> <code>maskedmerge</code> requires all three streams to have the same resolution and pixel format. You may need to use <code>scale</code> or <code>format</code> to align them.</p>
+
+    <h2 id="use-cases">Practical Use Cases</h2>
+
+    <h3>1. Selective Blur (Privacy Filter)</h3>
+    <p>Blur a specific region of a video (like a face or license plate) while keeping the rest sharp.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Blur only the region defined by a white mask
+ffmpeg -i video.mp4 -i blur_mask.png \
+-filter_complex "[0:v]boxblur=10[blurred];[blurred][1:v]alphamerge[alpha];[0:v][alpha]overlay" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>
+    </div>
+
+    <p>The mask (white where you want blur) creates an alpha channel that overlays the blurred version only on the white regions.</p>
+
+    <h3>2. Split Screen Effect</h3>
+    <p>Show two videos side by side using a hard-edged mask.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Split screen with a vertical divider mask
+ffmpeg -i left.mp4 -i right.mp4 -i split_mask.png \
+-filter_complex "[0:v][1:v][2:v]maskedmerge" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+<div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>    </div>
+
+    <p>The mask (white on the left half, black on the right) tells <code>maskedmerge</code> which pixels to take from each video.</p>
+
+    <h3>3. Custom Wipe Transition</h3>
+    <p>Animate a gradient mask to create a smooth, custom wipe between two videos.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Animated wipe using a moving gradient mask
+ffmpeg -i video1.mp4 -i video2.mp4 -filter_complex \
+"[0:v][1:v]xfade=transition=wipe:duration=2" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>
+    </div>
+
+    <p>For custom wipes, you can generate a gradient mask with the <code>geq</code> filter and animate it with <code>sendcmd</code> or <code>zmq</code>.</p>
+
+    <h2 id="debugging">Debugging Common Masking Errors</h2>
+
+    <p>Here are the most common issues you'll encounter with masks—and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Inverted mask</strong> (white hides, black shows)</td>
+          <td>Your mask's whites and blacks are reversed</td>
+          <td>Add <code>negate</code> to the mask stream: <code>[2:v]negate[negmask]</code></td>
+        </tr>
+        <tr>
+          <td><strong>Mask is ignored</strong> (overlay appears as solid image)</td>
+          <td>The mask doesn't have an alpha channel</td>
+          <td>Use <code>alphamerge</code> to create an alpha channel from the mask</td>
+        </tr>
+        <tr>
+          <td><strong>Colors are washed out</strong></td>
+          <td>Color space mismatch (YUV vs RGB)</td>
+          <td>Use <code>format=rgba</code> on the overlay stream before compositing</td>
+        </tr>
+        <tr>
+          <td><strong>Mask doesn't align</strong> (off by a few pixels)</td>
+          <td>The mask resolution doesn't match the video</td>
+          <td>Use <code>scale=W:H</code> to resize the mask to match the video</td>
+        </tr>
+        <tr>
+          <td><strong>Edges are blocky</strong></td>
+          <td>Hard edges in the mask cause aliasing</td>
+          <td>Use a soft-edged mask (blur the mask with <code>boxblur</code>)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ide">Compose Visually with the FFmpegLab IDE</h2>
+
+    <p>Mask overlay is <strong>much easier to debug</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>Preview your mask</strong> in real time—see exactly which regions are white, black, and gray.</li>
+      <li><strong>Verify alpha channels</strong> before compositing—spot missing alpha information immediately.</li>
+      <li><strong>Toggle between</strong> the background, foreground, and composite views.</li>
+      <li><strong>Adjust mask thresholds</strong> with sliders and see the result instantly.</li>
+      <li><strong>Visualize the filtergraph</strong> to ensure you're linking the right streams to the right filters.</li>
+    </ul>
+
+    <p>Here's how a mask composition looks in the FFmpegLab IDE—with live preview, stream inspection, and error highlighting.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Visual mask composition with real-time preview
+ffmpeg -i video.mp4 -i mask.png \
+-filter_complex "[0:v]format=rgba[bg];[1:v]format=gray[msk];[bg][msk]alphamerge[alpha];[bg][alpha]overlay" \
+-c:a copy composited.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+     <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div>
+    </div>
+
+    <p>The IDE shows you <em>exactly</em> what's happening at each step—from the original video, to the mask, to the final composite. You can adjust the mask, toggle visibility, and debug issues before you even run the encode.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What format should my mask image be?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>PNG</strong> is the best choice—it supports lossless compression and can be saved as grayscale. JPEG adds compression artifacts that can bleed into the compositing, causing rough edges. Use a PNG with 8‑bit or 16‑bit grayscale.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why does my mask look inverted (white hides, black shows)?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Some workflows use white for transparency and black for visibility. To fix, add the <code>negate</code> filter to the mask stream: <code>[2:v]negate[negmask];[1:v][negmask]alphamerge</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I animate a mask over time?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes! You can animate masks using <code>sendcmd</code> or <code>zmq</code> to change the mask image or its properties over time. You can also generate dynamic masks with the <code>geq</code> filter using time expressions like <code>t</code> and <code>n</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between alphamerge and maskedmerge?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>alphamerge</code> takes a video and a grayscale mask and produces an RGBA stream (video + alpha). <code>maskedmerge</code> takes <em>two</em> videos and <em>one</em> mask and blends them based on the mask weights. Use <code>alphamerge</code> when you want to overlay one video onto another. Use <code>maskedmerge</code> when you want to blend two videos together.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why are the edges of my mask blocky?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Hard, unantialiased edges in the mask cause aliasing in the composite. Apply a small blur to the mask before compositing: <code>[2:v]boxblur=2[softmask];[1:v][softmask]alphamerge</code>. This softens the transition and makes it look more natural.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Mask overlay is one of FFmpeg's most powerful compositing techniques. Whether you're blurring faces, creating split screens, or building custom transitions, the <code>overlay</code>, <code>alphamerge</code>, and <code>maskedmerge</code> filters give you pixel‑perfect control over how your videos blend together.</p>
+
+    <p>The key is understanding the <em>three methods</em> and knowing which one to use for your specific scenario. With the FFmpegLab IDE's visual feedback, you can experiment, debug, and perfect your masks without the guesswork.</p>
+
+    <p>Next time you need to composite two videos—or selectively apply an effect—reach for a mask. Your viewers will thank you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg Xfade Transitions Guide</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

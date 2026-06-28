@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FFmpeg Debugging & Troubleshooting – Read Logs, Fix Errors Fast</title>
+  <meta name="description" content="Stop guessing! Learn how to debug FFmpeg errors like a pro. Master log levels, filtergraph errors, stream mapping, and use the FFmpegLab IDE as your personal linting tool." />
+  <meta name="keywords" content="ffmpeg debug, ffmpeg troubleshooting, ffmpeg loglevel, ffmpeg error logs, ffmpeg filtergraph errors, ffmpeg stream mapping, ffmpeglab debugger" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-debugging-troubleshooting-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-debugging-troubleshooting-guide.html" />
+  <meta property="og:title" content="FFmpeg Debugging & Troubleshooting – Read Logs, Fix Errors Fast" />
+  <meta property="og:description" content="Stop guessing! Learn how to debug FFmpeg errors like a pro. Master log levels, filtergraph errors, stream mapping, and use the FFmpegLab IDE as your personal linting tool." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "FFmpeg Debugging & Troubleshooting – Read Logs, Fix Errors Fast",
+      "description": "Master FFmpeg debugging. Learn log levels, filtergraph errors, stream mapping, and use the FFmpegLab IDE as your personal linting tool.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-debugging-troubleshooting-guide.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Debugging &amp; Troubleshooting</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>FFmpeg Debugging &amp; Troubleshooting – Read Logs, Fix Errors Fast</h1>
+      <p class="dek">Stop staring at cryptic error messages. Master <code>-loglevel</code>, decode filtergraph failures, debug stream mapping, and use the FFmpegLab IDE as your personal linting tool.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Working Examples vs. Broken Reality</a></li>
+        <li><a href="#the-symptom">The Symptom: "Conversion failed!" – Now What?</a></li>
+        <li><a href="#loglevel">Log Levels – Your First Weapon</a></li>
+        <li><a href="#filtergraph-errors">Decoding Filtergraph Errors</a></li>
+        <li><a href="#stream-mapping">Stream Mapping &amp; Format Woes</a></li>
+        <li><a href="#ffprobe">FFprobe – The Diagnostic Swiss Army Knife</a></li>
+        <li><a href="#common-errors">Common Error Patterns &amp; Their Fixes</a></li>
+        <li><a href="#exit-codes">Understanding Exit Codes</a></li>
+        <li><a href="#ide">Debug Smarter with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>FFmpeg is incredibly powerful, but its error messages can feel like ancient riddles. You paste a command, hit Enter, and get:</p>
+
+    <pre><code>Conversion failed!</code></pre>
+
+    <p>That's it. No context, no hint—just failure. Or worse, a wall of text with a single line buried in the middle that actually tells you what went wrong. Most tutorials show <em>working</em> examples and never teach you how to <em>fix</em> things when they break.</p>
+
+    <p>This guide changes that. You'll learn how to read FFmpeg's language, use the right log levels, decode filtergraph failures, and leverage the FFmpegLab IDE as a real-time linter for your commands.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>-loglevel</code></strong> is your most important debugging tool—know when to use <code>error</code>, <code>warning</code>, <code>verbose</code>, <code>debug</code>, and <code>trace</code>.</li>
+        <li><strong>Filtergraph errors</strong> are the #1 source of failures. Learn to spot "Input pad not connected" vs. "Output pad not labelled".</li>
+        <li><strong><code>ffprobe</code></strong> is your friend—always inspect the input before building the command.</li>
+        <li><strong>FFmpegLab</strong> catches syntax errors, validates filter connections, and highlights issues in real time.</li>
+        <li><strong>Exit codes</strong> tell a story: <code>0</code> = success, <code>1</code> = error, <code>2</code> = invalid argument, <code>64</code> = usage error.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Working Examples vs. Broken Reality</h2>
+
+    <p>Tutorials are great—until your input file doesn't match the example. The documentation for <code>ffmpeg</code> lists options and flags, but it rarely teaches diagnostic thinking. When the command fails, you're left with a cryptic message and no roadmap.</p>
+
+    <p>The gap isn't a lack of information; it's a lack of <strong>methodology</strong>. This guide gives you a step-by-step approach to troubleshooting any FFmpeg failure.</p>
+
+    <h2 id="the-symptom">The Symptom: "Conversion failed!" – Now What?</h2>
+
+    <p>You see the dreaded error banner. Your instinct might be to copy the error into Google and pray. But before you do, take a breath and follow these steps:</p>
+
+    <ol>
+      <li><strong>Increase the log level</strong> to see more details.</li>
+      <li><strong>Check the very last error line</strong>—FFmpeg usually tells you the specific problem right before exiting.</li>
+      <li><strong>Verify your inputs</strong> using <code>ffprobe</code>.</li>
+      <li><strong>Simplify the filtergraph</strong>—remove filters until it works, then add them back one by one.</li>
+    </ol>
+
+    <p>Let's dive into each step.</p>
+
+    <h2 id="loglevel">Log Levels – Your First Weapon</h2>
+
+    <p>The <code>-loglevel</code> (or <code>-v</code>) flag controls how much information FFmpeg prints. Most users stick to the default (<code>info</code>), which hides crucial details.</p>
+
+    <table>
+      <thead>
+        <tr><th>Level</th><th>Flag</th><th>When to use</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>quiet</code></td><td><code>-loglevel quiet</code></td><td>Production scripts (no output unless fatal)</td></tr>
+        <tr><td><code>fatal</code></td><td><code>-loglevel fatal</code></td><td>Only show fatal crashes</td></tr>
+        <tr><td><code>error</code></td><td><code>-loglevel error</code></td><td>Show errors and fatal messages (good for CI/CD)</td></tr>
+        <tr><td><code>warning</code></td><td><code>-loglevel warning</code></td><td>Show warnings and above (default for many scripts)</td></tr>
+        <tr><td><code>info</code></td><td><code>-loglevel info</code></td><td>Default—shows progress, some metadata</td></tr>
+        <tr><td><code>verbose</code></td><td><code>-loglevel verbose</code></td><td>More details about inputs, outputs, and filter setup</td></tr>
+        <tr><td><code>debug</code></td><td><code>-loglevel debug</code></td><td>Everything—stream info, frame details, filter negotiation</td></tr>
+        <tr><td><code>trace</code></td><td><code>-loglevel trace</code></td><td>Insane detail—every frame, every byte (use as last resort)</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Pro tip:</strong> Start with <code>error</code> if you just want the clean error message. If that's not enough, escalate to <code>verbose</code> to see exactly where FFmpeg fails.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Verbose logging helps you see exactly where the pipeline breaks
+ffmpeg -loglevel verbose -i input.mp4 -vf "crop=100:100" -c:a copy out.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+     <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    </div>
+
+    <h2 id="filtergraph-errors">Decoding Filtergraph Errors</h2>
+
+    <p>Filtergraphs are the most common source of failures. Here's how to decode the three most frequent errors:</p>
+
+    <h3>1. "Input pad X is not connected"</h3>
+    <p>You're using a filter that requires <em>multiple</em> inputs (like <code>overlay</code> or <code>xfade</code>), but you only linked one stream.</p>
+
+    <pre><code># WRONG – overlay needs two inputs
+ffmpeg -i video.mp4 -filter_complex "[0:v]overlay[out]" -map "[out]" out.mp4
+# Error: Input pad 1 is not connected</code></pre>
+
+    <h3>2. "Output pad Y is not labelled"</h3>
+    <p>You split a stream but forgot to name one of the outputs.</p>
+
+    <pre><code># WRONG – second output [b] is not labelled
+ffmpeg -i video.mp4 -vf "split [a]; [a] crop=100:100 [c]" out.mp4
+# Error: Output pad 1 is not labelled</code></pre>
+
+    <h3>3. "Filter X has unset parameters"</h3>
+    <p>You forgot a required parameter (like <code>w</code> or <code>h</code> in <code>crop</code>).</p>
+
+    <pre><code># WRONG – crop needs w and h
+ffmpeg -i video.mp4 -vf "crop=" out.mp4
+# Error: Filter crop has unset parameters</code></pre>
+
+    <p>FFmpegLab's visual filtergraph editor solves this by <strong>highlighting unconnected pads</strong> and <strong>showing missing parameters</strong> before you even run the command.</p>
+
+    <h2 id="stream-mapping">Stream Mapping &amp; Format Woes</h2>
+
+    <p><code>-map</code> syntax is notoriously tricky. The golden rules:</p>
+
+    <ul>
+      <li><code>-map 0:v</code> → take video streams from input 0</li>
+      <li><code>-map 0:a</code> → take audio streams from input 0</li>
+      <li><code>-map 0:s</code> → take subtitle streams from input 0</li>
+      <li><code>-map 0:v:0</code> → take the <em>first</em> video stream from input 0</li>
+    </ul>
+
+    <p><strong>Container constraints:</strong> Not every format supports every codec. MP4 <em>can</em> contain H.264, HEVC, and AAC, but <em>cannot</em> contain FLAC or DTS without issues. MOV supports ProRes, but not VP9. Always check <code>ffprobe</code> to see what's inside.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Explicitly map video and audio to avoid "Stream specifier" errors
+ffmpeg -i input.mkv -map 0:v:0 -map 0:a:0 -c:v libx264 -c:a aac output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    </div>
+
+    <h2 id="ffprobe">FFprobe – The Diagnostic Swiss Army Knife</h2>
+
+    <p>Before you build a complex command, <strong>inspect your input</strong>. FFprobe gives you a complete picture of what you're working with.</p>
+
+    <pre><code># List all streams with codec, resolution, bitrate, and metadata
+ffprobe -v error -show_streams input.mov
+
+# Check if your file actually has audio (surprisingly common issue)
+ffprobe -v error -select_streams a -show_entries stream=codec_name -of default=noprint_wrappers=1 input.mp4
+
+# Print the exact frame count and duration
+ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 input.mp4</code></pre>
+
+    <p>If you get errors during encoding, <strong>always</strong> check your input with ffprobe first. It answers critical questions: Is there a video stream? What's the pixel format? Is the audio codec compatible with my output container?</p>
+
+    <h2 id="common-errors">Common Error Patterns &amp; Their Fixes</h2>
+
+    <table>
+      <thead>
+        <tr><th>Error Message</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Protocol not found</code></td><td>You typed a file path without quoting spaces</td><td>Wrap paths in quotes: <code>"my video file.mp4"</code></td></tr>
+        <tr><td><code>Invalid data found when processing input</code></td><td>Input file is corrupted or incomplete</td><td>Use <code>-err_detect explode</code> to see more details</td></tr>
+        <tr><td><code>Pixel format not supported</code></td><td>Encoder doesn't support 10-bit YUV</td><td>Add <code>-pix_fmt yuv420p</code> for 8-bit output</td></tr>
+        <tr><td><code>Decoder not found</code></td><td>FFmpeg build missing a codec</td><td>Check available codecs: <code>ffmpeg -codecs | grep your_codec</code></td></tr>
+        <tr><td><code>Frame size not set</code></td><td>Raw video input needs dimensions</td><td>Specify <code>-video_size</code> and <code>-pixel_format</code></td></tr>
+        <tr><td><code>Bitrate not specified</code></td><td>VBR encoding without target bitrate</td><td>Add <code>-b:v 5M</code> or use <code>-crf</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="exit-codes">Understanding Exit Codes</h2>
+
+    <p>In scripting, FFmpeg's exit code tells you exactly what happened:</p>
+
+    <ul>
+      <li><strong>0</strong> – Success</li>
+      <li><strong>1</strong> – General error (frame encoding failed, invalid parameter, file not found)</li>
+      <li><strong>2</strong> – Invalid argument (wrong flag, missing value)</li>
+      <li><strong>64</strong> – Usage error (wrong command syntax)</li>
+      <li><strong>126</strong> – Command not executable (permissions issue)</li>
+      <li><strong>127</strong> – Command not found</li>
+    </ul>
+
+    <p>In a bash script, you can check the exit code with <code>echo $?</code> immediately after running FFmpeg.</p>
+
+    <h2 id="ide">Debug Smarter with the FFmpegLab IDE</h2>
+
+    <p>The FFmpegLab editor is built for this. Instead of running the command blindly, you get:</p>
+
+    <ul>
+      <li><strong>Live linting</strong> – Syntax errors are highlighted as you type.</li>
+      <li><strong>Filtergraph visualization</strong> – See how pads are connected and instantly spot unlinked inputs.</li>
+      <li><strong>Context-aware logs</strong> – The Logs panel filters out noise and shows you the relevant error.</li>
+      <li><strong>Parameter suggestions</strong> – Hover over a filter to see its required parameters.</li>
+    </ul>
+
+    <p>Here's a classic mistake—trying to use <code>overlay</code> with only one input—and how the FFmpegLab IDE catches it before you waste time waiting for the encode to fail.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab" style="color:#FC6D26;">Logs (⚠️ Error)</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="background:#1e1e2e; padding:12px; border-radius:6px; margin-bottom:12px; font-family:monospace; font-size:0.9rem; border-left:4px solid #ef4444;">
+          <span style="color:#f87171;">[error]</span> <span style="color:#fbbf24;">Filter overlay has input pad 1 not connected!</span><br/>
+          <span style="color:#6b7280;">Hint: overlay requires two input streams. Example: [0:v][1:v]overlay</span>
+        </div>
+        <pre class="em-code" style="border:2px solid #ef4444; border-radius:6px;">ffmpeg -i video.mp4 -filter_complex "[0:v]overlay[out]" -map "[out]" out.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+     <div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    </div>
+
+    <p>Notice how the IDE doesn't just show the command—it <strong>understands</strong> the filtergraph and warns you about the missing connection <em>before</em> you press run. That's the power of integrating a linter directly into the editor.</p>
+
+    <p>You can also toggle log levels directly in the UI, switch between verbose and quiet modes, and see exactly how the filtergraph interprets your streams.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What does "Connection to pad not supported" mean?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">This usually means you're trying to connect a video filter to an audio stream or vice versa. Check that you're linking the correct stream types (<code>:v</code> for video, <code>:a</code> for audio) in your filtergraph.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why does my command work on one file but fail on another?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Input files can have different codecs, pixel formats, or stream counts. Always inspect your input with <code>ffprobe</code> before running the command. The FFmpegLab IDE automatically shows you the stream list when you load a file.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the best log level for debugging filtergraph errors?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Start with <code>-loglevel verbose</code>. It shows you exactly how FFmpeg negotiates filter parameters and which pads are being connected. If that's not enough, escalate to <code>debug</code>, but be prepared for a lot of text.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I check which codecs my FFmpeg build supports?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Run <code>ffmpeg -codecs</code> for a full list of supported encoders and decoders. For specific codec details, use <code>ffmpeg -h encoder=libx264</code> to see all available options for that encoder.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Debugging FFmpeg isn't about memorizing every error—it's about having a <strong>method</strong>. Start with the right log level, inspect your inputs with <code>ffprobe</code>, decode the filtergraph step by step, and use tools like the FFmpegLab IDE to get instant feedback.</p>
+
+    <p>The next time you see "Conversion failed!", don't panic. Open the logs, read the last error, check your filter connections, and fix it. You now have the toolkit to troubleshoot anything FFmpeg throws at you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-filter-complex-effects.html">Advanced Filter Complex Effects</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+        <li><a href="ffmpeg-audio-mixing-amix-guide.html">Mixing audio with amix</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

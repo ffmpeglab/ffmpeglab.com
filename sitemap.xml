@@ -151,8 +151,20 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ffmpeglab.com/articles/ffmpeg-metada.html</loc>
-    <lastmod>2026-06-27</lastmod>
+    <loc>https://ffmpeglab.com/articles/ffmpeg-metadata.html</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ffmpeglab.com/articles/ffmpeg-debugging-troubleshooting-guide.html</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ffmpeglab.com/articles/ffmpeg-mask-overlay-compositing.html</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
