@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ROI Encoding in FFmpeg – Region of Interest Encoding Guide</title>
+  <meta name="description" content="Master ROI encoding in FFmpeg. Allocate more bitrate to faces, text, and critical regions while saving bandwidth on backgrounds. Learn addroi, qoffset, and dynamic ROI." />
+  <meta name="keywords" content="ffmpeg roi encoding, ffmpeg region of interest, ffmpeg addroi, ffmpeg qoffset, ffmpeg libx264 roi, ffmpeg adaptive quantization" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-roi-encoding.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-roi-encoding.html" />
+  <meta property="og:title" content="ROI Encoding in FFmpeg – Region of Interest Encoding Guide" />
+  <meta property="og:description" content="Master ROI encoding in FFmpeg. Allocate more bitrate to faces, text, and critical regions while saving bandwidth on backgrounds. Learn addroi, qoffset, and dynamic ROI." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "ROI Encoding in FFmpeg – Region of Interest Encoding Guide",
+      "description": "Master ROI encoding in FFmpeg. Allocate more bitrate to faces, text, and critical regions while saving bandwidth on backgrounds.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-roi-encoding.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / ROI Encoding</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>ROI Encoding – Region of Interest Encoding</h1>
+      <p class="dek">Allocate more bitrate to faces, text, and critical regions while saving bandwidth on backgrounds. Master the <code>addroi</code> filter and <code>qoffset</code> parameter.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: A Powerful Feature, Almost No Command‑Line Guide</a></li>
+        <li><a href="#the-symptom">The Symptom: "Why Is My Face Blurry?"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Is ROI Encoding?</a></li>
+        <li><a href="#addroi">The <code>addroi</code> Filter – Your Command‑Line Tool</a></li>
+        <li><a href="#qoffset">Understanding <code>qoffset</code> – The Quality Knob</a></li>
+        <li><a href="#practical-face">Practical Example 1: Face Priority Encoding</a></li>
+        <li><a href="#practical-text">Practical Example 2: Text Overlay Quality</a></li>
+        <li><a href="#practical-multiple">Practical Example 3: Multiple ROIs</a></li>
+        <li><a href="#practical-dynamic">Practical Example 4: Dynamic ROI with zmq</a></li>
+        <li><a href="#encoder-support">Encoder Support – What Works Where</a></li>
+        <li><a href="#debugging">Debugging Common ROI Issues</a></li>
+        <li><a href="#ide">Visualize ROI with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>You've probably seen it before: a video where the subject's face is sharp and detailed, but the background is a blocky, pixelated mess. This isn't an accident—it's <strong>ROI encoding</strong>, one of the most powerful and least‑understood features in modern video compression.</p>
+
+    <p>ROI (Region of Interest) encoding lets you tell the encoder: <em>"This part of the frame matters more than the rest"</em>. The encoder then allocates more bitrate to that region, delivering higher quality where it counts, while saving bits on the background. The result? Better visual quality at the same bitrate—or the same quality at a lower bitrate.[reference:0]</p>
+
+    <p>Yet the command‑line documentation is sparse. The <code>addroi</code> filter was added in 2019[reference:1], but most users don't know it exists, and those who do struggle to make it work. This guide changes that.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>ROI encoding</strong> allocates more bitrate to important regions (faces, text, objects) and less to backgrounds.</li>
+        <li><strong><code>addroi</code></strong> is the filter that attaches ROI metadata to video frames for the encoder.</li>
+        <li><strong><code>qoffset</code></strong> controls the quality difference—<strong>negative</strong> = better quality, <strong>positive</strong> = worse quality.</li>
+        <li><strong>Supported encoders:</strong> libx264, libx265, libvpx (VP8/VP9), and some hardware encoders.</li>
+        <li><strong>Dynamic ROI</strong> with <code>zmq</code> lets you move the region in real time during live streaming.</li>
+        <li><strong>Multiple regions</strong> can be defined, ordered from most to least important.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: A Powerful Feature, Almost No Command‑Line Guide</h2>
+
+    <p>The FFmpeg ROI API was introduced in 2019[reference:2], adding support for ROI-based encoding in libx264, libx265, and libvpx[reference:3]. The <code>addroi</code> filter followed shortly after[reference:4], providing a command‑line interface for attaching ROI metadata to video frames.</p>
+
+    <p>Yet the documentation is sparse. The filter's <code>qoffset</code> parameter is explained in technical terms that assume you already understand quantization[reference:5]. Online resources are scattered—a mailing list post here, a code comment there[reference:6]. There's no cohesive guide that walks you through the <em>why</em> and <em>how</em> of ROI encoding from the command line.</p>
+
+    <p>This guide fills that gap.</p>
+
+    <h2 id="the-symptom">The Symptom: "Why Is My Face Blurry?"</h2>
+
+    <p>You've encoded a video at a reasonable bitrate. The background looks fine—but the subject's face is a blocky, pixelated mess. You increase the bitrate, and the face improves—but now the file is twice as large.</p>
+
+    <p>The problem is that traditional encoding treats every pixel equally. A face and a plain wall get the same bitrate allocation. ROI encoding fixes this by telling the encoder: <em>"This face is important. Give it more bits."</em></p>
+
+    <p>This is especially critical for:</p>
+
+    <ul>
+      <li><strong>Surveillance footage</strong> — faces and license plates need to be identifiable</li>
+      <li><strong>Video conferencing</strong> — the speaker's face should be crisp</li>
+      <li><strong>Live streaming</strong> — game HUD elements and faces need clarity</li>
+      <li><strong>Narrowband HD</strong> — saving bandwidth while maintaining critical detail[reference:7]</li>
+    </ul>
+
+    <h2 id="core-concepts">Core Concepts: What Is ROI Encoding?</h2>
+
+    <p>ROI encoding is a video coding technique that allocates more bitrate to regions of interest and less to background areas[reference:8]. It works by adjusting the <strong>quantization parameter (QP)</strong> on a per‑region basis[reference:9]:</p>
+
+    <ul>
+      <li><strong>Lower QP</strong> = finer quantization = higher quality = more bits</li>
+      <li><strong>Higher QP</strong> = coarser quantization = lower quality = fewer bits</li>
+    </ul>
+
+    <p>ROI encoding doesn't require changing the encoder's core behavior. Instead, it provides a <strong>unified interface</strong> that translates your ROI specifications into the API calls required by each encoder[reference:10].</p>
+
+    <p>The key data structure is <code>AVRegionOfInterest</code>[reference:11], which defines a rectangular region and a quality offset. In the command line, this structure is populated by the <code>addroi</code> filter.</p>
+
+    <h2 id="addroi">The <code>addroi</code> Filter – Your Command‑Line Tool</h2>
+
+    <p>The <code>addroi</code> filter attaches ROI metadata to video frames[reference:12]. It doesn't change the pixels—it just tells the encoder which regions should get special treatment.</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>addroi=x:y:w:h:qoffset[:clear]</code></pre>
+
+    <ul>
+      <li><strong><code>x</code></strong> — Distance from the left edge of the frame (in pixels)[reference:13]</li>
+      <li><strong><code>y</code></strong> — Distance from the top edge of the frame (in pixels)[reference:14]</li>
+      <li><strong><code>w</code></strong> — Width of the region (in pixels)[reference:15]</li>
+      <li><strong><code>h</code></strong> — Height of the region (in pixels)[reference:16]</li>
+      <li><strong><code>qoffset</code></strong> — Quality offset, from -1.0 to +1.0[reference:17]</li>
+      <li><strong><code>clear</code></strong> — Remove existing ROIs before adding new ones (optional)[reference:18]</li>
+    </ul>
+
+    <p>If you need to define multiple ROIs on the same frame, use multiple <code>addroi</code> filters chained together—they'll accumulate[reference:19].</p>
+
+    <h2 id="qoffset">Understanding <code>qoffset</code> – The Quality Knob</h2>
+
+    <p><code>qoffset</code> is the most important—and most misunderstood—parameter in ROI encoding[reference:20].</p>
+
+    <ul>
+      <li><strong><code>qoffset = 0</code></strong> — No quality change[reference:21]</li>
+      <li><strong><code>qoffset = negative</code></strong> — <em>Better</em> quality (lower QP, more bits)[reference:22]</li>
+      <li><strong><code>qoffset = positive</code></strong> — <em>Worse</em> quality (higher QP, fewer bits)[reference:23]</li>
+    </ul>
+
+    <p>The range is calibrated so that extreme values indicate the largest possible offset[reference:24]:</p>
+
+    <ul>
+      <li><strong><code>qoffset = -1.0</code></strong> — Encode the region at the best possible quality (QP = -12 in 10‑bit H.264)[reference:25]</li>
+      <li><strong><code>qoffset = +1.0</code></strong> — Encode the region at the worst possible quality[reference:26]</li>
+    </ul>
+
+    <p>In practice, a value of <strong><code>qoffset = -0.1</code> to <code>-0.3</code></strong> is often sufficient to make a visible difference[reference:27]. For a 10‑bit H.264 stream where most of the frame is encoded at QP ≈ 30, a <code>qoffset</code> of <code>-0.1</code> would lower the QP by about 6.3, resulting in noticeably better quality[reference:28].</p>
+
+    <h2 id="practical-face">Practical Example 1: Face Priority Encoding</h2>
+
+    <p>Let's encode a video where the subject's face (centered in the frame) gets higher quality than the background.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Encode with face region at 1080p, center 600x600 area gets better quality
+ffmpeg -i input.mp4 -vf "addroi=420:240:600:600:-0.2" -c:v libx264 -crf 23 -b:v 2M -c:a copy output_face_roi.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Breaking it down:</strong></p>
+
+    <ul>
+      <li><code>addroi=420:240:600:600:-0.2</code> — Defines a 600×600 region centered at (420, 240) in a 1920×1080 frame</li>
+      <li><code>qoffset=-0.2</code> — This region gets better quality (lower QP) than the rest of the frame</li>
+      <li><code>-c:v libx264 -crf 23 -b:v 2M</code> — H.264 encoding with a 2 Mbps target bitrate</li>
+    </ul>
+
+    <p>The result? The face is sharper and more detailed, while the background uses fewer bits. At the same overall bitrate, the subjective quality is higher[reference:29].</p>
+
+    <h2 id="practical-text">Practical Example 2: Text Overlay Quality</h2>
+
+    <p>If your video has important text overlays (subtitles, lower thirds, game HUD), you can prioritize those regions.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Prioritize the bottom third of the frame where subtitles appear
+ffmpeg -i input.mp4 -vf "addroi=0:720:1920:360:-0.15" -c:v libx264 -crf 23 -b:v 2M -c:a copy output_subtitle_roi.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This ensures that subtitles and lower‑third graphics remain crisp and readable, even at lower bitrates.</p>
+
+    <h2 id="practical-multiple">Practical Example 3: Multiple ROIs</h2>
+
+    <p>You can define multiple regions by chaining <code>addroi</code> filters. Each region can have a different <code>qoffset</code> value[reference:30].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Two ROIs: face (high priority) and subtitles (medium priority)
+ffmpeg -i input.mp4 -vf "addroi=420:240:600:600:-0.3,addroi=0:720:1920:360:-0.1" -c:v libx264 -crf 23 -b:v 2M -c:a copy output_multi_roi.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Important ordering rules:</strong> When multiple regions overlap, the <strong>first</strong> region in the chain takes priority[reference:31]. Regions should be ordered from most to least important, as some encoders have a limited number of region slots[reference:32][reference:33].</p>
+
+    <p>The <code>clear</code> parameter removes existing ROIs before adding new ones—use it if you're building a complex filtergraph and need to start fresh[reference:34].</p>
+
+    <h2 id="practical-dynamic">Practical Example 4: Dynamic ROI with zmq</h2>
+
+    <p>One of the most exciting features of ROI encoding is the ability to <strong>move the region in real time</strong> during live streaming[reference:35].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Start encoding with a dynamic ROI filter listening for zmq commands
+ffmpeg -i input.mp4 -vf "addroi=iw-200:ih-200:iw/2:ih/2:-1,zmq" -c:v libx264 -crf 23 -f mpegts udp://127.0.0.1:1234
+
+# In another terminal, move the ROI to a new position
+echo "Parsed_addroi_0 reinit x=200:y=200:w=300:h=300" | ./zmqsend</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This is incredibly powerful for live streaming[reference:36]. Imagine a security camera that follows a moving subject, always keeping the face in the high‑quality ROI[reference:37]. Or a sports broadcast that tracks the ball. The <code>zmq</code> filter makes this possible.</p>
+
+    <h2 id="encoder-support">Encoder Support – What Works Where</h2>
+
+    <p>ROI encoding is not supported by all encoders. Here's what works[reference:38]:</p>
+
+    <table>
+      <thead>
+        <tr><th>Encoder</th><th>ROI Support</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>libx264</strong></td><td>✅ Full support</td><td>Supports different QP offsets for different macroblocks[reference:39]</td></tr>
+        <tr><td><strong>libx265</strong></td><td>✅ Full support</td><td>Similar to libx264, with CTU‑level control[reference:40]</td></tr>
+        <tr><td><strong>libvpx (VP8/VP9)</strong></td><td>✅ Full support</td><td>Requires <code>aq_mode=0</code>, <code>cpu_used>=5</code>, and <code>deadline=realtime</code>[reference:41]</td></tr>
+        <tr><td><strong>h264_vaapi / hevc_vaapi</strong></td><td>✅ Partial support</td><td>Hardware‑accelerated, but may have region count limits[reference:42]</td></tr>
+        <tr><td><strong>nvenc (NVIDIA)</strong></td><td>⚠️ Limited</td><td>Some support via NVENC API, but not fully integrated</td></tr>
+        <tr><td><strong>libaom-av1</strong></td><td>❌ Not yet</td><td>ROI API support is still in development</td></tr>
+        <tr><td><strong>Software encoders (e.g., mpeg4)</strong></td><td>❌ No</td><td>Only modern encoders with ROI APIs support this</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Important:</strong> The FFmpeg ROI API was introduced in version 4.2.1[reference:43]. Ensure you're using a recent build.</p>
+
+    <h2 id="debugging">Debugging Common ROI Issues</h2>
+
+    <p>Here are the most frequent problems and their solutions.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>No visible quality difference</strong></td>
+          <td><code>qoffset</code> is too small or encoder doesn't support ROI</td>
+          <td>Try <code>qoffset=-0.5</code>; check encoder support; use <code>-c:v libx264</code></td>
+        </tr>
+        <tr>
+          <td><strong>Encoder ignores ROI</strong></td>
+          <td>Using an unsupported encoder or older FFmpeg</td>
+          <td>Use <code>libx264</code>, <code>libx265</code>, or <code>libvpx</code> with FFmpeg ≥ 4.2.1</td>
+        </tr>
+        <tr>
+          <td><strong>Region is misaligned</strong></td>
+          <td>Encoder requires region alignment (e.g., 16‑pixel boundaries for H.264)</td>
+          <td>Align x, y, w, h to multiples of 16 (or 32 for H.265)[reference:44]</td>
+        </tr>
+        <tr>
+          <td><strong>Multiple regions not working</strong></td>
+          <td>Encoder has a limited number of region slots</td>
+          <td>Order regions from most to least important; truncate the list if needed[reference:45]</td>
+        </tr>
+        <tr>
+          <td><strong>VP8/VP9 ROI not working</strong></td>
+          <td>Missing required encoder parameters</td>
+          <td>Set <code>aq_mode=0</code>, <code>cpu_used>=5</code>, and <code>deadline=realtime</code>[reference:46]</td>
+        </tr>
+        <tr>
+          <td><strong>Dynamic ROI with zmq not responding</strong></td>
+          <td>zmq filter not built or filter name mismatch</td>
+          <td>Check that FFmpeg was built with <code>--enable-libzmq</code>; use the correct filter name in the command</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ide">Visualize ROI with the FFmpegLab IDE</h2>
+
+    <p>ROI encoding is <strong>much easier to debug</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>Overlay ROI rectangles</strong> on the video preview—see exactly which regions will get better quality</li>
+      <li><strong>Adjust <code>qoffset</code> with a slider</strong> and see how it affects the encoder's decisions</li>
+      <li><strong>Compare before and after</strong> with side‑by‑side views</li>
+      <li><strong>Simulate multiple ROIs</strong> with visual ordering feedback</li>
+      <li><strong>Generate the exact command</strong> with your tuned parameters</li>
+    </ul>
+
+    <p>Here's how ROI visualization looks in the FFmpegLab IDE.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Visual ROI configuration
+# Drag rectangles on the preview to define regions; adjust qoffset with sliders</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what's happening—which regions are defined, what <code>qoffset</code> values are applied, and how the encoder will prioritize quality. You can drag rectangles to define regions, adjust <code>qoffset</code> with sliders, and see the visual feedback in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is ROI encoding and why would I use it?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">ROI (Region of Interest) encoding allocates more bitrate to important regions of a frame (like faces or text) and less to backgrounds[reference:47]. This improves visual quality where it matters most without increasing the overall bitrate—perfect for surveillance, video conferencing, and live streaming[reference:48].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I use ROI encoding from the command line?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use the <code>addroi</code> filter: <code>-vf "addroi=x:y:w:h:qoffset"</code>[reference:49]. For example, <code>-vf "addroi=420:240:600:600:-0.2"</code> gives better quality to a 600×600 region centered in a 1080p frame. Chain multiple <code>addroi</code> filters for multiple regions.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What does qoffset mean?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>qoffset</code> controls the quality offset, ranging from -1.0 to +1.0[reference:50]. <strong>Negative</strong> values give <em>better</em> quality (lower QP, more bits). <strong>Positive</strong> values give <em>worse</em> quality (higher QP, fewer bits)[reference:51]. A value of <code>-0.2</code> is often enough to make a visible difference[reference:52].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Which encoders support ROI encoding?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>libx264</strong>, <strong>libx265</strong>, and <strong>libvpx</strong> (VP8/VP9) have full support[reference:53]. Hardware encoders like <strong>h264_vaapi</strong> and <strong>hevc_vaapi</strong> have partial support[reference:54]. libaom-av1 and older encoders do not yet support ROI. Ensure you're using FFmpeg ≥ 4.2.1[reference:55].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I move the ROI during encoding?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes—using the <code>zmq</code> filter with <code>addroi</code>[reference:56]. You can send commands to update the ROI position in real time. This is ideal for live streaming where the subject moves[reference:57]. Example: <code>echo "Parsed_addroi_0 reinit x=200:y=200:w=300:h=300" | ./zmqsend</code>[reference:58].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why isn't my ROI encoding working?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Common reasons: (1) Using an unsupported encoder—use <code>libx264</code>, <code>libx265</code>, or <code>libvpx</code>; (2) <code>qoffset</code> is too small—try <code>-0.5</code>; (3) Region coordinates need alignment—align x, y, w, h to multiples of 16 for H.264[reference:59]; (4) For VP8/VP9, ensure <code>aq_mode=0</code> and <code>cpu_used>=5</code>[reference:60].</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>ROI encoding is one of the most powerful—and least‑understood—features in modern FFmpeg. By telling the encoder which parts of the frame matter most, you can deliver better visual quality at the same bitrate, or the same quality at a lower bitrate.</p>
+
+    <p>The <code>addroi</code> filter makes this accessible from the command line[reference:61]. With <code>qoffset</code> values ranging from -1.0 to +1.0, you have fine‑grained control over quality allocation[reference:62]. Multiple regions can be defined[reference:63], and dynamic ROI with <code>zmq</code> opens the door to real‑time applications like live streaming and surveillance[reference:64].</p>
+
+    <p>With the FFmpegLab IDE's visual feedback, you can experiment, debug, and perfect your ROI settings without the guesswork. Drag rectangles, adjust <code>qoffset</code> with sliders, and see the results in real time.</p>
+
+    <p>Next time you're encoding a video where some parts matter more than others, reach for ROI encoding. Your viewers—and your bandwidth budget—will thank you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg Xfade Transitions Guide</a></li>
+        <li><a href="ffmpeg-filter-complex-effects.html">Advanced Filter Complex Effects</a></li>
+        <li><a href="offline-private-video-editor.html">Offline Private Video Editor</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+        <li><a href="ffmpeg-lens-correction.html">Lens Correction &amp; Distortion</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

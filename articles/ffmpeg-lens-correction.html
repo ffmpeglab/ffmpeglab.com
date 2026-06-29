@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lens Correction & Distortion in FFmpeg – Remove or Add Effects</title>
+  <meta name="description" content="Master lens correction in FFmpeg with the lenscorrection filter. Remove barrel distortion, fisheye, and pincushion from GoPro, action cameras, and wide-angle lenses. Plus, learn to add creative distortion effects." />
+  <meta name="keywords" content="ffmpeg lens correction, ffmpeg lenscorrection, ffmpeg barrel distortion, ffmpeg fisheye removal, ffmpeg GoPro distortion, ffmpeg k1 k2, ffmpeg add lens distortion" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-lens-correction-distortion.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-lens-correction-distortion.html" />
+  <meta property="og:title" content="Lens Correction & Distortion in FFmpeg – Remove or Add Effects" />
+  <meta property="og:description" content="Master lens correction in FFmpeg with the lenscorrection filter. Remove barrel distortion, fisheye, and pincushion from GoPro, action cameras, and wide-angle lenses. Plus, learn to add creative distortion effects." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Lens Correction & Distortion in FFmpeg – Remove or Add Effects",
+      "description": "Master lens correction in FFmpeg with the lenscorrection filter. Remove barrel distortion, fisheye, and pincushion from GoPro, action cameras, and wide-angle lenses. Plus, learn to add creative distortion effects.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-lens-correction-distortion.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Lens Correction &amp; Distortion</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Lens Correction &amp; Distortion – Remove or Add Effects</h1>
+      <p class="dek">Remove barrel distortion, fisheye, and pincushion from action cameras and wide-angle lenses. Or <strong>add</strong> creative distortion effects for music videos, dream sequences, and retro vibes.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: A Powerful Filter, Almost No Guidance</a></li>
+        <li><a href="#the-symptom">The Symptom: "Why Are My GoPro Videos So Curved?"</a></li>
+        <li><a href="#core-concepts">Core Concepts: Barrel, Pincushion &amp; Fisheye</a></li>
+        <li><a href="#parameters">The <code>lenscorrection</code> Filter Parameters</a></li>
+        <li><a href="#practical-gopro">Remove: GoPro Fisheye Removal</a></li>
+        <li><a href="#practical-barrel">Remove: Barrel Distortion Correction</a></li>
+        <li><a href="#practical-pincushion">Remove: Pincushion Distortion</a></li>
+        <li><a href="#practical-add">Add: Creative Lens Distortion Effects</a></li>
+        <li><a href="#calculating">Calculating k1 and k2 – The Hard Part</a></li>
+        <li><a href="#performance">Performance &amp; Quality Considerations</a></li>
+        <li><a href="#debugging">Debugging Common Issues</a></li>
+        <li><a href="#ide">Visualize with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Lens distortion is the silent enemy of action camera footage. GoPro videos have that distinctive fisheye curve. Drone footage bends at the edges. Wide-angle lenses stretch and warp straight lines into gentle arcs.</p>
+
+    <p>But here's the twist: sometimes you <strong>want</strong> that distortion. Music videos, dream sequences, and retro aesthetics often use lens distortion as a creative effect.</p>
+
+    <p>FFmpeg's <code>lenscorrection</code> filter can do both—remove <em>and</em> add lens distortion. Yet the documentation is sparse, the formula is confusing, and most users give up before finding the right parameters.</p>
+
+    <p>This guide changes that. You'll learn how to correct distortion for professional results <em>and</em> how to add creative distortion effects—all with the same powerful filter.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Barrel distortion</strong> bulges outward (common in wide-angle and action cameras).</li>
+        <li><strong>Pincushion distortion</strong> pinches inward (common in telephoto lenses).</li>
+        <li><strong>To remove</strong> barrel distortion → use <strong>negative</strong> k1/k2 values.</li>
+        <li><strong>To add</strong> barrel distortion (creative effect) → use <strong>positive</strong> k1/k2 values.</li>
+        <li><strong>To remove</strong> pincushion distortion → use <strong>positive</strong> k1/k2 values.</li>
+        <li><strong>To add</strong> pincushion distortion → use <strong>negative</strong> k1/k2 values.</li>
+        <li><strong><code>k1=0:k2=0</code> means no correction</strong> (the documentation claiming 0.5 is incorrect).</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: A Powerful Filter, Almost No Guidance</h2>
+
+    <p>The FFmpeg documentation for <code>lenscorrection</code> is famously problematic. As one user noted on the FFmpeg mailing list: <em>"I found a bug in the documentation of the lenscorrection filter... It's written there '0.5 means no correction' for the coefficients k1 and k2. This can't be right"</em>.</p>
+
+    <p>Indeed, testing shows that <code>k1=0</code> and <code>k2=0</code> produce no correction—not 0.5. The documentation has been wrong for years.</p>
+
+    <p>Search online, and you'll find fragmented advice. Some users recommend <code>k1=-0.227:k2=-0.022</code> for GoPro. Others suggest <code>k1=-0.18:k2=0.006</code> for newer models. But almost no one explains <em>how</em> these values are calculated or <em>why</em> they work. And almost <em>no one</em> explains how to use the filter creatively.</p>
+
+    <p>This guide bridges that gap with clear explanations, working examples for both removal and addition, and a practical approach to finding your camera's correction parameters.</p>
+
+    <h2 id="the-symptom">The Symptom: "Why Are My GoPro Videos So Curved?"</h2>
+
+    <p>You've shot amazing footage with your action camera. But when you watch it back, straight lines are curved, the horizon bends, and the edges of the frame are stretched. The footage looks unmistakably <em>fisheye</em>.</p>
+
+    <p>Or maybe you're making a music video and you <em>want</em> that trippy, distorted look. You want to add barrel distortion to your footage for a dreamlike effect.</p>
+
+    <p>Whether you're removing or adding distortion, the <code>lenscorrection</code> filter is the tool. Let's explore both directions.</p>
+
+    <h2 id="core-concepts">Core Concepts: Barrel, Pincushion &amp; Fisheye</h2>
+
+    <p>Lens distortion comes in three main flavors:</p>
+
+    <ul>
+      <li><strong>Barrel distortion</strong> — Straight lines bow outward from the center, like the sides of a barrel. This is common in wide-angle lenses, action cameras, and GoPro footage.</li>
+      <li><strong>Pincushion distortion</strong> — Straight lines bow inward, like the sides of a pincushion. This is common in telephoto lenses and some zoom lenses.</li>
+      <li><strong>Fisheye distortion</strong> — An extreme form of barrel distortion where the field of view exceeds 180 degrees. The image appears spherical.</li>
+    </ul>
+
+    <p>The <code>lenscorrection</code> filter uses a <strong>radial distortion model</strong> based on the distance from the center of the image.</p>
+
+    <p>The distortion formula is:</p>
+
+    <pre><code>r_img = r_src * (1 + k1 * (r_src / r_0)^2 + k2 * (r_src / r_0)^4)</code></pre>
+
+    <p>Where:</p>
+    <ul>
+      <li><code>r_img</code> is the distance from the center in the distorted image</li>
+      <li><code>r_src</code> is the distance from the center in the undistorted (corrected) image</li>
+      <li><code>r_0</code> is half of the image diagonal</li>
+      <li><code>k1</code> and <code>k2</code> are distortion coefficients</li>
+    </ul>
+
+    <p><strong>Understanding the signs:</strong></p>
+    <ul>
+      <li><strong>Negative k1/k2</strong> → Corrects barrel distortion (pulls edges outward).</li>
+      <li><strong>Positive k1/k2</strong> → Creates/corrects pincushion distortion.</li>
+      <li><strong>To add barrel distortion</strong> (creative effect) → use <strong>positive</strong> values.</li>
+      <li><strong>To add pincushion distortion</strong> → use <strong>negative</strong> values.</li>
+    </ul>
+
+    <p>It's a classic "same filter, opposite direction" situation. The <code>lenscorrection</code> filter applies the <strong>inverse</strong> of the distortion formula. So specifying <code>k1</code> and <code>k2</code> tells FFmpeg <em>what distortion exists</em>, and it calculates the inverse to correct it.</p>
+
+    <h2 id="parameters">The <code>lenscorrection</code> Filter Parameters</h2>
+
+    <p>Here's every parameter you need to know, with practical guidance for each.</p>
+
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Default</th><th>What it does</th><th>When to adjust</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>cx</code></td>
+          <td>0.5</td>
+          <td>Relative x-coordinate of the distortion center (0=left, 1=right)</td>
+          <td>Usually leave at 0.5. Adjust if your lens's optical center is off-center</td>
+        </tr>
+        <tr>
+          <td><code>cy</code></td>
+          <td>0.5</td>
+          <td>Relative y-coordinate of the distortion center (0=top, 1=bottom)</td>
+          <td>Usually leave at 0.5. Adjust if your lens's optical center is off-center</td>
+        </tr>
+        <tr>
+          <td><code>k1</code></td>
+          <td>0</td>
+          <td>Coefficient of the quadratic correction term</td>
+          <td><strong>Removal:</strong> negative for barrel, positive for pincushion<br/><strong>Add:</strong> positive for barrel, negative for pincushion</td>
+        </tr>
+        <tr>
+          <td><code>k2</code></td>
+          <td>0</td>
+          <td>Coefficient of the quartic correction term</td>
+          <td>Usually smaller than k1. Helps fine-tune the effect at the edges</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Critical note:</strong> <code>k1=0</code> and <code>k2=0</code> mean <strong>no correction</strong>. The documentation's claim that "0.5 means no correction" is incorrect.</p>
+
+    <h2 id="practical-gopro">Remove: GoPro Fisheye Removal</h2>
+
+    <p>Let's correct the classic GoPro fisheye distortion. GoPro cameras use extreme wide-angle lenses that create significant barrel distortion.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Remove GoPro fisheye (Hero 3/4 style)
+ffmpeg -i gopro_input.mp4 -vf "lenscorrection=cx=0.5:cy=0.5:k1=-0.227:k2=-0.022" -c:a copy output_corrected.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>What's happening here?</strong></p>
+    <ul>
+      <li><code>cx=0.5:cy=0.5</code> — The distortion center is at the center of the frame</li>
+      <li><code>k1=-0.227</code> — The primary barrel correction coefficient (negative = remove barrel)</li>
+      <li><code>k2=-0.022</code> — The secondary correction for fine-tuning</li>
+    </ul>
+
+    <p>These values are widely used for GoPro Hero 3 and 4 cameras.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># GoPro Hero 5/6 correction (slightly different values)
+ffmpeg -i gopro_hero5.mp4 -vf "lenscorrection=k1=-0.18:k2=0.006" -c:a copy output_corrected.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Note:</strong> <code>k2</code> is positive here—different lenses require different correction profiles. As one user noted: <em>"There is no universal setting(s) to cover all GoPro models and lenses"</em>.</p>
+
+    <h2 id="practical-barrel">Remove: Barrel Distortion Correction</h2>
+
+    <p>Not all barrel distortion comes from GoPros. Many action cameras, drones, and wide-angle lenses exhibit similar effects.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># General barrel distortion correction (tune k1 and k2 for your lens)
+ffmpeg -i wideangle_input.mp4 -vf "lenscorrection=cx=0.5:cy=0.5:k1=-0.15:k2=-0.01" -c:a copy output_corrected.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Start with <code>k1=-0.1</code> and <code>k2=0</code>, then adjust both until straight lines appear straight. The <code>k2</code> parameter fine-tunes the correction at the edges of the frame.</p>
+
+    <h2 id="practical-pincushion">Remove: Pincushion Distortion</h2>
+
+    <p>Pincushion distortion is less common but appears in telephoto lenses and some zoom lenses. The correction uses <strong>positive</strong> values.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Pincushion distortion correction (positive k1/k2)
+ffmpeg -i telephoto_input.mp4 -vf "lenscorrection=cx=0.5:cy=0.5:k1=0.1:k2=0.01" -c:a copy output_corrected.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Positive <code>k1</code> and <code>k2</code> values correct pincushion distortion by pulling the corners outward.</p>
+
+    <h2 id="practical-add">Add: Creative Lens Distortion Effects</h2>
+
+    <p>Now for the creative side—adding lens distortion for artistic effect. Music videos, dream sequences, retro aesthetics, and psychedelic visuals often use lens distortion as a creative tool.</p>
+
+    <h3>Adding Barrel Distortion (Fisheye Effect)</h3>
+
+    <p>To add barrel distortion to normal footage (creating a fisheye-like effect), use <strong>positive</strong> k1 and k2 values.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># ADD barrel distortion (fisheye effect) – positive values
+ffmpeg -i normal_video.mp4 -vf "lenscorrection=cx=0.5:cy=0.5:k1=0.15:k2=0.01" -c:a copy output_fisheye.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This creates a subtle fisheye effect. Increase <code>k1</code> for a more dramatic effect.</p>
+
+    <h3>Adding Pincushion Distortion</h3>
+
+    <p>To add pincushion distortion (lines bow inward), use <strong>negative</strong> values.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># ADD pincushion distortion – negative values
+ffmpeg -i normal_video.mp4 -vf "lenscorrection=cx=0.5:cy=0.5:k1=-0.12:k2=-0.008" -c:a copy output_pincushion.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This creates a subtle pincushion effect, making the image appear to pinch inward at the corners.</p>
+
+    <h3>Extreme Fisheye (Action Camera Style)</h3>
+
+    <p>For an extreme fisheye effect like a GoPro, use larger positive values.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Extreme fisheye effect (GoPro style)
+ffmpeg -i normal_video.mp4 -vf "lenscorrection=cx=0.5:cy=0.5:k1=0.3:k2=0.04" -c:a copy output_fisheye_strong.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Warning:</strong> Extreme values will create significant black corners (since the image is stretched outward). You'll need to crop the edges or accept the artistic effect.</p>
+
+    <h3>Animated Distortion Effect</h3>
+
+    <p>For a dynamic, animated distortion (perfect for music videos), you can use <code>sendcmd</code> or <code>zmq</code> to change the distortion coefficients over time. Or, for a simpler approach, use timeline expressions to switch between different distortion levels.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Animated distortion using setpts and dynamic parameters (requires sendcmd)
+# Create a command file: distortion_commands.txt
+# 0.0   lenscorrection k1 0.15
+# 1.0   lenscorrection k1 0.3
+# 2.0   lenscorrection k1 0.15
+
+ffmpeg -i normal_video.mp4 -filter_complex "sendcmd=f=distortion_commands.txt,asplit[lens]" -c:a copy output_animated.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This creates a pulsing distortion effect that waxes and wanes over time—perfect for a music video or dream sequence.</p>
+
+    <h3>Combining with Other Effects</h3>
+
+    <p>Lens distortion pairs beautifully with other effects. Here's a "vintage lens" combination with vignette and color grading:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Vintage lens effect: distortion + vignette + color grading
+ffmpeg -i normal_video.mp4 \
+-vf "lenscorrection=k1=0.08:k2=0.005, vignette=0.3, colorlevels=rimax=0.85:gimax=0.8:bimax=0.9" \
+-c:a copy output_vintage.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="calculating">Calculating k1 and k2 – The Hard Part</h2>
+
+    <p>Finding the right <code>k1</code> and <code>k2</code> values for your specific camera is the biggest challenge. Here are three approaches.</p>
+
+    <h3>Approach 1: Known Values for Popular Cameras</h3>
+
+    <p>For popular cameras, you can find known values online:</p>
+
+    <ul>
+      <li><strong>Remove GoPro Hero 3/4 barrel:</strong> <code>k1=-0.227, k2=-0.022</code></li>
+      <li><strong>Remove GoPro Hero 5/6 barrel:</strong> <code>k1=-0.18, k2=0.006</code></li>
+      <li><strong>Remove general wide-angle barrel:</strong> <code>k1=-0.1 to -0.2</code></li>
+      <li><strong>Add subtle fisheye effect:</strong> <code>k1=0.08 to 0.15</code></li>
+      <li><strong>Add strong fisheye effect:</strong> <code>k1=0.2 to 0.35</code></li>
+    </ul>
+
+    <p>As one user noted: <em>"There is no universal setting(s) to cover all GoPro models and lenses"</em>. Different models and even different firmware versions can change the distortion profile.</p>
+
+    <h3>Approach 2: Calibration with a Grid or Chessboard</h3>
+
+    <p>For precise calibration, photograph a known pattern (like a chessboard) and adjust <code>k1</code> and <code>k2</code> until the lines are straight. This is the approach used by OpenCV's camera calibration.</p>
+
+    <p>However, there's a catch: the <code>k1</code> and <code>k2</code> parameters in FFmpeg's <code>lenscorrection</code> are <strong>different</strong> from the parameters calculated by OpenCV. As one developer noted: <em>"The k1,k2 parameters in vf_lenscorrection.c should be converted"</em>.</p>
+
+    <h3>Approach 3: Trial and Error (The Practical Approach)</h3>
+
+    <p>For most users, trial and error is the most practical approach:</p>
+
+    <ol>
+      <li>Start with <code>k1=-0.1, k2=0</code> for barrel correction</li>
+      <li>Encode a short test clip and check the results</li>
+      <li>If the edges are still curved, increase <code>k1</code> (more negative)</li>
+      <li>If the center is over-corrected, add <code>k2</code> (negative or positive)</li>
+      <li>Repeat until straight lines are straight</li>
+    </ol>
+
+    <p>For creative effects, the process is the same—but you're aiming for a specific <em>look</em>, not mathematical perfection.</p>
+
+    <h2 id="performance">Performance &amp; Quality Considerations</h2>
+
+    <p>Lens correction is computationally intensive. Here are some considerations.</p>
+
+    <h3>Quality Issues: Moiré Patterns</h3>
+
+    <p>One known issue with the <code>lenscorrection</code> filter is that it can create <strong>moiré patterns</strong> or bad interpolation artifacts, especially with high-frequency content like fine patterns or text.</p>
+
+    <p>To minimize these artifacts:</p>
+    <ul>
+      <li>Use high-quality source material</li>
+      <li>Avoid extreme correction values</li>
+      <li>Consider scaling the image <em>before</em> correction and then scaling back</li>
+    </ul>
+
+    <h3>Edge Cropping</h3>
+
+    <p>When correcting barrel distortion, the edges of the frame are pulled inward, revealing empty (black) pixels at the corners. When adding distortion, the opposite happens—the image is stretched outward, and you lose content at the edges.</p>
+
+    <p>To handle this:</p>
+    <ul>
+      <li>Crop the edges after correction</li>
+      <li>Scale the image up slightly to hide the empty areas</li>
+      <li>Accept the empty corners (they're usually outside the active area)</li>
+    </ul>
+
+    <p>For creative effects, black corners can actually enhance the aesthetic—it's part of the "lens look."</p>
+
+    <h3>Performance</h3>
+
+    <p>Lens correction is a pixel-by-pixel operation. For 4K video, it can be slow. Consider using a lower resolution for testing, and only apply the final correction at full resolution.</p>
+
+    <h2 id="debugging">Debugging Common Issues</h2>
+
+    <p>Here are the most common issues and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>No effect applied</strong></td>
+          <td><code>k1=0</code> and <code>k2=0</code></td>
+          <td>Set <code>k1</code> and/or <code>k2</code> to non-zero values</td>
+        </tr>
+        <tr>
+          <td><strong>Effect is reversed</strong> (wrong distortion direction)</td>
+          <td><code>k1</code> or <code>k2</code> has the wrong sign</td>
+          <td><strong>Removal:</strong> barrel=negative, pincushion=positive<br/><strong>Add:</strong> barrel=positive, pincushion=negative</td>
+        </tr>
+        <tr>
+          <td><strong>Moiré patterns</strong></td>
+          <td>High-frequency content with interpolation artifacts</td>
+          <td>Scale down before correction; use gentler correction values</td>
+        </tr>
+        <tr>
+          <td><strong>Black corners</strong> (removal)</td>
+          <td>Correction pulls edges inward</td>
+          <td>Crop the edges or scale the image up slightly</td>
+        </tr>
+        <tr>
+          <td><strong>Lost content at edges</strong> (addition)</td>
+          <td>Distortion stretches the image outward</td>
+          <td>Add padding before distortion, or scale down after</td>
+        </tr>
+        <tr>
+          <td><strong>Center is over-corrected</strong></td>
+          <td><code>k1</code> is too strong</td>
+          <td>Reduce <code>k1</code> and adjust <code>k2</code> to compensate</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ide">Visualize with the FFmpegLab IDE</h2>
+
+    <p>Lens correction is <strong>much easier to tune</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>Toggle between Remove and Add mode</strong> with a single switch</li>
+      <li><strong>Adjust k1 and k2 with sliders</strong> and see the effect in real time</li>
+      <li><strong>Toggle before/after</strong> views to compare the original and processed image</li>
+      <li><strong>Overlay a grid</strong> to see exactly how lines are being straightened (or curved!)</li>
+      <li><strong>Experiment with creative effects</strong> without wasting hours on encodes</li>
+      <li><strong>Export the exact command</strong> with your tuned parameters</li>
+    </ul>
+
+    <p>Here's how lens correction tuning looks in the FFmpegLab IDE—with both removal and addition modes.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Creative lens distortion: adding fisheye effect
+ffmpeg -i normal_video.mp4 -vf "lenscorrection=cx=0.5:cy=0.5:k1=0.15:k2=0.01" -c:a copy output_fisheye.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what's happening—the original image, the distorted result, and a grid overlay that makes it easy to see the effect. You can toggle between "Remove" and "Add" modes, adjust <code>k1</code> and <code>k2</code> with sliders, and see the result in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I remove barrel distortion with lenscorrection?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use <strong>negative</strong> values for <code>k1</code> and <code>k2</code>. For example, GoPro Hero 3/4: <code>k1=-0.227:k2=-0.022</code>. The filter applies the inverse distortion to straighten the image.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I add barrel distortion for a creative effect?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use <strong>positive</strong> values for <code>k1</code> and <code>k2</code>. Start with <code>k1=0.1:k2=0.01</code> and increase for a stronger effect. This creates a fisheye-like look.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why does the documentation say "0.5 means no correction"?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The documentation is <strong>incorrect</strong>. Testing confirms that <code>k1=0:k2=0</code> produces no correction. The "0.5" reference appears to be a documentation bug.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I animate the distortion effect over time?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Use <code>sendcmd</code> or <code>zmq</code> to change <code>k1</code> and <code>k2</code> dynamically. This allows you to create pulsing, growing, or decaying distortion effects—perfect for music videos and dream sequences.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does lenscorrection work on fisheye images?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. The <code>lenscorrection</code> filter can correct fisheye distortion, but it may not produce perfect results for extreme fisheye (180°+ FOV). For those cases, consider using the <code>v360</code> filter to convert to equirectangular projection first.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use lenscorrection with other filters?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Absolutely. You can chain <code>lenscorrection</code> with any other video filter. Common combinations include vignette, color grading, and scaling. For creative effects, try combining distortion with <code>vignette</code> and <code>colorlevels</code> for a vintage lens look.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Lens correction is one of FFmpeg's most underrated features. The <code>lenscorrection</code> filter can transform curved, distorted footage into professional-looking video—and just as easily add creative distortion effects for artistic projects.</p>
+
+    <p>The key is understanding the relationship between <code>k1</code>, <code>k2</code>, and distortion direction:</p>
+
+    <ul>
+      <li><strong>Remove barrel distortion:</strong> Use negative values</li>
+      <li><strong>Remove pincushion distortion:</strong> Use positive values</li>
+      <li><strong>Add barrel distortion (creative):</strong> Use positive values</li>
+      <li><strong>Add pincushion distortion (creative):</strong> Use negative values</li>
+    </ul>
+
+    <p>Finding the right values takes some trial and error, but with the FFmpegLab IDE's visual feedback and real‑time preview, you can tune your correction (or creative effect) in minutes instead of hours.</p>
+
+    <p>Next time you're frustrated by curved horizons—or inspired to create a trippy music video—reach for <code>lenscorrection</code>. It works both ways.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg Xfade Transitions Guide</a></li>
+        <li><a href="ffmpeg-filter-complex-effects.html">Advanced Filter Complex Effects</a></li>
+        <li><a href="offline-private-video-editor.html">Offline Private Video Editor</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

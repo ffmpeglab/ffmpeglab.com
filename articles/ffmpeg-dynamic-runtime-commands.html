@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic Runtime Commands & Timeline Editing in FFmpeg (sendcmd & zmq)</title>
+  <meta name="description" content="Master FFmpeg dynamic runtime commands with sendcmd and zmq. Learn to change overlay opacity, crop, and volume in real-time without restarting encoding. Full guide with interactive IDE examples." />
+  <meta name="keywords" content="ffmpeg dynamic commands, ffmpeg sendcmd, ffmpeg zmq, ffmpeg timeline editing, ffmpeg overlay opacity, ffmpeg real-time filter, ffmpeg interactive encoding, ffmpeg filter commands" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-dynamic-runtime-commands.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-dynamic-runtime-commands.html" />
+  <meta property="og:title" content="Dynamic Runtime Commands & Timeline Editing in FFmpeg" />
+  <meta property="og:description" content="Learn how to change crop, overlay, volume, and more while encoding—no restarts, no guessing. Real-world sendcmd and zmq examples." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article + FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Dynamic Runtime Commands & Timeline Editing in FFmpeg",
+      "description": "Master FFmpeg dynamic runtime commands with sendcmd and zmq. Learn to change overlay opacity, crop, and volume in real-time without restarting encoding.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-dynamic-runtime-commands.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the difference between sendcmd and zmq in FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "sendcmd reads commands from a static file at scheduled timestamps, making it ideal for scripted animations. zmq listens for commands over ZeroMQ, allowing interactive real-time adjustments during encoding."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which FFmpeg filters support dynamic runtime commands?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Filters with the 'T' flag in their documentation support commands, including crop, overlay (for x, y, opacity), volume, scale, drawtext, and smartblur."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I change overlay opacity dynamically without restarting FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Use the sendcmd filter with a keyframe file or the zmq filter to send opacity commands live. Both methods update the overlay's alpha channel in real time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does FFmpeg support per-frame expression evaluation for animations?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Filters like overlay evaluate expressions using t (time in seconds) and n (frame number) per frame, enabling smooth sliding, bouncing, or scaling effects without external commands."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Dynamic Runtime Commands</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Dynamic Runtime Commands &amp; Timeline Editing in FFmpeg</h1>
+      <p class="dek">Send interactive commands to FFmpeg while it's running to change filter parameters on the fly. Master <code>sendcmd</code>, <code>zmq</code>, and timeline expressions for dynamic overlays, opacity fades, and real‑time adjustments.</p>
+      <div class="article-meta">FFmpeg tutorial · ~8 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: <code>enable</code> vs. True Dynamic Control</a></li>
+        <li><a href="#the-symptom">The Symptom: Hours of Trial and Error</a></li>
+        <li><a href="#sendcmd">Method 1: <code>sendcmd</code> – Scheduled Commands</a></li>
+        <li><a href="#zmq">Method 2: <code>zmq</code> – Interactive Real‑Time Commands</a></li>
+        <li><a href="#supported-filters">Which Filters Support Runtime Commands?</a></li>
+        <li><a href="#expressions">Dynamic Expressions: <code>t</code>, <code>n</code>, and Per‑Frame Evaluation</a></li>
+        <li><a href="#practical-example">Practical Example: Fading a Watermark</a></li>
+        <li><a href="#ide">Test Dynamically in the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Most FFmpeg users treat filters as static: you set <code>crop=w:h:x:y</code> once, press Enter, and live with the result. But many filters support <strong>runtime commands</strong>—you can change parameters <em>while the video is being encoded</em>. Need a watermark to fade in, move across the screen, or change opacity halfway through? You don't need multiple encodes or complex scripting. You need <code>sendcmd</code>, <code>zmq</code>, and a solid grasp of timeline expressions.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>sendcmd</code></strong> reads a command file and applies changes at specific timestamps—perfect for scripted animations.</li>
+        <li><strong><code>zmq</code></strong> lets you push commands interactively over ZeroMQ for live tweaking during a stream or recording.</li>
+        <li>Filters that support the <strong><code>enable</code></strong> option can be turned on/off based on time, but for <em>gradual</em> changes you need runtime commands.</li>
+        <li>Dynamic expressions like <code>t</code> (current time in seconds) and <code>n</code> (frame number) let you animate parameters frame by frame without external input.</li>
+        <li>Not all filters support commands—always look for the <strong>'T'</strong> flag in the official FFmpeg documentation.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Timeline <code>enable</code> vs. True Dynamic Control</h2>
+
+    <p>FFmpeg's <strong>timeline editing</strong> feature (the generic <code>enable</code> option) is widely known. You can write:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># apply a blur only between 5 and 10 seconds
+ffmpeg -i in.mp4 -vf "smartblur=5:0.8:0:enable='between(t,5,10)'" -c:a copy out.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>That works—but <code>enable</code> is a simple on/off switch. It doesn't let you <em>change</em> a filter's parameters continuously over time. You can't make a watermark <em>gradually</em> fade in, or move an overlay <em>smoothly</em> across the frame, or adjust a volume knob <em>live</em> while streaming. For that, you need runtime commands.</p>
+
+    <h2 id="the-symptom">The Symptom: Hours of Trial and Error</h2>
+
+    <p>Building a script that changes a watermark's opacity or moves an overlay dynamically usually turns into a frustrating marathon. Why?</p>
+
+    <ul>
+      <li><strong>Documentation examples are minimal.</strong> The FFmpeg docs list which filters support commands, but real‑world examples are scarce.</li>
+      <li><strong>Syntax varies per filter.</strong> Some filters accept <code>width</code> and <code>height</code> commands; others expect <code>x</code> and <code>y</code>; some use <code>opacity</code>, others <code>alpha</code>.</li>
+      <li><strong>Timing is tricky.</strong> You need to know whether your expression uses <code>t</code> (seconds) or <code>n</code> (frame number), and whether the filter evaluates per‑frame or only at configuration.</li>
+    </ul>
+
+    <p>The good news: once you understand the two main mechanisms—<code>sendcmd</code> and <code>zmq</code>—you can stop guessing and start building reliable, dynamic encoding pipelines.</p>
+
+    <h2 id="sendcmd">Method 1: <code>sendcmd</code> – Scheduled Commands from a File</h2>
+
+    <p><code>sendcmd</code> reads a text file containing commands and applies them at specific timestamps. It's ideal for predictable, scripted changes—like a fade‑in that lasts two seconds, or a logo that moves from left to right over five seconds.</p>
+
+    <p>Create a command file (e.g., <code>commands.txt</code>) with this format:</p>
+
+    <pre><code># change overlay opacity between 1 and 3 seconds
+1.0   overlay   x 100   y 100   opacity 0.0
+2.0   overlay   x 100   y 100   opacity 0.5
+3.0   overlay   x 100   y 100   opacity 1.0
+
+# move the overlay from left to right between 5 and 10 seconds
+5.0   overlay   x 0     y 200
+10.0  overlay   x 500   y 200</code></pre>
+
+    <p>Then run:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># apply commands from a file using sendcmd
+ffmpeg -i background.mp4 -i logo.png \
+-filter_complex "[1:v]sendcmd=f=commands.txt[ov];[0:v][ov]overlay" \
+-c:a copy out.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Important:</strong> The <code>sendcmd</code> filter must be placed <em>before</em> the filter it's controlling in the filtergraph. In the example above, <code>sendcmd</code> is applied to the overlay stream (<code>[1:v]</code>) before it's passed to <code>overlay</code>.</p>
+
+    <h2 id="zmq">Method 2: <code>zmq</code> – Interactive Real‑Time Commands</h2>
+
+    <p>If you need to <strong>tweak parameters live</strong>—while encoding a stream, or during a recording session—<code>zmq</code> (ZeroMQ) is your friend. It sets up a socket that listens for commands you send from another terminal (or from a script).</p>
+
+    <p>First, enable <code>zmq</code> in your filtergraph:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># start FFmpeg with a zmq filter listening on port 5555
+ffmpeg -i in.mp4 -vf "zmq,volume=volume=1.0" -c:a copy out.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Then, in another terminal, send a command:</p>
+
+    <pre><code># send a command to change volume to 0.5
+echo "volume volume 0.5" | zmqsend</code></pre>
+
+    <p>The <code>zmq</code> filter passes the command to the <code>volume</code> filter, which adjusts the gain <strong>instantly</strong>—no restart, no re‑encode.</p>
+
+    <p><strong>Note:</strong> You need to build FFmpeg with <code>--enable-libzmq</code> to use the <code>zmq</code> filter. Most pre‑built binaries don't include it, so you may need to compile from source.</p>
+
+    <h2 id="supported-filters">Which Filters Support Runtime Commands?</h2>
+
+    <p>Not every filter does. Look for the <strong>'T'</strong> flag in the filter's documentation—it indicates the filter supports commands. Common filters that support runtime commands include:</p>
+
+    <ul>
+      <li><code>crop</code> – change <code>w</code>, <code>h</code>, <code>x</code>, <code>y</code> on the fly</li>
+      <li><code>overlay</code> – change <code>x</code>, <code>y</code>, <code>opacity</code></li>
+      <li><code>volume</code> – change gain/volume</li>
+      <li><code>scale</code> / <code>zscale</code> – change <code>width</code>, <code>height</code></li>
+      <li><code>drawtext</code> – change text, position, font size, etc.</li>
+      <li><code>smartblur</code> – change blur intensity</li>
+    </ul>
+
+    <p>For filters that <em>don't</em> support commands, you can sometimes work around it by using the <code>enable</code> option with a timeline expression—but that only gives you on/off control, not gradual change.</p>
+
+    <h2 id="expressions">Dynamic Expressions: <code>t</code>, <code>n</code>, and Per‑Frame Evaluation</h2>
+
+    <p>Some filters evaluate expressions <strong>per frame</strong>, which lets you animate parameters without sending explicit commands. For example, the <code>overlay</code> filter can evaluate <code>x</code> and <code>y</code> expressions dynamically.</p>
+
+    <p>This makes a logo bounce or slide:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># slide a logo from left to right over 10 seconds
+ffmpeg -i bg.mp4 -i logo.png \
+-filter_complex "[1:v]format=rgba,colorchannelmixer=aa=0.8[logo]; \
+                 [0:v][logo]overlay=x='100*t':y='200'" \
+-c:a copy out.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Here, <code>x='100*t'</code> moves the logo 100 pixels per second. You can also use <code>n</code> (frame number) for frame‑accurate animation, or combine expressions with <code>if()</code>, <code>between()</code>, and <code>sin()</code> for oscillating effects.</p>
+
+    <p><strong>Pro tip:</strong> not all filters evaluate expressions per frame. Some evaluate only once at configuration time. Check the documentation for your filter—if it says "This expression is evaluated only once during the filter configuration," you'll need <code>sendcmd</code> or <code>zmq</code> instead.</p>
+
+    <h2 id="practical-example">Practical Example: Fading a Watermark In and Out</h2>
+
+    <p>Let's put it all together. Suppose you want a watermark that:</p>
+
+    <ul>
+      <li>Appears at 2 seconds with 0% opacity</li>
+      <li>Fades to 100% opacity by 4 seconds</li>
+      <li>Stays at 100% until 8 seconds</li>
+      <li>Fades out to 0% by 10 seconds</li>
+    </ul>
+
+    <p>Using <code>sendcmd</code>, create <code>watermark.txt</code>:</p>
+
+    <pre><code>2.0   overlay   opacity 0.0
+3.0   overlay   opacity 0.5
+4.0   overlay   opacity 1.0
+8.0   overlay   opacity 1.0
+9.0   overlay   opacity 0.5
+10.0  overlay   opacity 0.0</code></pre>
+
+    <p>Then run:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code">ffmpeg -i video.mp4 -i watermark.png \
+-filter_complex "[1:v]sendcmd=f=watermark.txt,format=rgba,colorchannelmixer=aa=1[wm]; \
+                 [0:v][wm]overlay=x=W-w-10:y=10" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>That's it—no multiple encodes, no fragile shell scripts, no guesswork.</p>
+
+    <h2 id="ide">Test Dynamically in the FFmpegLab IDE</h2>
+
+    <p>The FFmpegLab editor lets you <strong>drag, drop, and preview</strong> dynamic effects before you commit to a full encode. You can adjust opacity sliders, move overlays, and see the result in real time—then export the exact <code>sendcmd</code> or <code>zmq</code> command you need.</p>
+
+    <p>Try it below. Load a video, add an overlay, set keyframes for opacity and position, and watch the preview update instantly. When you're happy, copy the generated FFmpeg command and run it locally—fully offline, nothing uploaded.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># dynamic overlay with keyframed opacity and position
+ffmpeg -i background.mp4 -i overlay.png \
+-filter_complex "[1:v]sendcmd=f=keyframes.txt,format=rgba,colorchannelmixer=aa=1[ov]; \
+                 [0:v][ov]overlay=x='W-w-10':y='10+50*sin(t*0.5)'" \
+-c:a copy dynamic.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="em-keyframes" style="display:flex; gap:4px; padding:8px 0;">
+          <span style="background:#FC6D26; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#FC6D26; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#FC6D26; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#ccc; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#ccc; width:12px; height:12px; border-radius:50%;"></span>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the difference between sendcmd and zmq in FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>sendcmd</code> reads a predefined text file and applies commands at fixed timestamps—perfect for offline, scripted animations. <code>zmq</code> opens a live socket that listens for commands over ZeroMQ, allowing you to adjust parameters interactively during an ongoing encode or stream.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Which FFmpeg filters support dynamic runtime commands?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Filters marked with a <strong>'T'</strong> (timeline + commands) in the official FFmpeg documentation support runtime commands. Common ones include <code>crop</code>, <code>overlay</code>, <code>volume</code>, <code>scale</code>, <code>drawtext</code>, and <code>smartblur</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I change overlay opacity dynamically without restarting FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Use <code>sendcmd</code> with an opacity command file or <code>zmq</code> to send <code>opacity</code> values live. Both methods update the overlay's alpha channel in real time.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does FFmpeg support per‑frame expression evaluation for animations?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Many filters, including <code>overlay</code>, evaluate expressions per frame using <code>t</code> (time in seconds) and <code>n</code> (frame number). This allows smooth sliding, bouncing, or scaling without external command files.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Dynamic runtime commands turn FFmpeg from a batch processor into a <strong>live, interactive editing tool</strong>. Whether you're fading watermarks, moving logos, adjusting audio on the fly, or creating complex motion graphics, <code>sendcmd</code> and <code>zmq</code> give you the control you need—without the trial and error.</p>
+
+    <p>Next time you're wrestling with a script that changes opacity or position over time, remember: you don't have to guess. Use runtime commands, test interactively, and let FFmpeg do the heavy lifting.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg Xfade Transitions Guide</a></li>
+        <li><a href="ffmpeg-filter-complex-effects.html">Advanced Filter Complex Effects</a></li>
+        <li><a href="offline-private-video-editor.html">Offline Private Video Editor</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
