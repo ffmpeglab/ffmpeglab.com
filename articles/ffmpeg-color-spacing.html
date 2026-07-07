@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Spaces, HDR, and Tone Mapping in FFmpeg – Complete Guide</title>
+  <meta name="description" content="Master HDR to SDR conversion in FFmpeg with zscale and tonemap filters. Fix washed-out colors, understand BT.709 vs BT.2020, and learn proper tone mapping for HDR10 and Dolby Vision." />
+  <meta name="keywords" content="ffmpeg HDR to SDR, ffmpeg tone mapping, ffmpeg zscale, ffmpeg colorspace, BT.709 BT.2020, HDR10 conversion, ffmpeg tonemap filter, ffmpeg color space conversion" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-color-spaces-hdr-tone-mapping.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-color-spaces-hdr-tone-mapping.html" />
+  <meta property="og:title" content="Color Spaces, HDR, and Tone Mapping in FFmpeg" />
+  <meta property="og:description" content="Convert HDR to SDR without washed-out colors. Step-by-step guide to zscale, tonemap, and proper color space conversion in FFmpeg." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Color Spaces, HDR, and Tone Mapping in FFmpeg",
+      "description": "Master HDR to SDR conversion in FFmpeg with zscale and tonemap filters. Fix washed-out colors, understand BT.709 vs BT.2020, and learn proper tone mapping for HDR10 and Dolby Vision.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-color-spaces-hdr-tone-mapping.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header>
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Color Spaces &amp; Tone Mapping</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Color Spaces, HDR, and Tone Mapping in FFmpeg</h1>
+      <p class="dek">Convert HDR video to SDR without washed-out colors. Master <code>zscale</code>, <code>tonemap</code>, and proper color space conversion for HDR10, HLG, and Dolby Vision.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Raw Parameters vs. Cohesive Guide</a></li>
+        <li><a href="#the-symptom">The Symptom: Washed-Out, Grey Images</a></li>
+        <li><a href="#why-tonemap">Why You Can't Just Re-encode HDR Video</a></li>
+        <li><a href="#check-input">Check Your Input with ffprobe</a></li>
+        <li><a href="#zscale-pipeline">The zscale + tonemap CPU Pipeline</a></li>
+        <li><a href="#tonemap-algorithms">Tonemapping Algorithms: Which One to Use</a></li>
+        <li><a href="#libplacebo">GPU Acceleration with libplacebo</a></li>
+        <li><a href="#hdr-metadata">Setting HDR Metadata Correctly</a></li>
+        <li><a href="#practical-example">Practical Example: HDR10 to SDR</a></li>
+        <li><a href="#ide">Test in the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Converting HDR video to SDR is one of the most common—and most misunderstood—tasks in FFmpeg. You've probably tried something like this:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># This will look terrible — washed out and grey
+ffmpeg -i hdr_video.mp4 -c:v libx264 -crf 18 output_sdr.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>The result? Washed-out colors, crushed shadows, blown highlights—a video that looks worse than a VHS tape.[reference:0] This guide will show you exactly why that happens and how to fix it.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>HDR uses BT.2020 primaries and PQ/HLG transfer</strong>—SDR uses BT.709 and gamma. You can't just re-encode; you must <em>convert</em>.</li>
+        <li><strong><code>zscale</code></strong> is the filter for color space conversion (primaries, matrix, transfer).</li>
+        <li><strong><code>tonemap</code></strong> compresses HDR brightness into SDR range—without it, you get washed-out greys.</li>
+        <li><strong>Choose the right tonemap algorithm:</strong> <code>hable</code> (best detail), <code>reinhard</code> (bright), <code>mobius</code> (balanced), <code>bt.2390</code> (ITU standard).</li>
+        <li><strong>Always set output metadata</strong> with <code>-color_trc</code>, <code>-color_primaries</code>, and <code>-colorspace</code>.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Raw Parameters vs. Cohesive Guide</h2>
+
+    <p>The FFmpeg documentation for <code>zscale</code> and <code>colorspace</code> filters lists raw parameters—<code>primaries</code>, <code>matrix</code>, <code>transfer</code>, <code>range</code>—but fails to provide a cohesive guide on how to properly tone-map HDR10 or Dolby Vision video down to SDR without ending up with a washed-out, grey image.[reference:1]</p>
+
+    <p>You'll find scattered forum posts with commands that "sort of work," but they rarely explain <em>why</em> they work or how to adapt them to your specific source. This guide bridges that gap.</p>
+
+    <h2 id="the-symptom">The Symptom: Washed-Out, Grey Images</h2>
+
+    <p>The main reason HDR videos look washed out on SDR screens is <strong>improper or missing tone mapping</strong> during conversion.[reference:2] HDR footage uses wider color gamuts such as BT.2020 and higher brightness levels, while SDR is based on Rec.709 with a more limited range.[reference:3]</p>
+
+    <p>Without tone mapping, this difference is not correctly compressed. Bright areas become overexposed, mid-tones lose depth, and the entire image appears flat and desaturated.[reference:4]</p>
+
+    <h2 id="why-tonemap">Why You Can't Just Re-encode HDR Video</h2>
+
+    <p>HDR video uses three things that SDR displays can't interpret correctly[reference:5]:</p>
+
+    <table>
+      <thead>
+        <tr><th>Property</th><th>HDR (typical)</th><th>SDR</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Transfer function</td><td>PQ (SMPTE ST 2084) or HLG</td><td>BT.709 gamma (~2.4)</td></tr>
+        <tr><td>Color primaries</td><td>BT.2020 (wide gamut)</td><td>BT.709 (standard gamut)</td></tr>
+        <tr><td>Bit depth</td><td>10-bit</td><td>8-bit</td></tr>
+        <tr><td>Peak brightness</td><td>1,000–10,000 nits</td><td>~100 nits</td></tr>
+      </tbody>
+    </table>
+
+    <p>Simply changing the container or codec doesn't convert these properties.[reference:6] You need a <strong>tonemapping step</strong> that mathematically remaps the wide brightness range into the SDR range while preserving as much visual detail as possible—plus a color space conversion from BT.2020 to BT.709.[reference:7]</p>
+
+    <h2 id="check-input">Check Your Input with ffprobe</h2>
+
+    <p>Before converting, verify that your source is actually HDR and identify its characteristics[reference:8]:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Check HDR metadata
+ffprobe -v quiet -show_streams -select_streams v:0 input_hdr.mp4 2>&1 | grep -E "color_|pix_fmt"</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>You should see something like[reference:9]:</p>
+
+    <pre><code>pix_fmt=yuv420p10le
+color_space=bt2020nc
+color_transfer=smpte2084
+color_primaries=bt2020</code></pre>
+
+    <ul>
+      <li><code>smpte2084</code> → HDR10/HDR10+ (PQ transfer)[reference:10]</li>
+      <li><code>arib-std-b67</code> → HLG[reference:11]</li>
+      <li><code>bt2020nc</code> → BT.2020 non-constant luminance[reference:12]</li>
+    </ul>
+
+    <h2 id="zscale-pipeline">The zscale + tonemap CPU Pipeline</h2>
+
+    <p>The most reliable CPU-based pipeline uses <code>zscale</code> for color space conversion and <code>tonemap</code> for brightness compression.[reference:13] Here's the quickest reliable command[reference:14]:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Full HDR to SDR conversion with zscale + tonemap
+ffmpeg -i input_hdr.mp4 \
+  -vf "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p" \
+  -c:v libx264 -crf 18 -preset slow -c:a copy output_sdr.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Let's break down each step[reference:15]:</p>
+
+    <ol>
+      <li><strong><code>zscale=t=linear:npl=100</code></strong> — Convert from PQ/HLG to linear light. <code>npl=100</code> sets the nominal peak luminance to 100 nits (SDR reference).[reference:16]</li>
+      <li><strong><code>format=gbrpf32le</code></strong> — Convert to floating-point RGB for accurate tone mapping.[reference:17]</li>
+      <li><strong><code>zscale=p=bt709</code></strong> — Convert color primaries from BT.2020 to BT.709.[reference:18]</li>
+      <li><strong><code>tonemap=hable:desat=0</code></strong> — Apply the Hable tone-mapping algorithm with no desaturation.[reference:19]</li>
+      <li><strong><code>zscale=t=bt709:m=bt709:r=tv</code></strong> — Convert transfer to BT.709 gamma, matrix to BT.709, and range to TV (limited).[reference:20]</li>
+      <li><strong><code>format=yuv420p</code></strong> — Convert back to 8-bit YUV for encoding.[reference:21]</li>
+    </ol>
+
+    <p><strong>Note:</strong> The <code>zscale</code> filter requires FFmpeg to be built with <code>--enable-libzimg</code>.[reference:22][reference:23] Most pre-built binaries don't include it, so you may need to compile from source or use a build that includes it.</p>
+
+    <h2 id="tonemap-algorithms">Tonemapping Algorithms: Which One to Use</h2>
+
+    <p>The <code>tonemap</code> filter supports several algorithms[reference:24]. Here's how to choose[reference:25][reference:26]:</p>
+
+    <table>
+      <thead>
+        <tr><th>Algorithm</th><th>Best for</th><th>Trade-offs</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>hable</code></td><td>Preserving both dark and bright details</td><td>Slightly darkens everything; best detail preservation[reference:27]</td></tr>
+        <tr><td><code>reinhard</code></td><td>Bright, punchy output</td><td>Less detail in highlights; "safe" default[reference:28]</td></tr>
+        <tr><td><code>mobius</code></td><td>Balance between accuracy and detail</td><td>User-adjustable threshold; default 0.3 is more accurate than reinhard[reference:29]</td></tr>
+        <tr><td><code>bt.2390</code></td><td>ITU standard (BT.2390)</td><td>Follows the official ITU recommendation for HDR to SDR</td></tr>
+        <tr><td><code>gamma</code></td><td>Simple gamma adjustment</td><td>Can cause color shifts; not recommended[reference:30]</td></tr>
+      </tbody>
+    </table>
+
+    <p>For most use cases, <strong><code>hable</code></strong> is the best choice—it preserves detail in both shadows and highlights better than <code>reinhard</code>.[reference:31]</p>
+
+    <h2 id="libplacebo">GPU Acceleration with libplacebo</h2>
+
+    <p>If you have a GPU and want faster conversion, the <code>libplacebo</code> filter provides hardware-accelerated tone mapping.[reference:32] It's significantly faster than the CPU-based <code>zscale+tonemap</code> pipeline, especially for 4K60 HDR video.[reference:33]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># GPU-accelerated HDR to SDR with libplacebo
+ffmpeg -i input_hdr.mp4 \
+  -vf "libplacebo=tonemapping=hable:colorspace=bt709:color_primaries=bt709:color_trc=bt709" \
+  -c:v libx264 -crf 18 -preset slow -c:a copy output_sdr.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Note:</strong> <code>libplacebo</code> requires FFmpeg to be built with Vulkan support. It's available in recent FFmpeg builds but may not be included in all distributions.</p>
+
+    <h2 id="hdr-metadata">Setting HDR Metadata Correctly</h2>
+
+    <p>When <em>creating</em> HDR output (rather than converting to SDR), you must set the correct metadata flags[reference:34]:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Create HDR10 output with proper metadata
+ffmpeg -i input.mp4 \
+  -vf "zscale=primaries=bt2020:matrix=bt2020_ncl:transfer=smpte2084" \
+  -color_trc smpte2084 -color_primaries bt2020 -colorspace bt2020nc \
+  -pix_fmt yuv420p10le -c:v libx265 -crf 18 output_hdr10.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Key metadata flags[reference:35]:</p>
+    <ul>
+      <li><code>-color_trc smpte2084</code> — Tags the transfer function as PQ (HDR10). Use <code>arib-std-b67</code> for HLG.[reference:36]</li>
+      <li><code>-color_primaries bt2020</code> — Tags the color primaries as Rec.2020.[reference:37]</li>
+      <li><code>-colorspace bt2020nc</code> — Tags the color space as Rec.2020 non-constant luminance.[reference:38]</li>
+      <li><code>-color_range 2</code> — Tags the channel range as full.[reference:39]</li>
+    </ul>
+
+    <h2 id="practical-example">Practical Example: HDR10 to SDR</h2>
+
+    <p>Let's put it all together with a real-world example. Suppose you have an HDR10 video (PQ, BT.2020) and you want to convert it to SDR (BT.709, gamma) for playback on standard displays.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Convert HDR10 (PQ/BT.2020) to SDR (BT.709) with hable tone mapping
+ffmpeg -i hdr10_video.mp4 \
+  -vf "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p" \
+  -c:v libx264 -crf 18 -preset slow -c:a copy -movflags +faststart sdr_output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>If your source is HLG instead of PQ, use <code>transfer=arib-std-b67</code> instead of <code>transfer=smpte2084</code> in the <code>zscale</code> chain.[reference:40]</p>
+
+    <h2 id="ide">Test in the FFmpegLab IDE</h2>
+
+    <p>The FFmpegLab editor lets you <strong>preview color space conversions</strong> before you commit to a full encode. Upload an HDR video, adjust tone mapping parameters, and see the result in real time—then export the exact command you need.</p>
+
+    <p>Try it below. Load an HDR video, select your target color space (BT.709 for SDR), choose a tone mapping algorithm, and watch the preview update instantly. When you're happy, copy the generated FFmpeg command and run it locally—fully offline, nothing uploaded.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Interactive HDR to SDR conversion with tone mapping preview
+ffmpeg -i hdr_input.mp4 \
+  -vf "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p" \
+  -c:v libx264 -crf 18 -preset slow -c:a copy tonemapped_output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="em-keyframes" style="display:flex; gap:4px; padding:8px 0;">
+          <span style="background:#FC6D26; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#FC6D26; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#FC6D26; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#ccc; width:12px; height:12px; border-radius:50%;"></span>
+          <span style="background:#ccc; width:12px; height:12px; border-radius:50%;"></span>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why does my HDR video look washed out after conversion?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The main reason is <strong>missing or improper tone mapping</strong>. HDR uses BT.2020 primaries and PQ/HLG transfer, while SDR uses BT.709 and gamma. Simply re-encoding without converting these properties results in washed-out, grey images.[reference:41] You need to use <code>zscale</code> for color space conversion and <code>tonemap</code> for brightness compression.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between zscale and colorspace filters?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>zscale</code> is more powerful and supports HDR conversion with proper handling of primaries, matrix, and transfer characteristics.[reference:42] <code>colorspace</code> is simpler but may not handle all HDR scenarios correctly.[reference:43] For HDR to SDR conversion, <code>zscale</code> is the recommended choice.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Which tone mapping algorithm should I use?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong><code>hable</code></strong> is generally the best choice—it preserves detail in both shadows and highlights better than <code>reinhard</code>.[reference:44] Use <code>mobius</code> if you want a balance between accuracy and detail preservation.[reference:45] <code>reinhard</code> is a safe default that produces bright, punchy output but may lose some highlight detail.[reference:46]</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I convert HLG (Hybrid Log-Gamma) HDR to SDR?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use <code>transfer=arib-std-b67</code> instead of <code>transfer=smpte2084</code> in the <code>zscale</code> chain.[reference:47] The rest of the pipeline (primaries conversion, tone mapping) remains the same. Check your input with <code>ffprobe</code>—if you see <code>color_transfer=arib-std-b67</code>, your source is HLG.[reference:48]</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does FFmpeg support Dolby Vision conversion?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">FFmpeg can read Dolby Vision metadata but full conversion support is limited. The <code>zscale+tonemap</code> pipeline works for the base layer, but Dolby Vision's dynamic metadata (which adjusts tone mapping per scene) is not fully supported in open-source FFmpeg.[reference:49] For best results with Dolby Vision, use professional tools or the <code>libplacebo</code> filter which has better HDR handling.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Converting HDR to SDR doesn't have to be a guessing game. With <code>zscale</code> for color space conversion and <code>tonemap</code> for brightness compression, you can produce SDR video that looks <em>good</em>—not washed out, not grey, not overly dark.</p>
+
+    <p>The key is understanding <em>what</em> you're converting (PQ or HLG? BT.2020 or BT.709?) and <em>how</em> to map it. Use <code>ffprobe</code> to check your input, choose the right tone mapping algorithm for your content, and always set the correct output metadata.</p>
+
+    <p>Next time you're faced with an HDR video that needs to play on an SDR screen, you'll know exactly what to do.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg Xfade Transitions Guide</a></li>
+        <li><a href="ffmpeg-filter-complex-effects.html">Advanced Filter Complex Effects</a></li>
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
