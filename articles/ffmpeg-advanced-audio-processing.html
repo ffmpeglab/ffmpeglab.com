@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Audio Processing in FFmpeg – Complete Guide</title>
+  <meta name="description" content="Master advanced audio processing in FFmpeg. Learn loudness normalization with loudnorm, noise reduction with afftdn, sidechain compression for ducking, and creative effects." />
+  <meta name="keywords" content="ffmpeg audio processing, ffmpeg loudnorm, ffmpeg afftdn, ffmpeg sidechaincompress, ffmpeg audio ducking, ffmpeg noise reduction, ffmpeg aecho, ffmpeg silenceremove" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-advanced-audio-processing.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-advanced-audio-processing.html" />
+  <meta property="og:title" content="Advanced Audio Processing in FFmpeg" />
+  <meta property="og:description" content="Master advanced audio processing in FFmpeg. Learn loudness normalization, noise reduction, sidechain compression for ducking, and creative audio effects." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Advanced Audio Processing in FFmpeg",
+      "description": "Master advanced audio processing in FFmpeg. Learn loudness normalization with loudnorm, noise reduction with afftdn, sidechain compression for ducking, and creative audio effects.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-advanced-audio-processing.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Advanced Audio Processing</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Advanced Audio Processing</h1>
+      <p class="dek">Master loudness normalization, noise reduction, sidechain compression, and creative audio effects with FFmpeg's professional audio filter suite.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Audio Is Treated as an Afterthought</a></li>
+        <li><a href="#the-symptom">The Symptom: "Why Does My Audio Sound Terrible?"</a></li>
+        <li><a href="#core-concepts">Core Concepts: The Audio Signal Chain</a></li>
+        <li><a href="#loudnorm">Loudness Normalization with <code>loudnorm</code></a></li>
+        <li><a href="#afftdn">Noise Reduction with <code>afftdn</code></a></li>
+        <li><a href="#sidechaincompress">Sidechain Compression &amp; Audio Ducking</a></li>
+        <li><a href="#silenceremove">Silence Removal with <code>silenceremove</code></a></li>
+        <li><a href="#compand">Dynamic Range Compression with <code>compand</code></a></li>
+        <li><a href="#creative">Creative Effects: Echo, Chorus, and More</a></li>
+        <li><a href="#practical-podcast">Practical Example: Podcast Mastering Chain</a></li>
+        <li><a href="#debugging">Debugging Common Audio Issues</a></li>
+        <li><a href="#ide">Visualize Audio with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Most FFmpeg tutorials treat audio as an afterthought. They show you how to extract it, copy it, or maybe change the volume. But professional audio processing—the kind that makes podcasts sound broadcast‑ready, music mixes punchy, and voiceovers crystal clear—is almost completely undocumented.</p>
+
+    <p>Yet FFmpeg has a <strong>powerful suite of audio filters</strong> that rivals dedicated DAW software. From EBU R128 loudness normalization to FFT‑based noise reduction, sidechain compression, and creative effects, FFmpeg can handle the entire audio signal chain.</p>
+
+    <p>This guide changes that. You'll learn the professional audio filters that most tutorials ignore, how to chain them together, and how to get broadcast‑quality results from the command line.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>loudnorm</code></strong> implements EBU R128 loudness normalization—the broadcast standard for consistent perceived volume.</li>
+        <li><strong><code>afftdn</code></strong> uses FFT‑based frequency‑domain noise reduction to remove steady background noise.</li>
+        <li><strong><code>sidechaincompress</code></strong> enables audio ducking—automatically lowering music when speech is detected.</li>
+        <li><strong><code>silenceremove</code></strong> cuts out silent sections, saving space and improving transcription accuracy.</li>
+        <li><strong><code>compand</code></strong> is a dynamic range compressor that evens out volume fluctuations.</li>
+        <li><strong>Chain filters together</strong> for a complete mastering pipeline: noise reduction → compression → EQ → normalization.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Audio Is Treated as an Afterthought</h2>
+
+    <p>The FFmpeg documentation for audio filters is extensive but scattered. The <code>loudnorm</code> filter's documentation runs for pages, but most users don't know it exists. The <code>afftdn</code> filter was added in 2018 but still lacks practical examples. The <code>sidechaincompress</code> filter is almost completely misunderstood—most users think it does ducking out of the box, but it requires careful filtergraph construction.</p>
+
+    <p>As one user put it: <em>"FFmpeg's sidechaincompress filter is often misunderstood—it doesn't directly 'duck' but compresses one audio based on another's signal"</em>[reference:0].</p>
+
+    <p>The gap is <strong>practical knowledge</strong>—knowing which filters exist, how they work together, and what parameters to tune for different content types. This guide fills that gap.</p>
+
+    <h2 id="the-symptom">The Symptom: "Why Does My Audio Sound Terrible?"</h2>
+
+    <p>You've recorded a podcast or voiceover. The levels are all over the place—some parts are too quiet, others clip. There's a constant background hum. The music you added drowns out the speech. And the whole thing sounds amateurish.</p>
+
+    <p>You need professional audio processing. FFmpeg can do it—but you need to know which filters to use and in what order.</p>
+
+    <h2 id="core-concepts">Core Concepts: The Audio Signal Chain</h2>
+
+    <p>Professional audio processing follows a signal chain. Here's the typical order:</p>
+
+    <ol>
+      <li><strong>Noise reduction</strong> — Remove background noise (<code>afftdn</code>, <code>anlmdn</code>)</li>
+      <li><strong>EQ / filtering</strong> — Cut unwanted frequencies (<code>highpass</code>, <code>lowpass</code>, <code>aequalizer</code>)</li>
+      <li><strong>Compression</strong> — Even out dynamics (<code>compand</code>, <code>acompressor</code>)</li>
+      <li><strong>Effects</strong> — Creative processing (<code>aecho</code>, <code>aphaser</code>, <code>chorus</code>)</li>
+      <li><strong>Loudness normalization</strong> — Set final perceived volume (<code>loudnorm</code>)</li>
+      <li><strong>Limiting</strong> — Prevent clipping (<code>alimiter</code>)</li>
+    </ol>
+
+    <p>Not every project needs all steps. A podcast might need noise reduction, compression, and loudness normalization. A music track might need EQ, compression, and creative effects. The key is knowing which tools to use and when.</p>
+
+    <h2 id="loudnorm">Loudness Normalization with <code>loudnorm</code></h2>
+
+    <p>The <code>loudnorm</code> filter implements the <strong>EBU R128</strong> loudness normalization standard[reference:1]. This is the broadcast standard used by Netflix, YouTube, and Spotify to ensure consistent perceived volume across different content.</p>
+
+    <p><strong>Why use it?</strong> Peak normalization (adjusting the loudest sample) doesn't account for perceived loudness. A quiet whisper and a loud explosion might have the same peak level. EBU R128 measures <strong>integrated loudness</strong> (LUFS), which correlates with human perception.</p>
+
+    <p><strong>Basic usage:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Basic loudness normalization (single pass)
+ffmpeg -i input.wav -af "loudnorm" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>The Two‑Pass Method (Recommended):</strong> For best results, run <code>loudnorm</code> twice—first to measure, second to apply[reference:2].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Two-pass loudness normalization
+# Pass 1: Measure
+ffmpeg -i input.wav -af "loudnorm=I=-16:LRA=11:TP=-1.5:print_format=json" -f null -
+
+# Pass 2: Apply (using measured values)
+ffmpeg -i input.wav -af "loudnorm=I=-16:LRA=11:TP=-1.5:measured_I=-23.5:measured_LRA=7.0:measured_TP=-2.1:measured_thresh=-31.2:offset=0.8" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Key parameters:</strong></p>
+    <ul>
+      <li><strong><code>I</code></strong> — Target integrated loudness in LUFS (default: -24). For podcasts, -16 is common. For music, -14 to -16.</li>
+      <li><strong><code>LRA</code></strong> — Target loudness range (default: 7). Lower values mean more consistent loudness.</li>
+      <li><strong><code>TP</code></strong> — True peak limit in dB (default: -2). Prevents clipping.</li>
+    </ul>
+
+    <p>As the FFmpeg wiki notes: <em>"It is recommended to run the normalization with two passes, extracting the measured values from the first run, then using the values in a second run with linear normalization enabled"</em>[reference:3].</p>
+
+    <h2 id="afftdn">Noise Reduction with <code>afftdn</code></h2>
+
+    <p>The <code>afftdn</code> filter uses <strong>FFT‑based frequency‑domain noise reduction</strong> to remove steady background noise like fan hum, air conditioning, or microphone hiss[reference:4].</p>
+
+    <p><strong>Basic usage:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Basic noise reduction (10dB reduction, -40dB noise floor)
+ffmpeg -i input.wav -af "afftdn=nr=10:nf=-40" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As documented in the FFmpeg source: <em>"Reduce white noise by 10dB, and use previously measured noise floor of -40dB"</em>[reference:5].</p>
+
+    <p><strong>With automatic noise floor tracking:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Noise reduction with automatic floor tracking
+ffmpeg -i input.wav -af "afftdn=nr=10:nf=-80:tn=1" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><em>"Enable automatic tracking of noise floor so noise floor will gradually change during processing"</em>[reference:6]. This is useful for content where the noise floor varies over time.</p>
+
+    <p><strong>Using commands to sample a noise profile:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Sample noise profile from first 0.4 seconds, then apply reduction
+ffmpeg -i input.wav -af "asendcmd=0.0 afftdn sn start,asendcmd=0.4 afftdn sn stop,afftdn=nr=20:nf=-40" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This samples the noise profile from the first 0.4 seconds of audio (assuming that's silence or noise-only) and applies 20dB of noise reduction[reference:7].</p>
+
+    <p><strong>Key parameters:</strong></p>
+    <ul>
+      <li><strong><code>nr</code></strong> — Noise reduction in dB (0.01 to 97, default 12)[reference:8]</li>
+      <li><strong><code>nf</code></strong> — Noise floor threshold in dB (lower = more aggressive)[reference:9]</li>
+      <li><strong><code>tn</code></strong> — Enable noise floor tracking (0=off, 1=on)</li>
+    </ul>
+
+    <p><strong>Practical tip:</strong> As one user found, combining <code>highpass</code> with <code>afftdn</code> yields better results: <em>"highpass=f=80, afftdn=nf=-25"</em>[reference:10]. The high‑pass filter removes low‑frequency rumble before noise reduction, preventing the noise reducer from wasting energy on frequencies that don't matter.</p>
+
+    <h2 id="sidechaincompress">Sidechain Compression &amp; Audio Ducking</h2>
+
+    <p>Sidechain compression is a technique where one audio signal controls the compression of another[reference:11]. The most common use case is <strong>audio ducking</strong>—automatically lowering background music when speech is detected[reference:12].</p>
+
+    <p><strong>The misunderstanding:</strong> The <code>sidechaincompress</code> filter doesn't automatically duck. It compresses the first input based on the level of the second input. To achieve ducking, you need to combine it with other filters[reference:13].</p>
+
+    <p><strong>Basic sidechain compression:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Basic sidechain compression (music ducked by voice)
+ffmpeg -i music.mp3 -i voice.wav -filter_complex "[1:a]asplit=2[sc][mix];[0:a][sc]sidechaincompress=threshold=0.003:ratio=20[compressed];[compressed][mix]amix=inputs=2" output.mp3</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This command splits the voice into two paths: one for the sidechain input, one for mixing. The music is compressed based on the voice level, then mixed with the original voice.</p>
+
+    <p><strong>For more precise ducking, use the <code>compand</code> filter to create a control track:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Ducking with compand control track
+ffmpeg -i music.mp3 -i speech.wav -filter_complex \
+"[1:a]compand=attacks=0:decays=0.5:points=-80/-80|-25/-15|0/-12|20/-8[ctrl]; \
+ [0:a]volume=enable='between(t,0,${duration})':volume='if(gt(ldb(r),-25),0.4,1)'[music]; \
+ [music][ctrl]amerge=inputs=2" -ac 2 output.mp3</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This creates a control track from the speech using <code>compand</code>, then uses the <code>volume</code> filter with a conditional expression to duck the music when the control signal exceeds -25 dB[reference:14].</p>
+
+    <h2 id="silenceremove">Silence Removal with <code>silenceremove</code></h2>
+
+    <p>The <code>silenceremove</code> filter removes silent sections from audio—useful for podcasts, interviews, and transcription preprocessing[reference:15].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Remove silence (threshold -50dB, min duration 0.1s)
+ffmpeg -i input.wav -af "silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Key parameters:</strong></p>
+    <ul>
+      <li><strong><code>stop_periods=-1</code></strong> — Remove all silent periods[reference:16]</li>
+      <li><strong><code>stop_duration</code></strong> — Minimum silence duration in seconds[reference:17]</li>
+      <li><strong><code>stop_threshold</code></strong> — Volume threshold below which audio is considered silence[reference:18]</li>
+    </ul>
+
+    <p>For best results with speech, use <code>detection=peak</code> which is more accurate for voice detection[reference:19].</p>
+
+    <h2 id="compand">Dynamic Range Compression with <code>compand</code></h2>
+
+    <p>The <code>compand</code> filter is a powerful dynamic range compressor that evens out volume fluctuations[reference:20]. It's more flexible than <code>acompressor</code> and allows custom transfer curves.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Soft compression for voice (smooth, natural)
+ffmpeg -i input.wav -af "compand=attacks=0.01:decays=1.0:points=-80/-80|-30/-20|0/0" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Key parameters:</strong></p>
+    <ul>
+      <li><strong><code>points</code></strong> — Transfer curve points: input/output pairs in dB[reference:21]</li>
+      <li><strong><code>attacks</code></strong> — Attack time in seconds</li>
+      <li><strong><code>decays</code></strong> — Decay time in seconds</li>
+    </ul>
+
+    <p>The points define a curve: below -80 dB, output is -80 dB (silence). At -30 dB input, output is -20 dB (gain reduction). At 0 dB input, output is 0 dB (no change). This creates gentle compression that evens out voice levels.</p>
+
+    <h2 id="creative">Creative Effects: Echo, Chorus, and More</h2>
+
+    <p>FFmpeg includes a range of creative audio effects for music production and sound design.</p>
+
+    <h3>Echo with <code>aecho</code></h3>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Echo effect (delay: 60ms, decay: 0.4)
+ffmpeg -i input.wav -af "aecho=0.8:0.88:60:0.4" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As noted in the FFmpeg docs, a very short delay (< 60ms) sounds like a robot or metallic effect[reference:22]. Longer delays create a clear echo.</p>
+
+    <h3>Chorus with <code>aphaser</code> or <code>chorus</code></h3>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Chorus/phaser effect
+ffmpeg -i input.wav -af "aphaser=type=rectangular" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h3>Equalization with <code>aequalizer</code></h3>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Parametric EQ: boost 2kHz for voice clarity
+ffmpeg -i input.wav -af "aequalizer=2k:width=200:gain=4" output.wav</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="practical-podcast">Practical Example: Podcast Mastering Chain</h2>
+
+    <p>Let's put it all together with a complete podcast mastering chain:</p>
+
+    <ol>
+      <li>Remove low‑frequency rumble (<code>highpass</code>)</li>
+      <li>Reduce background noise (<code>afftdn</code>)</li>
+      <li>Even out dynamics (<code>compand</code>)</li>
+      <li>Normalize loudness (<code>loudnorm</code>)</li>
+      <li>Boost volume (<code>volume</code>)</li>
+    </ol>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Complete podcast mastering chain
+ffmpeg -i raw_podcast.wav \
+-af "highpass=f=80,afftdn=nr=10:nf=-40,compand=attacks=0.01:decays=1.0:points=-80/-80|-30/-20|0/0,loudnorm=I=-16:LRA=11:TP=-1.5,volume=1.5" \
+-c:a libmp3lame -b:a 192k mastered_podcast.mp3</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This single command transforms raw audio into broadcast‑ready podcast audio. As one user noted, this approach is <em>"fast, compatible, and effective"</em> for preprocessing audio before transcription[reference:23].</p>
+
+    <h2 id="debugging">Debugging Common Audio Issues</h2>
+
+    <p>Here are the most common audio processing issues and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Noise reduction sounds "watery" or metallic</strong></td>
+          <td><code>nr</code> or <code>nf</code> too aggressive</td>
+          <td>Reduce <code>nr</code> (try 5-10) or raise <code>nf</code> (try -30 instead of -40)[reference:24]</td>
+        </tr>
+        <tr>
+          <td><strong>Loudness normalization doesn't change volume</strong></td>
+          <td>Target loudness already matches input</td>
+          <td>Check measured values with first pass; adjust <code>I</code> target</td>
+        </tr>
+        <tr>
+          <td><strong>Ducking doesn't work</strong></td>
+          <td><code>sidechaincompress</code> misconfigured</td>
+          <td>Use <code>compand</code> to create a control track[reference:25]</td>
+        </tr>
+        <tr>
+          <td><strong>Silence removal cuts too much</strong></td>
+          <td>Threshold too high</td>
+          <td>Lower <code>stop_threshold</code> (e.g., -60dB instead of -50dB)</td>
+        </tr>
+        <tr>
+          <td><strong>Compression sounds "pumping"</strong></td>
+          <td>Attack or decay too fast</td>
+          <td>Increase <code>attacks</code> or <code>decays</code> values[reference:26]</td>
+        </tr>
+        <tr>
+          <td><strong>Audio is distorted after processing</strong></td>
+          <td>Volume boost causes clipping</td>
+          <td>Add <code>alimiter</code> at the end of the chain</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ide">Visualize Audio with the FFmpegLab IDE</h2>
+
+    <p>Advanced audio processing is <strong>much easier to debug</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>View waveforms</strong> before and after processing—see exactly what each filter does</li>
+      <li><strong>Adjust parameters with sliders</strong> for <code>loudnorm</code>, <code>afftdn</code>, <code>compand</code>, and more</li>
+      <li><strong>Visualize frequency content</strong> to see what noise reduction is removing</li>
+      <li><strong>Monitor loudness in real time</strong> with LUFS metering</li>
+      <li><strong>Compare different filter chains</strong> side by side</li>
+    </ul>
+
+    <p>Here's how advanced audio processing looks in the FFmpegLab IDE.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🎵 Input: podcast.wav (44.1kHz, mono)</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📊 Chain: highpass → afftdn → compand → loudnorm</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#34d399;">✅ LUFS: -16.2 (target: -16.0)</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280;">
+            <div style="background:#2d2d3d; height:40px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563; position:relative;">
+              <span style="position:relative; z-index:1;">🎵 Before</span>
+              <div style="position:absolute; bottom:0; left:0; right:0; height:60%; background:#34d399; opacity:0.3; border-radius:0 0 4px 4px;"></div>
+            </div>
+            <span style="color:#f87171;">● Noise floor: -35 dB</span>
+          </div>
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280; border:2px solid #34d399;">
+            <div style="background:#2d2d3d; height:40px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563; position:relative;">
+              <span style="position:relative; z-index:1;">🎵 After</span>
+              <div style="position:absolute; bottom:0; left:0; right:0; height:80%; background:#34d399; opacity:0.5; border-radius:0 0 4px 4px;"></div>
+            </div>
+            <span style="color:#34d399;">● Noise floor: -58 dB</span>
+          </div>
+        </div>
+        <div style="background:#1e1e2e; border-radius:6px; padding:8px; margin-bottom:12px; font-family:monospace; font-size:0.75rem; color:#a1a1aa;">
+          <div style="color:#34d399;">[info]</div>
+          <div>  afftdn: reduced noise by 12.3 dB</div>
+          <div>  compand: dynamic range reduced from 28dB to 14dB</div>
+          <div>  loudnorm: integrated loudness -16.2 LUFS (target -16.0)</div>
+        </div>
+        <pre class="em-code"># Visual audio processing chain
+# Adjust parameters with sliders → hear and see results in real time</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div style="display:flex; gap:12px; padding:8px 0; font-size:0.8rem; color:#6b7280; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">🎵 <span style="color:#fff;">LUFS: -16.2</span></span>
+          <span style="display:flex; align-items:center; gap:4px;">🔇 <span style="color:#fff;">Noise reduction: 12.3 dB</span></span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Mastering complete</span>
+        </div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what's happening—waveforms before and after, noise floor measurements, and loudness metrics. You can adjust parameters with sliders and see the results in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between loudnorm and volume normalization?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>volume</code> normalization adjusts based on peak or RMS levels—it doesn't account for perceived loudness. <code>loudnorm</code> implements EBU R128, which measures <strong>perceived</strong> loudness (LUFS) and is the broadcast standard[reference:27]. For professional results, always use <code>loudnorm</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What noise reduction filter should I use?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>afftdn</code> (FFT‑based) is best for steady background noise like fan hum or hiss[reference:28]. <code>anlmdn</code> (non‑local means) is better for preserving music and complex signals[reference:29]. For most voice content, <code>afftdn</code> with <code>highpass</code> is the best combination[reference:30].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I duck audio with FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use the <code>sidechaincompress</code> filter in a filtergraph with two inputs, or use <code>compand</code> to create a control track[reference:31]. The key is that <code>sidechaincompress</code> doesn't automatically duck—you need to construct the right filtergraph[reference:32].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why is my audio distorted after loudnorm?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The <code>TP</code> (true peak) parameter might be too high. Try <code>TP=-2</code> or <code>-3</code>. Also ensure you're using the two‑pass method—single‑pass <code>loudnorm</code> can occasionally cause clipping[reference:33].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I process audio without re-encoding video?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Use <code>-c:v copy</code> to pass through the video stream unchanged, and apply audio filters with <code>-af</code>. Example: <code>ffmpeg -i input.mp4 -c:v copy -af "loudnorm" output.mp4</code>.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Advanced audio processing is one of FFmpeg's most powerful—and most underutilized—features. With filters like <code>loudnorm</code> for broadcast‑standard loudness, <code>afftdn</code> for noise reduction, <code>sidechaincompress</code> for ducking, and <code>compand</code> for dynamic control, FFmpeg can handle the entire professional audio signal chain.</p>
+
+    <p>The key is understanding which filters to use and in what order. Start with noise reduction and EQ, then compression, then loudness normalization. Chain them together for a complete mastering pipeline.</p>
+
+    <p>With the FFmpegLab IDE's visual feedback, you can experiment, debug, and perfect your audio processing without the guesswork. Adjust parameters with sliders, see waveforms update in real time, and hear the results instantly.</p>
+
+    <p>Next time you're facing noisy recordings or inconsistent levels, reach for FFmpeg's advanced audio filters. Your listeners will thank you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-sidechain-compression-audio-ducking.html">Sidechain Compression &amp; Audio Ducking</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
