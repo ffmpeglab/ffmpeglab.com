@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ffmpeglab.com/</loc>
-    <lastmod>2026-07-07</lastmod>
+    <lastmod>2026-07-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -146,13 +146,13 @@
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-sidechain-compression.html</loc>
-    <lastmod>2026-06-27</lastmod>
+    <lastmod>2026-07-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-metadata.html</loc>
-    <lastmod>2026-06-28</lastmod>
+    <lastmod>2026-07-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -176,7 +176,7 @@
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-lens-correction.html</loc>
-    <lastmod>2026-06-29</lastmod>
+    <lastmod>2026-07-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -188,13 +188,25 @@
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-color-spacing.html</loc>
-    <lastmod>2026-07-07</lastmod>
+    <lastmod>2026-07-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-advanced-audio-processing.html</loc>
     <lastmod>2026-07-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ffmpeglab.com/articles/ffmpeg-optical-flow-motion-interpolation.html</loc>
+    <lastmod>2026-07-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ffmpeglab.com/articles/ffmpeg-scene-detection-automated-editing.html</loc>
+    <lastmod>2026-07-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
