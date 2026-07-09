@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scene Detection & Automated Editing in FFmpeg – Complete Guide</title>
+  <meta name="description" content="Master scene detection in FFmpeg with scdet, select, and blackdetect filters. Automatically split videos, extract thumbnails, detect commercials, and build highlight reels." />
+  <meta name="keywords" content="ffmpeg scene detection, ffmpeg scdet, ffmpeg select scene, ffmpeg blackdetect, ffmpeg automated editing, ffmpeg split video by scene, ffmpeg thumbnail extraction" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-scene-detection-automated-editing.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-scene-detection-automated-editing.html" />
+  <meta property="og:title" content="Scene Detection & Automated Editing in FFmpeg" />
+  <meta property="og:description" content="Master scene detection in FFmpeg with scdet, select, and blackdetect filters. Automatically split videos, extract thumbnails, detect commercials, and build highlight reels." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Scene Detection & Automated Editing in FFmpeg",
+      "description": "Master scene detection in FFmpeg with scdet, select, and blackdetect filters. Automatically split videos, extract thumbnails, detect commercials, and build highlight reels.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-scene-detection-automated-editing.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Scene Detection</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Scene Detection &amp; Automated Editing</h1>
+      <p class="dek">Automatically detect scene changes, split videos, extract thumbnails, and build highlight reels with <code>scdet</code>, <code>select</code>, and <code>blackdetect</code>.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: A Hidden Superpower</a></li>
+        <li><a href="#the-symptom">The Symptom: "I Spent Hours Finding the Good Parts"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Is Scene Detection?</a></li>
+        <li><a href="#method-select">Method 1: The <code>select</code> Filter with <code>scene</code></a></li>
+        <li><a href="#method-scdet">Method 2: The <code>scdet</code> Filter</a></li>
+        <li><a href="#method-blackdetect">Method 3: The <code>blackdetect</code> Filter</a></li>
+        <li><a href="#practical-split">Practical Example 1: Split Video by Scene</a></li>
+        <li><a href="#practical-thumbnails">Practical Example 2: Extract Thumbnails</a></li>
+        <li><a href="#practical-storyboard">Practical Example 3: Create a Storyboard</a></li>
+        <li><a href="#practical-commercials">Practical Example 4: Detect Commercials</a></li>
+        <li><a href="#practical-highlights">Practical Example 5: Build a Highlight Reel</a></li>
+        <li><a href="#debugging">Debugging Common Scene Detection Issues</a></li>
+        <li><a href="#ide">Visualize Scene Changes with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Scene detection is one of FFmpeg's most powerful—and most overlooked—features. It can automatically find every cut in a video, split it into individual scenes, extract representative thumbnails, and even build highlight reels. Yet most users don't know these filters exist, and those who do struggle to find working examples.</p>
+
+    <p>As one frustrated user wrote on the FFmpeg mailing list back in 2011: <em>"I have been looking for >1 year on the www, from top to bottom and could not find anything"</em>[reference:0]. A decade later, the situation has improved—but only slightly.</p>
+
+    <p>This guide changes that. You'll learn the three main approaches to scene detection, how to tune the parameters for different content types, and how to build automated editing pipelines that save hours of manual work.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Three scene detection methods</strong>: <code>select</code> (simple), <code>scdet</code> (metadata‑based), and <code>blackdetect</code> (black frames).</li>
+        <li><strong>Threshold tuning</strong> is the key—lower values detect more cuts, higher values detect fewer.</li>
+        <li><strong><code>select='gt(scene, X)'</code></strong> is the simplest way to detect scene changes.</li>
+        <li><strong><code>scdet</code></strong> sets frame metadata (<code>lavfi.scd.score</code>, <code>lavfi.scd.time</code>) that other filters can use.</li>
+        <li><strong><code>blackdetect</code></strong> detects black frames—perfect for finding commercials or fades.</li>
+        <li><strong>Automated editing</strong> workflows can split videos, extract thumbnails, and build highlight reels with a single command.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: A Hidden Superpower</h2>
+
+    <p>The FFmpeg documentation for scene detection is scattered across three different filter pages. The <code>select</code> filter has a <code>scene</code> parameter buried in its expression documentation. The <code>scdet</code> filter was added in 2019 but is still poorly documented[reference:1]. The <code>blackdetect</code> filter is mentioned in passing.</p>
+
+    <p>Worse, the examples online are often incomplete or contradictory. Some users recommend <code>select='gt(scene,0.4)'</code>, others say <code>0.3</code> or <code>0.5</code>. Few explain <em>why</em> these values work or <em>how</em> to tune them for different content.</p>
+
+    <p>This guide bridges that gap with clear explanations, working examples, and practical workflows.</p>
+
+    <h2 id="the-symptom">The Symptom: "I Spent Hours Finding the Good Parts"</h2>
+
+    <p>You've got hours of footage. You need to find the best moments, split the video into scenes, or extract thumbnails for a storyboard. Manually scrubbing through the timeline is tedious and error‑prone.</p>
+
+    <p>What if FFmpeg could do it for you? It can.</p>
+
+    <h2 id="core-concepts">Core Concepts: What Is Scene Detection?</h2>
+
+    <p>Scene detection (also called shot boundary detection) identifies the points in a video where the content changes significantly. These are typically:</p>
+
+    <ul>
+      <li><strong>Hard cuts</strong> — an abrupt transition from one shot to another</li>
+      <li><strong>Fades</strong> — a gradual transition to/from black or white</li>
+      <li><strong>Dissolves</strong> — a gradual transition where one shot blends into another</li>
+    </ul>
+
+    <p>FFmpeg provides three filters for detecting these boundaries:</p>
+
+    <table>
+      <thead>
+        <tr><th>Filter</th><th>Method</th><th>Best for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>select</code> with <code>scene</code></td><td>Pixel‑difference analysis</td><td>Quick scene detection, thumbnail extraction</td></tr>
+        <tr><td><code>scdet</code></td><td>MAFD (Mean Absolute Frame Difference)</td><td>Detailed scene detection with metadata</td></tr>
+        <tr><td><code>blackdetect</code></td><td>Black frame detection</td><td>Fades, commercials, title cards</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="method-select">Method 1: The <code>select</code> Filter with <code>scene</code></h2>
+
+    <p>The <code>select</code> filter is the simplest way to detect scene changes. The <code>scene</code> variable returns a value between 0 and 1 indicating the probability of a scene change[reference:2].</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>select='gt(scene, THRESHOLD)'</code></pre>
+
+    <ul>
+      <li><strong><code>THRESHOLD</code></strong> — A value between 0 and 1. <strong>Lower values</strong> detect more cuts (including subtle ones); <strong>higher values</strong> detect fewer[reference:3].</li>
+      <li>Sane values are typically in the <strong>0.3 to 0.5</strong> range[reference:4].</li>
+    </ul>
+
+    <p>To detect scene changes and print the frame numbers:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Detect scene changes and print frame numbers (threshold 0.4)
+ffmpeg -i input.mp4 -vf "select='gt(scene,0.4)',metadata=print:file=-" -an -f null - 2>&1 | grep scene</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As the FFmpeg mailing list confirms: <em>"Check the select filter and the scene parameter"</em>[reference:5]. The <code>select</code> filter is the most widely used method for scene detection[reference:6].</p>
+
+    <h2 id="method-scdet">Method 2: The <code>scdet</code> Filter</h2>
+
+    <p>The <code>scdet</code> (scene detection) filter was added in 2019[reference:7]. It's more sophisticated than the <code>select</code> filter approach because it sets <strong>frame metadata</strong> that other filters can use[reference:8].</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>scdet=threshold=VALUE[:sc_pass=FLAG]</code></pre>
+
+    <ul>
+      <li><strong><code>threshold</code> (or <code>t</code>)</strong> — Scene change threshold as a percentage of maximum change. Good values are in the <strong><code>[8.0, 14.0]</code></strong> range[reference:9].</li>
+      <li><strong><code>sc_pass</code> (or <code>s</code>)</strong> — If set to <code>1</code>, only scene change frames are passed to the next filter[reference:10].</li>
+    </ul>
+
+    <p>The filter sets three metadata keys on every frame[reference:11]:</p>
+    <ul>
+      <li><strong><code>lavfi.scd.mafd</code></strong> — Mean Absolute Frame Difference</li>
+      <li><strong><code>lavfi.scd.score</code></strong> — Scene change score</li>
+      <li><strong><code>lavfi.scd.time</code></strong> — Timestamp of the frame</li>
+    </ul>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Detect scene changes with scdet (threshold 10%)
+ffmpeg -i input.mp4 -vf "scdet=t=10" -an -f null - 2>&1 | grep "lavfi.scd"</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Pass‑through mode:</strong> When <code>sc_pass=1</code>, only scene change frames are passed through[reference:12]:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Pass only scene change frames (for thumbnail extraction)
+ffmpeg -i input.mp4 -vf "scdet=s=1,t=10" -vsync vfr thumb_%03d.jpg</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Note:</strong> As one developer noted, <em>"scdet filter doesn't choose a mode. The default has to be current 'Legacy' for backward compatibility"</em>[reference:13]. The filter forwards all frames but sets metadata on each one[reference:14].</p>
+
+    <h2 id="method-blackdetect">Method 3: The <code>blackdetect</code> Filter</h2>
+
+    <p>The <code>blackdetect</code> filter detects frames that are (almost) black[reference:15]. This is useful for finding fades, commercial breaks, title cards, and scene transitions that use black frames[reference:16].</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>blackdetect=d=DURATION[:pix_th=PIXEL_THRESHOLD]</code></pre>
+
+    <ul>
+      <li><strong><code>d</code> (duration)</strong> — Minimum duration of detected black in seconds[reference:17]</li>
+      <li><strong><code>pix_th</code> (pixel threshold)</strong> — Pixel luminance threshold (default 0.10)[reference:18]</li>
+    </ul>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Detect black frames (0.05 seconds minimum, 0.10 pixel threshold)
+ffmpeg -i input.mp4 -vf "blackdetect=d=0.05:pix_th=0.10" -an -f null - 2>&1 | grep blackdetect</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As noted in a real‑world example: <em>"On a 64 core system it takes around 31 seconds to process an hour‑long CNN broadcast"</em>[reference:19]. The <code>blackdetect</code> filter is efficient even on long videos.</p>
+
+    <p>For structured output, use <code>ffprobe</code> instead of parsing the raw log[reference:20]:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Get blackdetect output as JSON via ffprobe
+ffprobe -v quiet -show_entries frame_tags=lavfi.blackdetect.start,lavfi.blackdetect.end -of json input.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="practical-split">Practical Example 1: Split Video by Scene</h2>
+
+    <p>One of the most powerful applications is automatically splitting a video into individual scenes. This can be done using the <code>select</code> filter with the <code>segment</code> muxer[reference:21].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Split video into scenes using scene detection + segment muxer
+ffmpeg -i input.mp4 -vf "select='gt(scene,0.4)',setpts=N/FRAME_RATE/TB" -vsync vfr -f segment -segment_time 0.001 -reset_timestamps 1 scene_%03d.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As one Gist example shows, you can also use the <code>scdet</code> filter directly with the segment muxer[reference:22]:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Split using scdet with segment muxer
+ffmpeg -i input.mp4 -vf "scdet" -map 0 -f segment -segment_format mp4 scene_%07d.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Warning:</strong> Splitting using <code>scdet</code> with the segment muxer can be slow on long videos. One user reported: <em>"I didnt bother to wait for the scene detector to finish parsing the 40 minutes"</em>[reference:23]. For faster results, use keyframe‑based splitting[reference:24].</p>
+
+    <h2 id="practical-thumbnails">Practical Example 2: Extract Thumbnails</h2>
+
+    <p>Extract one thumbnail per scene—perfect for video previews or storyboards.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Extract one thumbnail per scene
+ffmpeg -i input.mp4 -vf "select='gt(scene,0.4)',scale=320:-1" -vsync vfr thumb_%03d.jpg</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>For a more comprehensive storyboard, you can extract thumbnails and arrange them in a grid[reference:25].</p>
+
+    <h2 id="practical-storyboard">Practical Example 3: Create a Storyboard</h2>
+
+    <p>A storyboard displays multiple scene thumbnails in a single image, arranged in a grid[reference:26].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Create a storyboard grid (6 columns, 80 rows)
+ffmpeg -i input.mp4 -vf "select='gt(scene,0.4)',scale=160:-1,tile=6x80" -frames:v 1 -q:v 3 storyboard.jpg</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This command selects frames where scene changes occur, scales them to 160px wide, and arranges them in a grid of 6 columns and up to 80 rows[reference:27].</p>
+
+    <h2 id="practical-commercials">Practical Example 4: Detect Commercials</h2>
+
+    <p>The <code>blackdetect</code> filter is commonly used to identify commercial breaks. Many TV broadcasts use black frames as markers between content and commercials[reference:28].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Detect commercial breaks (black periods >= 0.5 seconds)
+ffmpeg -i broadcast.mp4 -vf "blackdetect=d=0.5:pix_th=0.10" -an -f null - 2>&1 | grep blackdetect</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As documented in a real‑world example: <em>"we use FFMPEG to detect all of the blackframe transition periods in the video where the programming transitions either to or from a commercial break"</em>[reference:29].</p>
+
+    <h2 id="practical-highlights">Practical Example 5: Build a Highlight Reel</h2>
+
+    <p>Combine scene detection with other filters to build automated highlight reels. For example, detect the "busiest" parts of a video by using a low threshold[reference:30].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Detect high-activity segments (low threshold = more "busy" frames detected)
+ffmpeg -i input.mp4 -vf "select='gt(scene,0.05)'" -vsync vfr -f concat -safe 0 highlight_reel.txt</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As noted by one user: <em>"If you set a low threshold, every frame is regarded as a scene change when there is sufficient 'activity'"</em>[reference:31]. This can be used to identify the most dynamic parts of a video.</p>
+
+    <h2 id="debugging">Debugging Common Scene Detection Issues</h2>
+
+    <p>Here are the most common issues and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Too few scenes detected</strong></td>
+          <td>Threshold is too high</td>
+          <td>Lower the threshold (e.g., <code>0.3</code> instead of <code>0.5</code>)[reference:32]</td>
+        </tr>
+        <tr>
+          <td><strong>Too many false positives</strong></td>
+          <td>Threshold is too low</td>
+          <td>Raise the threshold (e.g., <code>0.5</code> instead of <code>0.3</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>No output from scdet</strong></td>
+          <td>Filter isn't logging or metadata isn't being printed</td>
+          <td>Use <code>-loglevel debug</code> or check metadata with <code>ffprobe</code>[reference:33]</td>
+        </tr>
+        <tr>
+          <td><strong>Blackdetect misses fades</strong></td>
+          <td>Duration threshold is too high or pixel threshold is too low</td>
+          <td>Lower <code>d</code> (e.g., <code>0.05</code>) or adjust <code>pix_th</code>[reference:34]</td>
+        </tr>
+        <tr>
+          <td><strong>Splitting is slow</strong></td>
+          <td>Scene detection on long videos is CPU‑intensive</td>
+          <td>Use keyframe‑based splitting for speed[reference:35]</td>
+        </tr>
+        <tr>
+          <td><strong>Thumbnails are blurry</strong></td>
+          <td>Not scaling or using wrong format</td>
+          <td>Add <code>scale</code> filter before output[reference:36]</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ide">Visualize Scene Changes with the FFmpegLab IDE</h2>
+
+    <p>Scene detection is <strong>much easier to debug</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>Visualize detected scenes</strong> on a timeline—see exactly where every cut occurs</li>
+      <li><strong>Adjust the threshold with a slider</strong> and see which scenes appear/disappear in real time</li>
+      <li><strong>Preview scene thumbnails</strong> in a storyboard view</li>
+      <li><strong>Compare different detection methods</strong> (<code>select</code>, <code>scdet</code>, <code>blackdetect</code>) side by side</li>
+      <li><strong>Export scene timestamps</strong> as CSV, JSON, or EDL[reference:37]</li>
+    </ul>
+
+    <p>Here's how scene detection visualization looks in the FFmpegLab IDE.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📹 Input: 2h 15min</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🔍 Method: select scene=0.4</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📊 Detected scenes: 847</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#34d399;">✅ Avg scene length: 9.6s</span>
+        </div>
+        <div style="background:#1e1e2e; border-radius:6px; padding:8px; margin-bottom:12px; position:relative; height:60px; overflow:hidden;">
+          <div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; padding:0 8px;">
+            <div style="display:flex; width:100%; height:20px; gap:1px; align-items:center;">
+              <div style="flex:5; height:100%; background:#34d399; border-radius:2px;"></div>
+              <div style="flex:3; height:100%; background:#fbbf24; border-radius:2px;"></div>
+              <div style="flex:8; height:100%; background:#34d399; border-radius:2px;"></div>
+              <div style="flex:2; height:100%; background:#f87171; border-radius:2px;"></div>
+              <div style="flex:12; height:100%; background:#34d399; border-radius:2px;"></div>
+              <div style="flex:4; height:100%; background:#fbbf24; border-radius:2px;"></div>
+              <div style="flex:6; height:100%; background:#34d399; border-radius:2px;"></div>
+              <div style="flex:3; height:100%; background:#f87171; border-radius:2px;"></div>
+            </div>
+          </div>
+          <div style="position:absolute; bottom:4px; left:0; right:0; display:flex; justify-content:space-between; padding:0 8px; font-size:0.6rem; color:#6b7280;">
+            <span>00:00</span>
+            <span>00:30</span>
+            <span>01:00</span>
+            <span>01:30</span>
+            <span>02:00</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:2px 8px; border-radius:12px; font-size:0.65rem; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#34d399; border-radius:2px; display:inline-block;"></span> Scene</span>
+          <span style="background:#2d2d3d; padding:2px 8px; border-radius:12px; font-size:0.65rem; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#fbbf24; border-radius:2px; display:inline-block;"></span> Fade</span>
+          <span style="background:#2d2d3d; padding:2px 8px; border-radius:12px; font-size:0.65rem; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#f87171; border-radius:2px; display:inline-block;"></span> Commercial</span>
+        </div>
+        <pre class="em-code"># Visual scene timeline with detected cuts
+# Adjust threshold slider → scenes update in real time</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div style="display:flex; gap:12px; padding:8px 0; font-size:0.8rem; color:#6b7280; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">📊 <span style="color:#fff;">Scenes: 847</span></span>
+          <span style="display:flex; align-items:center; gap:4px;">🎯 <span style="color:#fff;">Threshold: 0.40</span></span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Detection complete</span>
+          <span style="display:flex; align-items:center; gap:4px; color:#fbbf24;">⏳ Fine‑tuning threshold...</span>
+        </div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what's happening—a visual timeline of detected scenes, color‑coded by type (scene changes, fades, commercials). You can adjust the threshold with a slider and see which scenes appear or disappear in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between scdet and select with scene?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>select='gt(scene, X)'</code> is simpler and works well for most use cases. <code>scdet</code> is more advanced—it sets frame metadata (<code>lavfi.scd.score</code>, <code>lavfi.scd.time</code>) that other filters can use[reference:38]. For basic scene detection, <code>select</code> is sufficient. For complex pipelines where you need the scene score, use <code>scdet</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What threshold should I use for scene detection?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">For <code>select='gt(scene, X)'</code>, values between <strong>0.3 and 0.5</strong> work well for most content[reference:39][reference:40]. For <code>scdet</code>, good values are in the <strong><code>[8.0, 14.0]</code></strong> range[reference:41]. Lower values detect more cuts (including subtle ones); higher values detect fewer.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I get the timestamps of scene changes?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use the <code>metadata</code> filter with <code>select</code>: <code>ffmpeg -i input.mp4 -vf "select='gt(scene,0.4)',metadata=print:file=-" -an -f null - 2>&1 | grep scene</code>. For <code>scdet</code>, the <code>lavfi.scd.time</code> metadata key provides the timestamp[reference:42].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I split a video into scenes without re-encoding?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes—but with caveats. Use <code>-c copy</code> with the <code>segment</code> muxer. However, keyframe‑accurate splitting requires re‑encoding. For fastest results, use keyframe‑based splitting: <code>ffmpeg -i input.mp4 -c copy -map 0 -segment_time 0.01 -f segment scene_%07d.mp4</code>[reference:43]. The <code>segment</code> muxer can split by scene changes[reference:44], but accuracy depends on keyframe placement.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I detect fades and dissolves?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use <code>blackdetect</code> for fades to/from black[reference:45]. For dissolves (where one shot blends into another), the <code>select</code> and <code>scdet</code> filters can detect them as scene changes, but the threshold may need tuning. Dissolves typically produce lower scene change scores than hard cuts.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Is scene detection available in hardware‑accelerated encoding?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Scene detection filters are CPU‑based. However, you can use hardware‑accelerated encoding (<code>-c:v h264_nvenc</code> or <code>hevc_nvenc</code>) after scene detection is complete. For real‑time applications, consider using <code>scdet_vulkan</code>[reference:46] for GPU‑accelerated scene detection.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Scene detection is one of FFmpeg's most powerful—and most underutilized—features. With the <code>select</code>, <code>scdet</code>, and <code>blackdetect</code> filters, you can automatically split videos, extract thumbnails, detect commercials, and build highlight reels.</p>
+
+    <p>The key is understanding the three methods and knowing when to use each one:</p>
+
+    <ul>
+      <li><strong><code>select='gt(scene, X)'</code></strong> — Simple, fast, works for most use cases</li>
+      <li><strong><code>scdet</code></strong> — Advanced, sets metadata for complex pipelines</li>
+      <li><strong><code>blackdetect</code></strong> — Specialized for fades, commercials, and title cards</li>
+    </ul>
+
+    <p>With the FFmpegLab IDE's visual timeline and real‑time threshold adjustment, you can experiment, debug, and perfect your scene detection without the guesswork.</p>
+
+    <p>Next time you're facing hours of footage, let FFmpeg do the heavy lifting. Your eyes—and your schedule—will thank you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-optical-flow-motion-interpolation.html">Optical Flow &amp; Motion Interpolation</a></li>
+        <li><a href="ffmpeg-roi-encoding.html">ROI Encoding – Region of Interest</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

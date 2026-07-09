@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optical Flow & Motion Interpolation in FFmpeg – Complete Guide</title>
+  <meta name="description" content="Master optical flow and motion interpolation in FFmpeg with the minterpolate filter. Create buttery-smooth slow motion, convert frame rates, and eliminate judder." />
+  <meta name="keywords" content="ffmpeg minterpolate, ffmpeg optical flow, ffmpeg motion interpolation, ffmpeg slow motion, ffmpeg frame rate conversion, ffmpeg smooth video" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-optical-flow-motion-interpolation.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-optical-flow-motion-interpolation.html" />
+  <meta property="og:title" content="Optical Flow & Motion Interpolation in FFmpeg" />
+  <meta property="og:description" content="Master optical flow and motion interpolation in FFmpeg with the minterpolate filter. Create buttery-smooth slow motion, convert frame rates, and eliminate judder." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Optical Flow & Motion Interpolation in FFmpeg",
+      "description": "Master optical flow and motion interpolation in FFmpeg with the minterpolate filter. Create buttery-smooth slow motion, convert frame rates, and eliminate judder.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-06-27",
+      "dateModified": "2026-06-27",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-optical-flow-motion-interpolation.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Optical Flow &amp; Motion Interpolation</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Optical Flow &amp; Motion Interpolation</h1>
+      <p class="dek">Create buttery-smooth slow motion, convert frame rates, and eliminate judder with the <code>minterpolate</code> filter. Master motion estimation, compensation, and scene detection.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated June 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: A Powerful Filter, Poorly Explained</a></li>
+        <li><a href="#the-symptom">The Symptom: "Why Is My Slow Motion So Choppy?"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Is Motion Interpolation?</a></li>
+        <li><a href="#parameters">The <code>minterpolate</code> Filter Parameters</a></li>
+        <li><a href="#practical-slowmo">Practical Example 1: Buttery-Smooth Slow Motion</a></li>
+        <li><a href="#practical-fps">Practical Example 2: Frame Rate Conversion</a></li>
+        <li><a href="#scene-detection">Scene Detection – Preventing Artifacts</a></li>
+        <li><a href="#performance">Performance &amp; Hardware Considerations</a></li>
+        <li><a href="#debugging">Debugging Common Interpolation Issues</a></li>
+        <li><a href="#ide">Visualize Motion Vectors with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Optical flow and motion interpolation are among the most impressive—and most computationally expensive—features in FFmpeg. The <code>minterpolate</code> filter can transform choppy 24fps footage into buttery-smooth 60fps or 120fps video by analyzing motion between frames and generating entirely new frames that never existed.</p>
+
+    <p>Yet the documentation for <code>minterpolate</code> is sparse and confusing. As one FFmpeg user put it: <em>"minterpolate is an important and amazing function"</em>—but the parameter descriptions are cryptic, and the default values are unclear[reference:0]. Most users give up after seeing artifacts or waiting hours for a render.[reference:1]
+
+    <p>This guide changes that. You'll learn exactly how motion interpolation works, how to tune the parameters for your specific content, and how to debug the inevitable issues that arise.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Motion interpolation</strong> analyzes movement between frames to generate new, intermediate frames.</li>
+        <li><strong><code>mi_mode</code></strong> controls the interpolation method—<code>dup</code> (duplicate), <code>blend</code> (average), or <code>mci</code> (motion-compensated interpolation).</li>
+        <li><strong><code>mc_mode</code></strong> and <strong><code>me_mode</code></strong> control how motion vectors are estimated and applied.</li>
+        <li><strong>Scene detection (<code>scd</code>)</strong> prevents interpolation across scene changes, avoiding ugly artifacts.</li>
+        <li><strong>Motion interpolation is never perfect</strong>—expect artifacts around fast motion, occlusions, and edges.[reference:2]</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: A Powerful Filter, Poorly Explained</h2>
+
+    <p>The FFmpeg documentation for <code>minterpolate</code> lists the parameters but provides almost no guidance on <em>how</em> to use them. The parameter descriptions are technical and assume you already understand motion estimation theory.[reference:3]</p>
+
+    <p>Search online, and you'll find scattered forum posts with conflicting advice. Some users recommend <code>mi_mode=mci:mc_mode=aobmc</code> for the best quality, others suggest <code>mc_mode=obmc</code> for speed. Few explain <em>why</em> one works better than the other.[reference:4]</p>
+
+    <p>This guide bridges that gap with clear explanations, working examples, and troubleshooting steps.</p>
+
+    <h2 id="the-symptom">The Symptom: "Why Is My Slow Motion So Choppy?"</h2>
+
+    <p>You've tried the simple approach—using <code>setpts</code> to slow down your video.[reference:5]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Simple slow motion — drops frames, looks choppy
+ffmpeg -i input.mp4 -filter:v "setpts=2.0*PTS" -r 12 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>The result? The video plays in slow motion, but it's <strong>choppy and stuttery</strong>. That's because <code>setpts</code> simply stretches the existing frames over a longer duration—it doesn't create any new frames. The frame rate drops, and the motion looks unnatural.</p>
+
+    <p>You need <strong>motion interpolation</strong>—a technique that analyzes the movement between frames and generates <em>new</em> frames that smoothly bridge the gap.</p>
+
+    <h2 id="core-concepts">Core Concepts: What Is Motion Interpolation?</h2>
+
+    <p>Motion interpolation is the process of generating intermediate frames between two existing frames by analyzing the motion of objects.[reference:6]</p>
+
+    <p>There are three approaches to interpolation, and FFmpeg's <code>minterpolate</code> supports all of them[reference:7]:</p>
+
+    <ul>
+      <li><strong><code>dup</code> (Duplicate)</strong> — Simply duplicates the previous or next frame. Fast, but creates stuttering.</li>
+      <li><strong><code>blend</code> (Blend)</strong> — Averages the pixel values of the two frames. Smoother than duplication, but creates ghosting.</li>
+      <li><strong><code>mci</code> (Motion-Compensated Interpolation)</strong> — Analyzes motion vectors and generates new frames that accurately represent the movement. This is the highest quality—and most computationally expensive—option.[reference:8]</li>
+    </ul>
+
+    <p>Motion-compensated interpolation works by:</p>
+    <ol>
+      <li><strong>Motion estimation</strong> — Analyzing how pixels move between frames</li>
+      <li><strong>Motion compensation</strong> — Using those motion vectors to generate new frames</li>
+      <li><strong>Scene detection</strong> — Detecting scene changes to avoid interpolating across cuts</li>
+    </ol>
+
+    <p>As one FFmpeg user noted: <em>"minterpolate does a truly amazing job"</em> when properly configured[reference:9].</p>
+
+    <h2 id="parameters">The <code>minterpolate</code> Filter Parameters</h2>
+
+    <p>Here's every parameter you need to know, with practical guidance for each.</p>
+
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Default</th><th>What it does</th><th>When to adjust</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>fps</code></td>
+          <td><em>Required</em></td>
+          <td>Output frame rate (e.g., 60, 120, 60000/1001)</td>
+          <td>Set to your desired output frame rate</td>
+        </tr>
+        <tr>
+          <td><code>mi_mode</code></td>
+          <td><em>No default</em>[reference:10]</td>
+          <td>Interpolation mode: <code>dup</code>, <code>blend</code>, or <code>mci</code></td>
+          <td>Use <code>mci</code> for high quality, <code>blend</code> for speed</td>
+        </tr>
+        <tr>
+          <td><code>mc_mode</code></td>
+          <td><code>obmc</code>[reference:11]</td>
+          <td>Motion compensation mode: <code>obmc</code> (overlapped block) or <code>aobmc</code> (adaptive overlapped block)</td>
+          <td><code>aobmc</code> often gives better quality[reference:12]</td>
+        </tr>
+        <tr>
+          <td><code>me_mode</code></td>
+          <td><code>bilat</code>[reference:13]</td>
+          <td>Motion estimation mode: <code>bilat</code> (bilateral) or <code>bidir</code> (bidirectional)</td>
+          <td><code>bidir</code> can improve accuracy for complex motion[reference:14]</td>
+        </tr>
+        <tr>
+          <td><code>me</code></td>
+          <td><code>epzs</code>[reference:15]</td>
+          <td>Motion estimation algorithm: <code>epzs</code>, <code>esa</code>, <code>tss</code>, <code>ntss</code>, <code>fss</code>, <code>ds</code>, <code>hexbs</code>, <code>umh</code></td>
+          <td><code>epzs</code> is fastest; <code>umh</code> is more accurate but slower</td>
+        </tr>
+        <tr>
+          <td><code>vsbmc</code></td>
+          <td>0</td>
+          <td>Enable variable-size block motion compensation</td>
+          <td>Set to 1 for better quality[reference:16]</td>
+        </tr>
+        <tr>
+          <td><code>search_param</code></td>
+          <td>32</td>
+          <td>Search range for motion estimation</td>
+          <td>Increase for fast motion (e.g., 64-128)[reference:17]</td>
+        </tr>
+        <tr>
+          <td><code>scd</code></td>
+          <td><code>fdiff</code>[reference:18]</td>
+          <td>Scene change detection method: <code>none</code> or <code>fdiff</code> (frame difference)</td>
+          <td>Leave as <code>fdiff</code> to avoid artifacts across cuts</td>
+        </tr>
+        <tr>
+          <td><code>scd_threshold</code></td>
+          <td>10.0[reference:19]</td>
+          <td>Threshold for scene change detection</td>
+          <td>Lower = more sensitive; adjust if scenes aren't detected[reference:20]</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="practical-slowmo">Practical Example 1: Buttery-Smooth Slow Motion</h2>
+
+    <p>Let's create a 2x slow-motion effect from a 24fps input. To slow down by 2x, we need to output at 48fps (2 × 24).</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># 2x smooth slow motion using motion-compensated interpolation
+ffmpeg -i input_24fps.mp4 \
+-filter:v "minterpolate=fps=48:mi_mode=mci:mc_mode=aobmc:vsbmc=1" \
+-c:a copy output_slowmo.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>What's happening here?</strong></p>
+
+    <ul>
+      <li><code>fps=48</code> — Doubles the frame rate from 24 to 48, creating one new frame for every original frame</li>
+      <li><code>mi_mode=mci</code> — Uses motion-compensated interpolation for the highest quality[reference:21]</li>
+      <li><code>mc_mode=aobmc</code> — Adaptive overlapped block motion compensation for smoother results[reference:22]</li>
+      <li><code>vsbmc=1</code> — Enables variable-size block motion compensation[reference:23]</li>
+    </ul>
+
+    <p>For 4x slow motion (24fps → 96fps):</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># 4x smooth slow motion (24fps → 96fps)
+ffmpeg -i input_24fps.mp4 \
+-filter:v "minterpolate=fps=96:mi_mode=mci:mc_mode=aobmc:vsbmc=1" \
+-c:a copy output_4x_slowmo.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="practical-fps">Practical Example 2: Frame Rate Conversion</h2>
+
+    <p>Converting 24fps film to 60fps for modern displays is a common use case. The goal is to eliminate judder while preserving the cinematic look.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># 24fps film to 60fps with motion interpolation (NTSC-friendly)
+ffmpeg -i film_24fps.mp4 \
+-filter:v "minterpolate=fps=60000/1001:mi_mode=mci:mc_mode=aobmc:vsbmc=1" \
+-c:a copy output_60fps.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>For 24fps to 120fps (ideal for high-refresh-rate displays):</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># 24fps film to 120fps for high refresh rate displays
+ffmpeg -i film_24fps.mp4 \
+-filter:v "minterpolate=fps=120:mi_mode=mci:mc_mode=aobmc:vsbmc=1" \
+-c:a copy output_120fps.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Note on audio:</strong> When slowing down video, you must also slow down the audio to maintain sync. Use the <code>atempo</code> filter[reference:24]:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># 2x slow motion with audio (24fps → 48fps, audio at 0.5x speed)
+ffmpeg -i input_24fps.mp4 \
+-filter_complex "[0:v]minterpolate=fps=48:mi_mode=mci:mc_mode=aobmc:vsbmc=1[v];[0:a]atempo=0.5[a]" \
+-map "[v]" -map "[a]" output_slowmo.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Note:</strong> <code>atempo</code> is limited to values between 0.5 and 2.0. For slower speeds, chain multiple <code>atempo</code> filters[reference:25].</p>
+
+    <h2 id="scene-detection">Scene Detection – Preventing Artifacts</h2>
+
+    <p>One of the most important—and most overlooked—features of <code>minterpolate</code> is <strong>scene change detection</strong>. When a scene changes, motion vectors point in random directions. Interpolating across a cut creates ugly artifacts.[reference:26]</p>
+
+    <p>The <code>scd</code> (scene change detection) parameter detects these cuts and replaces interpolated frames with duplicated ones to prevent artifacts.[reference:27]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># With scene change detection (recommended for all content with cuts)
+ffmpeg -i input.mp4 \
+-filter:v "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:scd=fdiff:scd_threshold=10" \
+-c:a copy output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Key parameters:</strong></p>
+    <ul>
+      <li><code>scd=fdiff</code> — Uses frame difference to detect scene changes[reference:28]</li>
+      <li><code>scd_threshold=10</code> — The sensitivity of scene detection. Lower values are more sensitive[reference:29]</li>
+    </ul>
+
+    <p>If you're seeing interpolation artifacts across cuts, try lowering <code>scd_threshold</code> (e.g., to 5) to make detection more sensitive. If scenes aren't being detected, raise it (e.g., to 15).</p>
+
+    <h2 id="performance">Performance &amp; Hardware Considerations</h2>
+
+    <p>Motion interpolation is <strong>computationally expensive</strong>. A 4K 24fps to 60fps conversion can take hours on a CPU. Here are some strategies to manage performance.</p>
+
+    <h3>Choosing the Right Motion Estimation Algorithm</h3>
+
+    <p>The <code>me</code> parameter controls the motion estimation algorithm[reference:30]:</p>
+
+    <ul>
+      <li><code>epzs</code> (Enhanced Predictive Zonal Search) — Fast, good for most content[reference:31]</li>
+      <li><code>umh</code> (Uneven Multi-Hexagon) — More accurate, slower[reference:32]</li>
+      <li><code>esa</code> (Exhaustive Search) — Highest quality, extremely slow[reference:33]</li>
+      <li><code>hexbs</code> (Hexagon-Based Search) — Good balance of speed and quality[reference:34]</li>
+    </ul>
+
+    <p>For most users, <code>me=epzs</code> (the default) is the best choice. Only switch to <code>umh</code> or <code>hexbs</code> if you have serious quality issues.[reference:35]</p>
+
+    <h3>Reducing Resolution</h3>
+
+    <p>Consider scaling down before interpolation if you're just testing:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Scale down before interpolation for faster testing
+ffmpeg -i input_4k.mp4 -vf "scale=1280:720,minterpolate=fps=60:mi_mode=mci" -c:a copy output_test.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h3>GPU Acceleration</h3>
+
+    <p>FFmpeg's <code>minterpolate</code> filter is CPU‑only. However, there are GPU‑accelerated alternatives like SVPflow, MVTools2, and DAIN that can be integrated with FFmpeg[reference:36]. These are outside the scope of this guide but worth exploring for production workflows.</p>
+
+    <h2 id="debugging">Debugging Common Interpolation Issues</h2>
+
+    <p>Motion interpolation is never perfect. Here are the most common issues and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Warping / morphing artifacts</strong></td>
+          <td>Motion estimation errors in complex scenes</td>
+          <td>Try <code>me_mode=bidir</code> (bidirectional estimation)[reference:37]; increase <code>search_param</code>; use <code>mc_mode=obmc</code> instead of <code>aobmc</code></td>
+        </tr>
+        <tr>
+          <td><strong>Edge ghosting</strong></td>
+          <td>Occlusion (objects appearing/disappearing)</td>
+          <td>Use <code>mc_mode=obmc</code>; consider using <code>blend</code> mode for problematic scenes[reference:38]</td>
+        </tr>
+        <tr>
+          <td><strong>Artifacts at scene changes</strong></td>
+          <td>Scene detection isn't working</td>
+          <td>Ensure <code>scd=fdiff</code> is set; lower <code>scd_threshold</code>[reference:39]</td>
+        </tr>
+        <tr>
+          <td><strong>Interpolation looks choppy</strong></td>
+          <td>Output frame rate is too low</td>
+          <td>Increase <code>fps</code> value; for 2x slow motion, set <code>fps=2×input_fps</code></td>
+        </tr>
+        <tr>
+          <td><strong>Unnatural "soap opera" effect</strong></td>
+          <td>Too much smoothing in motion vectors</td>
+          <td>Try <code>mc_mode=obmc</code> instead of <code>aobmc</code>; reduce <code>fps</code> slightly</td>
+        </tr>
+        <tr>
+          <td><strong>Processing is extremely slow</strong></td>
+          <td>High resolution and high FPS target</td>
+          <td>Use <code>me=epzs</code> (default); scale down for testing; consider GPU alternatives[reference:40]</td>
+        </tr>
+        <tr>
+          <td><strong>Letterbox edges artifact</strong></td>
+          <td>Black borders confuse motion estimation</td>
+          <td>Crop or pad before interpolation; FFmpeg's minterpolate doesn't have built‑in edge padding[reference:41]</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>As one FFmpeg user noted: <em>"Motion interpolation is never perfect, there are always some types artifacts, occlusions, edge morphing"</em>[reference:42]. The key is minimizing them through careful parameter tuning.</p>
+
+    <h2 id="ide">Visualize Motion Vectors with the FFmpegLab IDE</h2>
+
+    <p>Motion interpolation is <strong>much easier to debug</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>Preview interpolated frames</strong> in real time—see exactly what the filter is generating</li>
+      <li><strong>Compare original vs. interpolated</strong> frames side by side</li>
+      <li><strong>Adjust parameters with sliders</strong>—<code>fps</code>, <code>scd_threshold</code>, <code>search_param</code>—and see the effect instantly</li>
+      <li><strong>Visualize motion vectors</strong> (coming soon) to understand where estimation is failing</li>
+      <li><strong>Detect artifacts early</strong> before you waste hours on a full encode</li>
+    </ul>
+
+    <p>Here's how motion interpolation preview looks in the FFmpegLab IDE.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📹 Input: 24fps, 1920×1080</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🎯 Output: 60fps (2.5x interpolation)</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#34d399;">✅ mi_mode=mci | mc_mode=aobmc</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280; border:1px solid #4b5563;">
+            <div style="background:#2d2d3d; height:60px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563;">🔄 Frame 0 (original)</div>
+            <span style="color:#6b7280;">24 fps</span>
+          </div>
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280; border:2px solid #FC6D26;">
+            <div style="background:#2d2d3d; height:60px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#fbbf24;">✨ Frame 1 (interpolated)</div>
+            <span style="color:#fbbf24;">⏳ Generating...</span>
+          </div>
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280; border:1px solid #4b5563;">
+            <div style="background:#2d2d3d; height:60px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563;">🔄 Frame 2 (original)</div>
+            <span style="color:#6b7280;">24 fps</span>
+          </div>
+        </div>
+        <div style="background:#1e1e2e; border-radius:6px; padding:8px; margin-bottom:12px; font-family:monospace; font-size:0.75rem; color:#a1a1aa; max-height:60px; overflow-y:auto;">
+          <div style="color:#34d399;">[info]</div>
+          <div>  Motion vectors: 1,024 blocks estimated</div>
+          <div>  Scene change detected at frame 245 → skipping interpolation</div>
+        </div>
+        <pre class="em-code"># Interactive motion interpolation preview
+# Adjust fps, scd_threshold, and search_param in real time</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div style="display:flex; gap:12px; padding:8px 0; font-size:0.8rem; color:#6b7280; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">🎯 <span style="color:#fff;">FPS: 60</span></span>
+          <span style="display:flex; align-items:center; gap:4px;">📊 <span style="color:#fff;">Motion vectors: 1,024</span></span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Scene detection: active</span>
+        </div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what's happening—which frames are original, which are interpolated, and whether scene detection is working correctly. You can experiment with different settings and see the results in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between <code>dup</code>, <code>blend</code>, and <code>mci</code>?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>dup</code> duplicates frames—fast but choppy. <code>blend</code> averages frames—smoother but with ghosting[reference:43]. <code>mci</code> uses motion vectors to generate accurate new frames—highest quality but slowest[reference:44]. For professional results, use <code>mci</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why does my interpolated video have warping artifacts?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Warping occurs when motion estimation fails—typically in scenes with complex motion, occlusion, or low contrast[reference:45]. Try <code>me_mode=bidir</code> (bidirectional estimation)[reference:46], increase <code>search_param</code>, or switch to <code>mc_mode=obmc</code> instead of <code>aobmc</code>[reference:47].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I convert 24fps to 60fps without the "soap opera" effect?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The "soap opera" effect is caused by too much smoothing. Try using <code>mc_mode=obmc</code> instead of <code>aobmc</code>, which produces less aggressive interpolation[reference:48]. You can also reduce the output frame rate—e.g., 48fps instead of 60fps—to create a more subtle effect.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Is motion interpolation available for hardware acceleration?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">FFmpeg's <code>minterpolate</code> is CPU‑only. However, there are GPU‑accelerated alternatives like SVPflow, MVTools2, and DAIN that can be integrated with FFmpeg[reference:49]. These are typically faster but require additional setup.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why is minterpolate so slow?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Motion interpolation is computationally expensive—it's analyzing every pixel's movement and generating new frames[reference:50]. For 4K content, processing can take hours. To speed things up, reduce resolution for testing, use <code>me=epzs</code> (the fastest algorithm)[reference:51], or consider GPU‑accelerated alternatives.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does minterpolate support scene change detection?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Use <code>scd=fdiff</code> to enable frame‑difference scene detection[reference:52]. The <code>scd_threshold</code> parameter controls sensitivity—lower values detect more scenes[reference:53]. This prevents interpolation artifacts across cuts[reference:54].</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Optical flow and motion interpolation are among FFmpeg's most impressive features. The <code>minterpolate</code> filter can transform choppy, low‑frame‑rate footage into buttery‑smooth video that rivals dedicated tools like Twixtor or SVP.</p>
+
+    <p>The key is understanding the parameters: <code>mi_mode</code> controls <em>how</em> frames are interpolated; <code>mc_mode</code> and <code>me_mode</code> control <em>how accurately</em> motion is estimated; and <code>scd</code> prevents artifacts across scene changes. Tune these for your specific content, and you'll get professional results.</p>
+
+    <p>As one FFmpeg user put it: <em>"minterpolate is an important and amazing function"</em>[reference:55]. With the FFmpegLab IDE's visual feedback, you can experiment, debug, and perfect your interpolation settings without the guesswork.</p>
+
+    <p>Next time you need to create smooth slow motion or convert frame rates, reach for <code>minterpolate</code>. Your viewers will thank you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+        <li><a href="ffmpeg-color-spaces-hdr-tone-mapping.html">Color Spaces, HDR, and Tone Mapping</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
