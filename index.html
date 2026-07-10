@@ -159,6 +159,52 @@
     .stat-card .v { font-size: 1.875rem; font-weight: 800; color: var(--ink); }
     .stat-card .k { margin-top: 0.25rem; font-size: 0.875rem; color: var(--muted-2); }
 
+    /* ---------- Collaboration workspace ---------- */
+    .collab { background: #FAF8FD; border-top: 1px solid #ECE9F3; }
+    .collab .inner { padding-block: 6rem; }
+    .collab .head { display: grid; gap: 1.5rem; align-items: end; }
+    .collab h2 { max-width: 46rem; font-size: 2.25rem; font-weight: 700; line-height: 1.12; letter-spacing: -0.02em; }
+    .collab .sub { max-width: 40rem; font-size: 1.125rem; line-height: 1.7; color: var(--muted); }
+    .collab .learn { display: inline-flex; margin-top: 1rem; font-weight: 600; color: var(--orange); }
+    .collab-editor { margin-top: 3rem; overflow: hidden; border: 1px solid #2C2741; border-radius: 0.9rem; background: #0D0F12; box-shadow: 0 25px 50px -16px rgba(0,0,0,.5); color: #fff; }
+    .ce-toolbar { min-height: 3.25rem; display: flex; align-items: center; gap: .55rem; padding: .65rem .8rem; border-bottom: 1px solid #252933; background: #12161A; }
+    .ce-back, .ce-action { display: grid; place-items: center; height: 2rem; border: 1px solid #343B46; background: #202833; color: #DCE3EC; border-radius: .65rem; font: 600 .68rem ui-monospace, monospace; }
+    .ce-back { width: 2rem; }
+    .ce-spacer { flex: 1; }
+    .ce-people { display: flex; align-items: center; padding-left: .35rem; }
+    .ce-person { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; margin-left: -.35rem; border: 2px solid #12161A; border-radius: 9999px; background: #33445C; font-size: .62rem; font-weight: 700; }
+    .ce-person.live { background: var(--orange); }
+    .ce-action { padding-inline: .7rem; }
+    .ce-action.active { background: #34465C; border-color: #485E77; color: #fff; }
+    .ce-workspace { display: grid; min-height: 22rem; }
+    .ce-stage { position: relative; min-height: 18rem; display: grid; place-items: center; background: #080A0D; border-bottom: 1px solid #252933; }
+    .ce-frame { width: 42%; min-width: 10rem; aspect-ratio: 9/12; position: relative; overflow: hidden; border: 1px solid #282E37; background: linear-gradient(145deg,#20252D,#101318); }
+    .ce-frame::before { content: ""; position: absolute; inset: 13% 14% 42%; border-radius: .35rem; background: linear-gradient(135deg,#3C4652,#20262E); }
+    .ce-frame::after { content: ""; position: absolute; left: 14%; right: 22%; bottom: 18%; height: 4px; border-radius: 99px; background: #596574; box-shadow: 0 12px 0 #303944, 0 24px 0 #252D36; }
+    .ce-play { position: absolute; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 9999px; background: rgba(255,255,255,.14); font-size: .8rem; }
+    .ce-time { position: absolute; left: 1rem; bottom: .8rem; font: 600 .68rem ui-monospace, monospace; color: #DCE3EC; }
+    .ce-cursor { position: absolute; left: 60%; top: 34%; padding: .25rem .45rem; border-radius: .35rem; background: var(--orange); font-size: .62rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+    .ce-comments { display: flex; flex-direction: column; min-height: 19rem; background: #12161A; }
+    .ce-comments-head { display: flex; align-items: center; justify-content: space-between; padding: .85rem 1rem; border-bottom: 1px solid #252933; font-size: .82rem; font-weight: 600; }
+    .ce-live { color: #AAB7C6; font: .62rem ui-monospace, monospace; }
+    .ce-thread { display: flex; flex: 1; flex-direction: column; gap: .8rem; padding: 1rem; }
+    .ce-msg { max-width: 88%; padding: .7rem .8rem; border-radius: .8rem; background: #2C466E; font-size: .78rem; line-height: 1.35; }
+    .ce-msg.me { align-self: flex-end; background: #B54D21; }
+    .ce-msg small { display: block; margin-top: .35rem; color: rgba(255,255,255,.65); font: .58rem ui-monospace, monospace; }
+    .ce-input { margin-top: auto; padding: .9rem 1rem; border-top: 1px solid #252933; color: #7E8997; font-size: .72rem; }
+    .ce-timeline { background: #101419; border-top: 1px solid #252933; }
+    .ce-ruler { height: 1.6rem; padding: .35rem 1rem 0 8rem; color: #6F7B89; font: .55rem ui-monospace, monospace; word-spacing: 2.5rem; overflow: hidden; white-space: nowrap; }
+    .ce-track-row { display: grid; grid-template-columns: 7rem 1fr; min-height: 3rem; border-top: 1px solid #252933; }
+    .ce-track-name { display: flex; align-items: center; gap: .45rem; padding: .55rem .75rem; background: #17212B; color: #AAB7C6; font: .62rem ui-monospace, monospace; }
+    .ce-track-dot { width: .55rem; height: .55rem; border-radius: 9999px; background: var(--orange); }
+    .ce-clips { position: relative; display: flex; gap: .25rem; padding: .35rem; overflow: hidden; }
+    .ce-clip { position: relative; min-width: 9rem; padding: .55rem .65rem; border-radius: .35rem; background: #009F9D; color: #fff; font: 600 .62rem ui-monospace, monospace; }
+    .ce-clip.alt { min-width: 7rem; background: #C29454; }
+    .ce-audio { width: 65%; min-width: 13rem; background: #89A956; }
+    .ce-marker { position: absolute; top: .25rem; right: .35rem; display: grid; place-items: center; width: 1.35rem; height: 1.35rem; border-radius: .35rem; background: #263247; color: #fff; font-size: .65rem; }
+    @media (min-width: 800px) { .collab .head { grid-template-columns: 1.1fr .9fr; } .ce-workspace { grid-template-columns: 1fr 22rem; } .ce-stage { border-right: 1px solid #252933; border-bottom: 0; } }
+    @media (max-width: 640px) { .ce-action:nth-of-type(2), .ce-action:nth-of-type(3) { display: none; } .ce-ruler { padding-left: 5.5rem; } .ce-track-row { grid-template-columns: 4.75rem 1fr; } .ce-track-name { padding-inline: .45rem; } .ce-frame { width: 58%; } }
+
     /* ---------- Stats band ---------- */
     .stats-band { background: #1B1730; }
     .stats-band .inner { padding-block: 5rem; }
@@ -425,6 +471,29 @@
             </div>
           </div>
 
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Collaborative editing ===== -->
+    <section class="collab" id="collaboration">
+      <div class="container inner">
+        <div class="head">
+          <div>
+            <h2 class="balance">Edit the timeline together. Keep every comment on the cut.</h2>
+          </div>
+          <div>
+            <p class="sub">Invite teammates into the same project, leave live comments at exact moments, and see timeline changes as they happen — without exporting another review draft.</p>
+            <a class="learn" href="articles/collaborative-video-editor-live-comments.html">How collaborative video editing works →</a>
+          </div>
+        </div>
+        <div class="collab-editor" role="img" aria-label="FFmpegLab collaborative video editor showing two collaborators, live comments, and comment markers on a shared timeline">
+          <div class="ce-toolbar"><span class="ce-back">←</span><div class="ce-people"><span class="ce-person live">DP</span><span class="ce-person">MK</span><span class="ce-person">+2</span></div><span class="ce-spacer"></span><span class="ce-action active">Share</span><span class="ce-action">Renders</span><span class="ce-action">{ } Code</span><span class="ce-action">Config</span></div>
+          <div class="ce-workspace">
+            <div class="ce-stage"><div class="ce-frame"></div><span class="ce-play">▶</span><span class="ce-time">00:00:16</span><span class="ce-cursor">Maya is editing</span></div>
+            <aside class="ce-comments"><div class="ce-comments-head"><span>Live comments</span><span class="ce-live">3 online</span></div><div class="ce-thread"><div class="ce-msg me">Can we tighten this section so the first cut lands faster?<small>Danila · 00:16</small></div><div class="ce-msg">Yes — trimming the pause and moving the next clip now.<small>Maya · live</small></div><div class="ce-msg me">Perfect. Keep the music transition where it is.<small>Danila · resolved</small></div></div><div class="ce-input">Reply to this moment…</div></aside>
+          </div>
+          <div class="ce-timeline"><div class="ce-ruler">00:00 00:05 00:10 00:15 00:20 00:25</div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Video 1</div><div class="ce-clips"><div class="ce-clip">intro.mp4<span class="ce-marker">2</span></div><div class="ce-clip">demo.mp4<span class="ce-marker">1</span></div><div class="ce-clip alt">outro.mp4</div></div></div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Audio 1</div><div class="ce-clips"><div class="ce-clip ce-audio">mixdown.wav</div></div></div></div>
         </div>
       </div>
     </section>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collaborative Video Editor: Live Timeline Comments</title>
+  <meta name="description" content="Edit video together on one shared timeline. Leave live, time-stamped comments, see changes as they happen, and sync projects privately across devices." />
+  <meta name="keywords" content="collaborative video editor, real-time collaborative video editing, edit video together online, shared video editing timeline, live comments video editor, team video editor, frame accurate video comments" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/collaborative-video-editor-live-comments.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/collaborative-video-editor-live-comments.html" />
+  <meta property="og:title" content="Collaborative Video Editor: Live Timeline Comments" />
+  <meta property="og:description" content="Work on one shared timeline, leave time-stamped comments, and see edits as they happen — without another review export." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Collaborative Video Editor: Live Timeline Comments" />
+  <meta name="twitter:description" content="One shared timeline for editing, live comments, and frame-specific feedback." />
+  <meta name="twitter:image" content="https://ffmpeglab.com/og-image.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Collaborative Video Editor with Live Timeline Comments",
+        "description": "How collaborative video editing connects a shared timeline, live comments, frame-specific feedback, and private cross-device sync.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/collaborative-video-editor-live-comments.html",
+        "datePublished": "2026-07-10",
+        "dateModified": "2026-07-10"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Collaborative Video Editing" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is a collaborative video editor?",
+            "acceptedAnswer": { "@type": "Answer", "text": "A collaborative video editor gives multiple people one shared workspace for editing, reviewing, commenting, and keeping project changes synchronized." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can multiple people edit the same video timeline?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. A real-time collaborative editor can synchronize timeline changes, comments, and project state so teammates work from the same sequence instead of exchanging separate project files." }
+          },
+          {
+            "@type": "Question",
+            "name": "How do live comments help video editing teams?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Live comments attach feedback to a specific moment or clip, reducing ambiguous notes and keeping the discussion next to the edit it refers to." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start free</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Collaborative Video Editing</div>
+      <span class="eyebrow">Team Workflow Guide</span>
+      <h1>Collaborative video editing with live timeline comments</h1>
+      <p class="dek">Work on one shared timeline, leave feedback at the exact moment it applies, and see edits as they happen — without exporting another review draft.</p>
+      <div class="article-meta">Video collaboration guide · ~7 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>A <strong>collaborative video editor</strong> gives editors, producers, clients, and teammates one shared place to make changes and discuss them. Instead of exporting a draft, sending a link, collecting notes in chat, and translating “around 23 seconds” into an edit, feedback stays attached to the timeline and the current project state.</p>
+
+    <p>The important distinction is between <strong>video review</strong> and <strong>collaborative video editing</strong>. Review tools collect feedback on a rendered file. A collaborative editor connects comments, clips, tracks, and timeline changes inside the editing workspace, so the team can move from feedback to a fix without another handoff.</p>
+
+    <div class="collab-editor" role="img" aria-label="Collaborative video editor with live comments and comment markers on a shared timeline">
+      <div class="ce-toolbar"><span class="ce-back">←</span><div class="ce-people"><span class="ce-person live">DP</span><span class="ce-person">MK</span><span class="ce-person">+2</span></div><span class="ce-spacer"></span><span class="ce-action active">Share</span><span class="ce-action">Renders</span><span class="ce-action">{ } Code</span><span class="ce-action">Config</span></div>
+      <div class="ce-workspace"><div class="ce-stage"><div class="ce-frame"></div><span class="ce-play">▶</span><span class="ce-time">00:00:16</span><span class="ce-cursor">Maya is editing</span></div><aside class="ce-comments"><div class="ce-comments-head"><span>Live comments</span><span class="ce-live">3 online</span></div><div class="ce-thread"><div class="ce-msg me">Can we tighten this section so the first cut lands faster?<small>Danila · 00:16</small></div><div class="ce-msg">Yes — trimming the pause and moving the next clip now.<small>Maya · live</small></div><div class="ce-msg me">Perfect. Keep the music transition where it is.<small>Danila · resolved</small></div></div><div class="ce-input">Reply to this moment…</div></aside></div>
+      <div class="ce-timeline"><div class="ce-ruler">00:00 00:05 00:10 00:15 00:20</div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Video 1</div><div class="ce-clips"><div class="ce-clip">intro.mp4<span class="ce-marker">2</span></div><div class="ce-clip">demo.mp4<span class="ce-marker">1</span></div><div class="ce-clip alt">outro.mp4</div></div></div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Audio 1</div><div class="ce-clips"><div class="ce-clip ce-audio">mixdown.wav</div></div></div></div>
+    </div>
+
+    <div class="callout">
+      <h3>What makes a video editor genuinely collaborative?</h3>
+      <ul>
+        <li><strong>One shared timeline:</strong> everyone works from the same sequence instead of passing project files.</li>
+        <li><strong>Time-stamped comments:</strong> feedback is anchored to the moment it describes.</li>
+        <li><strong>Live project updates:</strong> teammates can see timeline changes and new comments as they happen.</li>
+        <li><strong>Reliable sync:</strong> the project remains consistent across collaborators and devices.</li>
+      </ul>
+    </div>
+
+    <h2>Live comments belong next to the timeline</h2>
+    <p>The most useful comment is not “make the intro faster.” It is “tighten this pause,” attached to the exact clip and playhead position where the pause happens.</p>
+
+    <p>In FFmpegLab, comments live beside the preview while markers appear on the timeline. A producer can leave a note at a specific moment, an editor can reply in the same thread, and both can keep the relevant frame visible while discussing the change. The context remains available when the project is reopened on another device.</p>
+
+    <ul>
+      <li>Comments identify a timestamp or clip instead of relying on written timecodes.</li>
+      <li>Replies keep the decision with the original request.</li>
+      <li>Timeline markers show unresolved feedback at a glance.</li>
+      <li>The latest edit and the latest discussion stay together.</li>
+    </ul>
+
+    <h2>Edit the same timeline together</h2>
+    <p>Collaboration should continue after a comment is posted. A shared timeline lets teammates see cuts, clip moves, layer changes, and audio adjustments as the project evolves.</p>
+
+    <ol>
+      <li>An editor assembles the first cut.</li>
+      <li>A teammate joins the same project and leaves comments on specific clips.</li>
+      <li>The editor updates the timeline while the teammate watches the change appear.</li>
+      <li>The thread is resolved when the edit matches the decision.</li>
+      <li>The current project syncs across browser, desktop, and mobile devices.</li>
+    </ol>
+
+    <p>This avoids the familiar “final-v2-revised” problem. There is one working project rather than a chain of exported drafts and detached feedback documents.</p>
+
+    <h2>Real-time and asynchronous collaboration both matter</h2>
+    <p>Teams do not need to be online at the same moment for collaboration to work. Real-time editing is useful during a live review, but asynchronous comments are often more practical across time zones.</p>
+
+    <p>Collaborative browser editors such as <a href="https://www.kapwing.com/video-editor/collaboration" rel="noopener">Kapwing</a>, <a href="https://flixier.com/tools/video-collaboration" rel="noopener">Flixier</a>, and <a href="https://scenery.video/" rel="noopener">Scenery</a> describe the category around shared timelines, real-time editing, and comments attached to exact moments. <a href="https://www.louper.io/" rel="noopener">Louper</a> separates synchronized live review from anytime feedback, while <a href="https://www.veed.io/tools/video-collaboration" rel="noopener">VEED</a> emphasizes time-stamped comments and team participation.</p>
+
+    <p>The useful workflow supports both modes:</p>
+    <ul>
+      <li><strong>Live:</strong> watch the same moment, discuss a change, and update the timeline immediately.</li>
+      <li><strong>Asynchronous:</strong> leave a precise note, let the editor respond later, and preserve the full context.</li>
+    </ul>
+
+    <p>The shared timeline is the bridge between them. A conversation can begin live and continue asynchronously without moving to a different tool.</p>
+
+    <h2>Collaborate without uploading every source file to a vendor cloud</h2>
+    <p>Many browser-based collaborative editors are cloud-first: media is uploaded into a hosted workspace so the team can access it. FFmpegLab takes a different approach. The editor is <a href="offline-private-video-editor.html">offline-first</a>, projects can sync peer-to-peer across devices, and collaboration can use end-to-end encrypted project data or <a href="self-hosted-video-editor-docker.html">a backend you control</a>.</p>
+
+    <p>That matters for teams working with unreleased campaigns, interviews, client footage, internal training, journalism, legal material, or any project where raw media should not become another third-party cloud copy.</p>
+
+    <p>The goal is not to remove sharing. It is to give the team control over where project data and footage live while retaining the collaborative workflow: shared edits, live comments, timeline markers, and cross-device sync.</p>
+
+    <h2>A collaborative editor should reduce handoffs</h2>
+    <p>The value of collaboration is not the number of avatars shown in the toolbar. It is the number of avoidable handoffs removed from the edit.</p>
+
+    <p>A strong workflow keeps these actions connected: watch the current cut, comment on the exact moment, see the relevant clip on the timeline, make or observe the change, resolve the discussion, and continue from another device without creating another project version.</p>
+
+    <p>When those steps happen in one workspace, feedback becomes part of editing rather than a separate administrative process.</p>
+
+    <h2>Edit together in FFmpegLab</h2>
+    <p>FFmpegLab combines a visual timeline with direct access to the generated FFmpeg command. Teams can edit clips together, discuss changes with time-stamped comments, and keep the project synchronized across devices while retaining control over the underlying render pipeline.</p>
+
+    <p>Start a shared project, invite a collaborator, and keep the conversation attached to the cut — not scattered across email, chat, and exported drafts.</p>
+
+    <div class="sources">
+      <h2>Sources</h2>
+      <ul>
+        <li><a href="https://www.kapwing.com/video-editor/collaboration" rel="noopener">Kapwing: Collaborative Video Editing</a> — shared editing and frame-accurate comments.</li>
+        <li><a href="https://flixier.com/tools/video-collaboration" rel="noopener">Flixier: Video Collaboration Software</a> — timeline comments and parallel editing.</li>
+        <li><a href="https://scenery.video/" rel="noopener">Scenery</a> — multiplayer timeline editing and time-stamped comments.</li>
+        <li><a href="https://www.louper.io/" rel="noopener">Louper</a> — synchronized review and asynchronous feedback.</li>
+        <li><a href="https://www.veed.io/tools/video-collaboration" rel="noopener">VEED: Video Collaboration</a> — time-stamped comments and team workflows.</li>
+      </ul>
+    </div>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="offline-private-video-editor.html"><span class="k">Privacy</span><span class="t">The offline, private video editor</span><span class="d">Keep footage on-device.</span></a>
+        <a class="related-card" href="self-hosted-video-editor-docker.html"><span class="k">Self-hosting</span><span class="t">Self-host with Docker</span><span class="d">Bring your own backend.</span></a>
+        <a class="related-card" href="ffmpeg-merge-concatenate-videos.html"><span class="k">Merge</span><span class="t">Merge &amp; concatenate videos</span><span class="d">Join clips on one timeline.</span></a>
+        <a class="related-card" href="ffmpeg-audio-mixing-amix-guide.html"><span class="k">Audio</span><span class="t">Mixing audio with amix</span><span class="d">Build a shared soundtrack.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Edit together. Keep feedback on the timeline.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://www.starpy.me/webapp/editor/folder/new_editor?title=New">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>
