@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Denoising in FFmpeg – Complete Guide to Noise Removal</title>
+  <meta name="description" content="Master video denoising in FFmpeg. Learn to remove noise with hqdn3d, nlmeans, vaguedenoiser, bm3d, fftdnoiz, and other powerful filters. Compare algorithms and tune parameters." />
+  <meta name="keywords" content="ffmpeg video denoising, ffmpeg noise removal, ffmpeg hqdn3d, ffmpeg nlmeans, ffmpeg vaguedenoiser, ffmpeg bm3d, ffmpeg fftdnoiz, ffmpeg atadenoise" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-video-denoising.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-video-denoising.html" />
+  <meta property="og:title" content="Video Denoising in FFmpeg – Complete Guide to Noise Removal" />
+  <meta property="og:description" content="Master video denoising in FFmpeg. Learn to remove noise with hqdn3d, nlmeans, vaguedenoiser, bm3d, fftdnoiz, and other powerful filters." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Video Denoising in FFmpeg – Complete Guide to Noise Removal",
+      "description": "Master video denoising in FFmpeg. Learn to remove noise with hqdn3d, nlmeans, vaguedenoiser, bm3d, fftdnoiz, and other powerful filters. Compare algorithms and tune parameters.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-08",
+      "dateModified": "2026-07-08",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-video-denoising-guide.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the best denoise filter in FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "There's no single 'best' filter—it depends on your source and needs. For high-quality results, nlmeans and bm3d are excellent but slow. For fast denoising, hqdn3d and atadenoise work well. For fine-tuning, vaguedenoiser offers wavelet-based control. Test each on a short clip to see which works best for your content."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I denoise video in FFmpeg without losing detail?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Start with low strength values and increase gradually. For hqdn3d, try luma_spatial=4.0:chroma_spatial=3.0. For nlmeans, start with s=4.0. Always preview on a short clip before processing the full video. You can also pair denoising with unsharp to restore some sharpness."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which FFmpeg denoise filter is fastest?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "atadenoise is generally the fastest among dedicated denoise filters. hqdn3d is also relatively fast. nlmeans, bm3d, and vaguedenoiser are significantly slower, with dctdnoiz being extremely slow and not designed for real-time use."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I denoise 10-bit/HDR video with FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Most denoise filters support high bit depths. nlmeans is currently limited to 8-bit formats, but hqdn3d, vaguedenoiser, bm3d, and others work with 10-bit and higher. Check the filter documentation for specific format support."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I remove only chroma noise (color noise)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the chromanr filter for chrominance noise reduction. Alternatively, use the planes parameter to target only chroma planes: hqdn3d=0:0:4:3 (luma strength 0, chroma spatial 4, chroma temporal 3)."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .filter-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-fast { background: #34d399; color: #064e3b; }
+    .badge-medium { background: #fbbf24; color: #78350f; }
+    .badge-slow { background: #f59e0b; color: #78350f; }
+    .badge-veryslow { background: #f87171; color: #7f1d1d; }
+    .badge-quality { background: #3b82f6; color: #fff; }
+    .badge-temporal { background: #8b5cf6; color: #fff; }
+    .badge-spatial { background: #ec4899; color: #fff; }
+    .badge-wavelet { background: #06b6d4; color: #fff; }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .comparison-card {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid #2d2d3d;
+    }
+    .comparison-card h4 {
+      margin-top: 0;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .comparison-card .stats {
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      margin: 0.3rem 0;
+    }
+    .comparison-card .stats span {
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+    .filter-diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .filter-diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .filter-diagram .filter-name {
+      color: #34d399;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Video Denoising</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Video Denoising – Complete Guide to Noise Removal</h1>
+      <p class="dek">Remove grain, salt‑and‑pepper, and compression artifacts with FFmpeg's powerful denoise filters. Compare <code>hqdn3d</code>, <code>nlmeans</code>, <code>vaguedenoiser</code>, <code>bm3d</code>, and more.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: A Dozen Filters, Almost No Guidance</a></li>
+        <li><a href="#the-symptom">The Symptom: "My Video Is Too Noisy"</a></li>
+        <li><a href="#core-concepts">Core Concepts: Understanding Noise</a></li>
+        <li><a href="#filter-comparison">Denoise Filters at a Glance</a></li>
+        <li><a href="#hqdn3d">hqdn3d – The Workhorse</a></li>
+        <li><a href="#nlmeans">nlmeans – The Quality Champion</a></li>
+        <li><a href="#vaguedenoiser">vaguedenoiser – Wavelet Precision</a></li>
+        <li><a href="#bm3d">bm3d – State of the Art</a></li>
+        <li><a href="#atadenoise">atadenoise – Fast &amp; Adaptive</a></li>
+        <li><a href="#fftdnoiz">fftdnoiz – Frequency Domain</a></li>
+        <li><a href="#other-filters">Other Denoise Filters</a></li>
+        <li><a href="#practical-chain">Practical Example: Denoising Pipeline</a></li>
+        <li><a href="#performance">Performance Comparison</a></li>
+        <li><a href="#debugging">Debugging Common Issues</a></li>
+        <li><a href="#ide">Visualize Denoising with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Noise is the enemy of clean video. Whether it's the grain from a high‑ISO shot, the speckles from an old analog capture, or the blocky artifacts from a low‑bitrate encode, noise degrades quality, wastes bitrate, and makes your footage look amateurish.</p>
+
+    <p>FFmpeg has <strong>over a dozen dedicated denoise filters</strong>[reference:0]—from the fast and reliable <code>hqdn3d</code> to the cutting‑edge <code>nlmeans</code> and <code>bm3d</code>. But with so many options, how do you choose? The documentation lists parameters but doesn't tell you <em>which</em> filter to use or <em>how</em> to tune it.</p>
+
+    <p>This guide changes that. You'll learn about every major denoise filter, when to use each one, and how to get professional results.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Denoising is destructive</strong>—it irreversibly modifies your video[reference:1]. Always test on a short clip first.</li>
+        <li><strong>hqdn3d</strong> is the best all‑rounder: fast, effective, and easy to tune.</li>
+        <li><strong>nlmeans</strong> and <strong>bm3d</strong> deliver the highest quality but are significantly slower[reference:2].</li>
+        <li><strong>vaguedenoiser</strong> offers wavelet‑based precision with fine control.</li>
+        <li><strong>atadenoise</strong> is the fastest option for temporal noise reduction.</li>
+        <li><strong>Always preview</strong>—what looks good on a desktop may look terrible on a TV with built‑in denoising[reference:3].</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: A Dozen Filters, Almost No Guidance</h2>
+
+    <p>FFmpeg supports multiple denoise filters[reference:4], but the documentation is sparse. The <a href="https://trac.ffmpeg.org/wiki/DenoiseExamples">Denoise Examples</a> page lists filters and basic commands but doesn't explain <em>why</em> you'd choose one over another. As the page itself admits: <em>"This document does not offer direct recommendations for denoise video algorithm selection, since the expected quality and performance is entirely subjective and all sources differ"</em>[reference:5].</p>
+
+    <p>This guide fills that gap with practical advice, real‑world examples, and performance comparisons.</p>
+
+    <h2 id="the-symptom">The Symptom: "My Video Is Too Noisy"</h2>
+
+    <p>You've shot footage with a smartphone at high ISO, or digitized an old VHS tape, or received a low‑bitrate MP4 from a client. The video is grainy, speckled, or blocky. You need to clean it up—but you don't want to blur away all the detail.</p>
+
+    <p>This is the classic denoising dilemma: remove noise without destroying detail. FFmpeg's filters give you the tools to find the right balance.</p>
+
+    <h2 id="core-concepts">Core Concepts: Understanding Noise</h2>
+
+    <p>Before diving into filters, it helps to understand what you're dealing with.</p>
+
+    <p><strong>Types of video noise:</strong></p>
+    <ul>
+      <li><strong>Gaussian noise</strong> — random variations in brightness and color. Common in low‑light footage.</li>
+      <li><strong>Salt‑and‑pepper noise</strong> — random white and black pixels. Common in old digitizations.</li>
+      <li><strong>Compression artifacts</strong> — blocky, mosquito noise from low‑bitrate encoding.</li>
+      <li><strong>Film grain</strong> — natural texture from analog film (sometimes desirable).</li>
+      <li><strong>Chroma noise</strong> — color noise in the chrominance channels.</li>
+    </ul>
+
+    <p><strong>Denoising approaches:</strong></p>
+    <ul>
+      <li><strong>Spatial denoising</strong> — looks at individual frames, averaging neighboring pixels. Good for static noise but can blur edges.</li>
+      <li><strong>Temporal denoising</strong> — looks across multiple frames, averaging over time. Excellent for removing random noise without blurring[reference:6].</li>
+      <li><strong>Frequency‑domain denoising</strong> — transforms the image to the frequency domain (FFT, DCT, wavelet) and filters out high‑frequency noise[reference:7].</li>
+      <li><strong>Patch‑based denoising</strong> — finds similar patches across the image (nlmeans, bm3d) for state‑of‑the‑art results[reference:8].</li>
+    </ul>
+
+    <p>Most FFmpeg denoise filters combine multiple approaches.</p>
+
+    <h2 id="filter-comparison">Denoise Filters at a Glance</h2>
+
+    <p>Here's a quick overview of the major denoise filters in FFmpeg[reference:9]:</p>
+
+    <table>
+      <thead>
+        <tr><th>Filter</th><th>Type</th><th>Speed</th><th>Quality</th><th>Best For</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>hqdn3d</strong></td><td>Spatial + Temporal</td><td><span class="filter-badge badge-fast">Fast</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>All‑around denoising</td></tr>
+        <tr><td><strong>nlmeans</strong></td><td>Patch‑based (spatial)</td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Excellent</span></td><td>High‑quality detail preservation[reference:10]</td></tr>
+        <tr><td><strong>vaguedenoiser</strong></td><td>Wavelet (spatial)</td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Very Good</span></td><td>Fine control, wavelet denoising[reference:11]</td></tr>
+        <tr><td><strong>bm3d</strong></td><td>Patch‑based (spatial)</td><td><span class="filter-badge badge-veryslow">Very Slow</span></td><td><span class="filter-badge badge-quality">Excellent</span></td><td>State‑of‑the‑art quality[reference:12]</td></tr>
+        <tr><td><strong>atadenoise</strong></td><td>Temporal averaging</td><td><span class="filter-badge badge-fast">Fast</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Fast temporal denoising[reference:13]</td></tr>
+        <tr><td><strong>fftdnoiz</strong></td><td>FFT (spatial + temporal)</td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Frequency‑domain denoising[reference:14]</td></tr>
+        <tr><td><strong>dctdnoiz</strong></td><td>DCT (spatial)</td><td><span class="filter-badge badge-veryslow">Very Slow</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Not designed for real time[reference:15]</td></tr>
+        <tr><td><strong>owdenoise</strong></td><td>Wavelet (spatial)</td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Overcomplete wavelet denoising[reference:16]</td></tr>
+        <tr><td><strong>chromanr</strong></td><td>Chroma only</td><td><span class="filter-badge badge-fast">Fast</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Color noise reduction</td></tr>
+        <tr><td><strong>removegrain</strong></td><td>Spatial</td><td><span class="filter-badge badge-fast">Fast</span></td><td><span class="filter-badge badge-quality">Moderate</span></td><td>Progressive video, grain removal[reference:17]</td></tr>
+        <tr><td><strong>tmedian</strong></td><td>Temporal median</td><td><span class="filter-badge badge-medium">Medium</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Heavy transient artifacts[reference:18]</td></tr>
+        <tr><td><strong>tmix</strong></td><td>Temporal mixing</td><td><span class="filter-badge badge-medium">Medium</span></td><td><span class="filter-badge badge-quality">Moderate</span></td><td>Noise reduction by frame mixing[reference:19]</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="hqdn3d">hqdn3d – The Workhorse</h2>
+
+    <p><code>hqdn3d</code> (High Quality 3D Denoiser) is the most popular denoise filter in FFmpeg[reference:20]. It combines spatial and temporal denoising for excellent results at reasonable speed.</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>hqdn3d=luma_spatial=4.0:chroma_spatial=3.0:luma_tmp=6.0:chroma_tmp=3.0</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+      <li><strong><code>luma_spatial</code></strong> — Spatial denoising strength for luma (brightness). Default 4.0.[reference:21]</li>
+      <li><strong><code>chroma_spatial</code></strong> — Spatial denoising strength for chroma (color). Default 3.0.[reference:22]</li>
+      <li><strong><code>luma_tmp</code></strong> — Temporal denoising strength for luma. Default 6.0.[reference:23]</li>
+      <li><strong><code>chroma_tmp</code></strong> — Temporal denoising strength for chroma. Default 3.0.[reference:24]</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Basic hqdn3d denoising with moderate settings
+ffmpeg -i noisy.mp4 -vf "hqdn3d=4:3:6:4.5" -c:v libx264 -crf 20 denoised.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This command applies moderate denoising[reference:25]. The parameters are <code>luma_spatial:chroma_spatial:luma_tmp:chroma_tmp</code>.</p>
+
+    <p><strong>Tips:</strong></p>
+    <ul>
+      <li>Start with <code>4:3:6:4.5</code> and adjust up or down.</li>
+      <li>For very noisy footage, try <code>6:4:8:6</code>.</li>
+      <li>To denoise only luma (leaving color untouched), set chroma parameters to 0: <code>hqdn3d=4:0:6:0</code>.</li>
+      <li>To denoise only chroma (color noise), set luma parameters to 0: <code>hqdn3d=0:3:0:4.5</code>.</li>
+    </ul>
+
+    <h2 id="nlmeans">nlmeans – The Quality Champion</h2>
+
+    <p><code>nlmeans</code> (Non‑Local Means) is widely considered one of the most advanced denoise filters[reference:26]. It works by finding similar patches across the image and averaging them—preserving edges and textures much better than simpler filters[reference:27].</p>
+
+    <p><strong>Limitation:</strong> Currently limited to <strong>8‑bit per channel</strong> formats[reference:28].</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>nlmeans=s=STRENGTH:r=PATCH_RADIUS:p=PREVIEW</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+      <li><strong><code>s</code></strong> — Denoising strength. Default 1.0, range 1.0–30.0.[reference:29]</li>
+      <li><strong><code>r</code></strong> — Patch radius. Default 3.</li>
+      <li><strong><code>p</code></strong> — Preview mode (0=off, 1=on).</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># nlmeans denoising with strength 30 (aggressive)
+ffmpeg -i noisy.mp4 -vf "nlmeans=s=30:r=3:p=1" -c:v libx264 -crf 20 denoised.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As one user noted, <code>nlmeans</code> is <em>"too excellent"</em> and can recover even bad sources like VHS video[reference:30].</p>
+
+    <p><strong>Tips:</strong></p>
+    <ul>
+      <li>Start with <code>s=4</code> for light denoising, <code>s=10</code> for moderate, <code>s=20-30</code> for aggressive[reference:31][reference:32].</li>
+      <li><code>p=1</code> enables preview mode—useful for testing.</li>
+      <li>For best results, pair with <code>unsharp</code> to restore sharpness: <code>nlmeans=s=10:r=3,unsharp=5:5:1.0:5:5:0.0</code>[reference:33].</li>
+      <li><code>nlmeans</code> is significantly slower than <code>hqdn3d</code>[reference:34].</li>
+    </ul>
+
+    <h2 id="vaguedenoiser">vaguedenoiser – Wavelet Precision</h2>
+
+    <p><code>vaguedenoiser</code> applies a wavelet‑based denoiser using the Cohen‑Daubechies‑Feauveau 9/7 wavelet[reference:35]. It transforms each frame into the wavelet domain, filters coefficients, and inverse transforms[reference:36].</p>
+
+    <p><strong>Note:</strong> Requires FFmpeg to be compiled with <code>--enable-libvidstab</code>[reference:37].</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>vaguedenoiser=threshold=THRESHOLD:method=METHOD:nsteps=NSTEPS:percent=PERCENT:planes=PLANES:type=TYPE</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+      <li><strong><code>threshold</code></strong> — Filtering strength. Higher = more filtering. Default 2.[reference:38]</li>
+      <li><strong><code>method</code></strong> — <code>hard</code>, <code>soft</code>, or <code>garrote</code> (default)[reference:39].</li>
+      <li><strong><code>nsteps</code></strong> — Wavelet decomposition levels. Default 6[reference:40].</li>
+      <li><strong><code>percent</code></strong> — Percentage of full denoising. Default 85[reference:41].</li>
+      <li><strong><code>planes</code></strong> — Which planes to process. Default all[reference:42].</li>
+      <li><strong><code>type</code></strong> — <code>universal</code> (default) or <code>bayes</code>[reference:43].</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># vaguedenoiser with moderate threshold
+ffmpeg -i noisy.mp4 -vf "vaguedenoiser=threshold=22:percent=100:nsteps=4" -c:v libx264 -crf 20 denoised.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This applies wavelet denoising with a threshold of 22 and 4 decomposition levels[reference:44].</p>
+
+    <p><strong>Tips:</strong></p>
+    <ul>
+      <li><code>method=garrote</code> (default) is a good balance between soft and hard thresholding[reference:45].</li>
+      <li><code>nsteps</code> values above 6 may not improve results much[reference:46].</li>
+      <li><code>percent=100</code> applies full denoising; lower values apply partial[reference:47].</li>
+      <li><code>type=bayes</code> can be more adaptive than <code>universal</code>[reference:48].</li>
+    </ul>
+
+    <h2 id="bm3d">bm3d – State of the Art</h2>
+
+    <p><code>bm3d</code> (Block‑Matching 3D) is one of the most advanced denoising algorithms available[reference:49]. It works by finding similar blocks in the image, grouping them into 3D stacks, applying collaborative filtering, and aggregating the results[reference:50].</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>bm3d=sigma=SIGMA:block=BLOCK:bstep=BSTEP:group=GROUP:range=RANGE:mstep=MSTEP:thmse=THMSE:hdthr=HDTHR:estim=ESTIM:planes=PLANES</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+      <li><strong><code>sigma</code></strong> — Denoising strength. Default 1, range 0–999.9.[reference:51]</li>
+      <li><strong><code>block</code></strong> — Block size. Default 4.[reference:52]</li>
+      <li><strong><code>bstep</code></strong> — Block step. Default 2.[reference:53]</li>
+      <li><strong><code>group</code></strong> — Group size. Default 1.[reference:54]</li>
+      <li><strong><code>estim</code></strong> — Estimation mode: <code>basic</code> or <code>final</code>[reference:55].</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># bm3d denoising with sigma 30
+ffmpeg -i noisy.mp4 -vf "bm3d=sigma=30:block=4:bstep=2:group=1:estim=basic" -c:v libx264 -crf 20 denoised.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This applies BM3D denoising with a sigma of 30[reference:56]. BM3D is <strong>extremely slow</strong> but delivers state‑of‑the‑art quality[reference:57].</p>
+
+    <h2 id="atadenoise">atadenoise – Fast &amp; Adaptive</h2>
+
+    <p><code>atadenoise</code> (Adaptive Temporal Averaging Denoiser) is one of the fastest denoise filters[reference:58]. It works by averaging pixels across multiple frames, adapting to motion to avoid ghosting.</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>atadenoise=0a=THRESHOLD_A:0b=THRESHOLD_B:1a=THRESHOLD_A:1b=THRESHOLD_B:2a=THRESHOLD_A:2b=THRESHOLD_B</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+      <li><strong><code>0a</code></strong> — Threshold A for plane 0 (luma)[reference:59]</li>
+      <li><strong><code>0b</code></strong> — Threshold B for plane 0 (luma)[reference:60]</li>
+      <li><strong><code>1a</code></strong> — Threshold A for plane 1 (chroma)</li>
+      <li><strong><code>1b</code></strong> — Threshold B for plane 1 (chroma)</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># atadenoise with default settings
+ffmpeg -i noisy.mp4 -vf "atadenoise" -c:v libx264 -crf 20 denoised.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>With default parameters, <code>atadenoise</code> is a great starting point for fast denoising[reference:61].</p>
+
+    <h2 id="fftdnoiz">fftdnoiz – Frequency Domain</h2>
+
+    <p><code>fftdnoiz</code> applies denoising using a 3D Fast Fourier Transform[reference:62]. "3D" means it considers both spatial and temporal dimensions[reference:63].</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>fftdnoiz=SIGMA:BLOCK:OVERLAP:PRECISION</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+    <ul>
+      <li><strong><code>sigma</code></strong> — Denoising strength. Typical values 5‑9.[reference:64]</li>
+      <li><strong><code>block</code></strong> — Block size.</li>
+      <li><strong><code>overlap</code></strong> — Overlap between blocks.</li>
+      <li><strong><code>precision</code></strong> — Calculation precision.</li>
+    </ul>
+
+    <p><strong>Example:</strong></p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># fftdnoiz with sigma 30
+ffmpeg -i noisy.mp4 -vf "fftdnoiz=30:1:6:0.8" -c:v libx264 -crf 20 denoised.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Warning:</strong> <code>fftdnoiz</code> can introduce ringing artifacts with bad settings[reference:65]. Start with lower sigma values (5‑9) and increase gradually[reference:66].</p>
+
+    <h2 id="other-filters">Other Denoise Filters</h2>
+
+    <h3>chromanr</h3>
+
+    <p>Reduces chrominance (color) noise only. Useful when luma is clean but color is noisy[reference:67].</p>
+
+    <pre><code>ffmpeg -i noisy.mp4 -vf "chromanr" -c:v libx264 -crf 20 denoised.mp4</code></pre>
+
+    <h3>removegrain</h3>
+
+    <p>Spatial denoiser for progressive video[reference:68]. Fast but can blur edges.</p>
+
+    <pre><code>ffmpeg -i noisy.mp4 -vf "removegrain=4" -c:v libx264 -crf 20 denoised.mp4</code></pre>
+
+    <p>Users have reported success chaining multiple <code>removegrain</code> filters[reference:69].</p>
+
+    <h3>tmedian</h3>
+
+    <p>Temporal median filter—picks the median pixel from several frames[reference:70]. Good for heavy transient artifacts[reference:71].</p>
+
+    <pre><code>ffmpeg -i noisy.mp4 -vf "tmedian=radius=3" -c:v libx264 -crf 20 denoised.mp4</code></pre>
+
+    <h3>tmix</h3>
+
+    <p>Reduces noise by mixing successive video frames[reference:72].</p>
+
+    <pre><code>ffmpeg -i noisy.mp4 -vf "tmix=frames=5" -c:v libx264 -crf 20 denoised.mp4</code></pre>
+
+    <h3>owdenoise</h3>
+
+    <p>Overcomplete wavelet denoiser[reference:73]. Similar to <code>vaguedenoiser</code> but uses a different wavelet transform[reference:74].</p>
+
+    <pre><code>ffmpeg -i noisy.mp4 -vf "owdenoise=8:6:6" -c:v libx264 -crf 20 denoised.mp4</code></pre>
+
+    <h3>dctdnoiz</h3>
+
+    <p>2D DCT‑based denoiser[reference:75]. <strong>Extremely slow</strong> and not designed for real time[reference:76].</p>
+
+    <pre><code>ffmpeg -i noisy.mp4 -vf "dctdnoiz=sigma=30:n=4" -c:v libx264 -crf 20 denoised.mp4</code></pre>
+
+    <h2 id="practical-chain">Practical Example: Denoising Pipeline</h2>
+
+    <p>For the best results, combine denoising with sharpening:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Professional denoising pipeline: denoise → sharpen
+ffmpeg -i noisy.mp4 -vf "hqdn3d=4:3:6:4.5,unsharp=5:5:1.0:5:5:0.0" -c:v libx264 -crf 18 -preset slow denoised_sharp.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>For high‑quality denoising with <code>nlmeans</code>:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># High-quality denoising with nlmeans + unsharp
+ffmpeg -i noisy.mp4 -vf "nlmeans=s=10:r=3:p=1,unsharp=5:5:1.0:5:5:0.0" -c:v libx264 -crf 18 -preset slow denoised_high_quality.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="performance">Performance Comparison</h2>
+
+    <p>Based on real‑world testing, here's how the filters compare for a 10‑second 1080p clip on a modern CPU[reference:77]:</p>
+
+    <table>
+      <thead>
+        <tr><th>Filter</th><th>Relative Speed</th><th>Quality</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>atadenoise</strong></td><td><span class="filter-badge badge-fast">Fastest</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Excellent for fast workflows</td></tr>
+        <tr><td><strong>hqdn3d</strong></td><td><span class="filter-badge badge-fast">Very Fast</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Best all‑rounder</td></tr>
+        <tr><td><strong>removegrain</strong></td><td><span class="filter-badge badge-fast">Fast</span></td><td><span class="filter-badge badge-quality">Moderate</span></td><td>Simple spatial denoising</td></tr>
+        <tr><td><strong>tmedian</strong></td><td><span class="filter-badge badge-medium">Medium</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Good for transient artifacts</td></tr>
+        <tr><td><strong>vaguedenoiser</strong></td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Very Good</span></td><td>Wavelet precision</td></tr>
+        <tr><td><strong>fftdnoiz</strong></td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Can cause ringing</td></tr>
+        <tr><td><strong>nlmeans</strong></td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Excellent</span></td><td>8‑bit only</td></tr>
+        <tr><td><strong>owdenoise</strong></td><td><span class="filter-badge badge-slow">Slow</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Wavelet denoising</td></tr>
+        <tr><td><strong>bm3d</strong></td><td><span class="filter-badge badge-veryslow">Very Slow</span></td><td><span class="filter-badge badge-quality">Excellent</span></td><td>State‑of‑the‑art</td></tr>
+        <tr><td><strong>dctdnoiz</strong></td><td><span class="filter-badge badge-veryslow">Extremely Slow</span></td><td><span class="filter-badge badge-quality">Good</span></td><td>Not for real‑time</td></tr>
+      </tbody>
+    </table>
+
+    <p>As noted in the FFmpeg wiki, <em>"these comparisons and values are not recommendations, but are to demonstrate how algorithm and options selection can have a major impact on performance"</em>[reference:78].</p>
+
+    <h2 id="debugging">Debugging Common Issues</h2>
+
+    <p>Here are the most common denoising problems and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Too much blur</strong></td>
+          <td>Spatial strength too high</td>
+          <td>Reduce spatial parameters; increase temporal instead[reference:79]</td>
+        </tr>
+        <tr>
+          <td><strong>Ghosting / trailing</strong></td>
+          <td>Temporal strength too high for fast motion</td>
+          <td>Reduce temporal parameters; use atadenoise which adapts to motion</td>
+        </tr>
+        <tr>
+          <td><strong>Ringing artifacts</strong></td>
+          <td>Frequency‑domain filter too aggressive</td>
+          <td>Reduce sigma in fftdnoiz[reference:80]; use wavelet or patch‑based filters</td>
+        </tr>
+        <tr>
+          <td><strong>Color bleeding</strong></td>
+          <td>Chroma parameters too high</td>
+          <td>Reduce chroma_spatial and chroma_tmp in hqdn3d; use chromanr separately</td>
+        </tr>
+        <tr>
+          <td><strong>No visible effect</strong></td>
+          <td>Strength values too low</td>
+          <td>Increase parameters gradually until effect is visible</td>
+        </tr>
+        <tr>
+          <td><strong>Processing is extremely slow</strong></td>
+          <td>Using nlmeans, bm3d, or dctdnoiz</td>
+          <td>Switch to hqdn3d or atadenoise for faster results</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Pro tip:</strong> As one user noted, <em>"I always use unsharp to sharpen the image after nlmeans"</em>[reference:81]. Denoising always removes some detail—sharpening helps restore it.</p>
+
+    <h2 id="ide">Visualize Denoising with the FFmpegLab IDE</h2>
+
+    <p>Denoising is <strong>much easier to tune</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>Preview denoising in real time</strong>—adjust parameters and see the result instantly</li>
+      <li><strong>Compare before and after</strong> side by side</li>
+      <li><strong>Adjust strength sliders</strong> for hqdn3d, nlmeans, and vaguedenoiser</li>
+      <li><strong>Visualize noise reduction</strong> with a difference overlay</li>
+      <li><strong>Generate the exact command</strong> with your tuned parameters</li>
+    </ul>
+
+    <p>Here's how denoising tuning looks in the FFmpegLab IDE.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🎬 Filter: hqdn3d</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📊 Luma S: 4.0 | Chroma S: 3.0 | Luma T: 6.0 | Chroma T: 4.5</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#34d399;">✅ Denoising active</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280;">
+            <div style="background:#2d2d3d; height:80px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563;">📷 Before</div>
+            <span style="color:#f87171;">● Noise level: 42%</span>
+          </div>
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280; border:2px solid #34d399;">
+            <div style="background:#2d2d3d; height:80px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563;">✨ After</div>
+            <span style="color:#34d399;">● Noise level: 8%</span>
+          </div>
+        </div>
+        <div style="background:#1e1e2e; border-radius:6px; padding:8px; margin-bottom:12px; font-family:monospace; font-size:0.75rem; color:#a1a1aa;">
+          <div style="color:#34d399;">[info]</div>
+          <div>  Denoising applied: 34% noise reduction</div>
+          <div>  Sharpness preserved: 92%</div>
+          <div>  Processing time: 14ms/frame</div>
+        </div>
+        <pre class="em-code"># Visual denoising preview
+# Adjust sliders → see results in real time</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div style="display:flex; gap:12px; padding:8px 0; font-size:0.8rem; color:#6b7280; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">🎬 <span style="color:#fff;">hqdn3d denoising</span></span>
+          <span style="display:flex; align-items:center; gap:4px;">📊 <span style="color:#fff;">Noise reduction: 34%</span></span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Preview active</span>
+        </div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what's happening—the original frame, the denoised result, and metrics like noise reduction percentage. You can adjust parameters with sliders and see the results in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the best denoise filter in FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">There's no single "best" filter—it depends on your source and needs. For high‑quality results, <strong>nlmeans</strong> and <strong>bm3d</strong> are excellent but slow. For fast denoising, <strong>hqdn3d</strong> and <strong>atadenoise</strong> work well. For fine‑tuning, <strong>vaguedenoiser</strong> offers wavelet‑based control[reference:82]. Test each on a short clip to see which works best for your content.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I denoise video in FFmpeg without losing detail?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Start with low strength values and increase gradually. For hqdn3d, try <code>luma_spatial=4.0:chroma_spatial=3.0</code>[reference:83]. For nlmeans, start with <code>s=4.0</code>. Always preview on a short clip before processing the full video. You can also pair denoising with <code>unsharp</code> to restore some sharpness[reference:84].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Which FFmpeg denoise filter is fastest?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>atadenoise</strong> is generally the fastest among dedicated denoise filters[reference:85]. <strong>hqdn3d</strong> is also relatively fast[reference:86]. <strong>nlmeans</strong>, <strong>bm3d</strong>, and <strong>vaguedenoiser</strong> are significantly slower[reference:87], with <strong>dctdnoiz</strong> being extremely slow and not designed for real‑time use[reference:88].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I denoise 10-bit/HDR video with FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Most denoise filters support high bit depths. <strong>nlmeans</strong> is currently limited to 8‑bit formats[reference:89], but <strong>hqdn3d</strong>, <strong>vaguedenoiser</strong>, <strong>bm3d</strong>, and others work with 10‑bit and higher. Check the filter documentation for specific format support.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I remove only chroma noise (color noise)?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use the <strong>chromanr</strong> filter for chrominance noise reduction[reference:90]. Alternatively, use the <code>planes</code> parameter to target only chroma planes: <code>hqdn3d=0:0:4:3</code> (luma strength 0, chroma spatial 4, chroma temporal 3).</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Why does my denoised video look blurry?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Denoising always removes some detail—that's the trade‑off for removing noise[reference:91]. Try reducing the strength parameters, using more temporal (less spatial) denoising, or adding an <code>unsharp</code> filter after denoising to restore sharpness[reference:92].</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Video denoising is one of FFmpeg's most powerful—and most complex—capabilities. With over a dozen dedicated filters, you have the tools to clean up almost any noisy footage.</p>
+
+    <p>The key is understanding the trade‑offs: <strong>hqdn3d</strong> for speed and reliability, <strong>nlmeans</strong> and <strong>bm3d</strong> for quality, <strong>vaguedenoiser</strong> for wavelet precision, and <strong>atadenoise</strong> for fast temporal denoising.</p>
+
+    <p>With the FFmpegLab IDE's visual feedback, you can experiment, debug, and perfect your denoising settings without the guesswork. Adjust parameters with sliders, preview the results in real time, and export the exact command you need.</p>
+
+    <p>Next time you're facing noisy footage, reach for FFmpeg's denoise filters. Your viewers will thank you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+        <li><a href="ffmpeg-color-spaces-hdr-tone-mapping.html">Color Spaces, HDR, and Tone Mapping</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

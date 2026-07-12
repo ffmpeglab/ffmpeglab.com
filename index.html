@@ -313,6 +313,7 @@
       .closing h2 { font-size: 3rem; }
       .guides-grid { grid-template-columns: repeat(3, 1fr); }
     }
+    
   </style>
 </head>
 <body>
@@ -488,12 +489,12 @@
           </div>
         </div>
         <div class="collab-editor" role="img" aria-label="FFmpegLab collaborative video editor showing two collaborators, live comments, and comment markers on a shared timeline">
-          <div class="ce-toolbar"><span class="ce-back">←</span><div class="ce-people"><span class="ce-person live">DP</span><span class="ce-person">MK</span><span class="ce-person">+2</span></div><span class="ce-spacer"></span><span class="ce-action active">Share</span><span class="ce-action">Renders</span><span class="ce-action">{ } Code</span><span class="ce-action">Config</span></div>
+          <div class="ce-toolbar"><span class="ce-back">←</span><div class="ce-people"><span class="ce-person live">DP</span><span class="ce-person">MK</span><span class="ce-person">+2</span></div><span class="ce-spacer"></span><span class="ce-action active">Share</span><span class="ce-action">Renders</span><span class="ce-action">Code</span><span class="ce-action">Config</span></div>
           <div class="ce-workspace">
             <div class="ce-stage"><div class="ce-frame"></div><span class="ce-play">▶</span><span class="ce-time">00:00:16</span><span class="ce-cursor">Maya is editing</span></div>
             <aside class="ce-comments"><div class="ce-comments-head"><span>Live comments</span><span class="ce-live">3 online</span></div><div class="ce-thread"><div class="ce-msg me">Can we tighten this section so the first cut lands faster?<small>Danila · 00:16</small></div><div class="ce-msg">Yes — trimming the pause and moving the next clip now.<small>Maya · live</small></div><div class="ce-msg me">Perfect. Keep the music transition where it is.<small>Danila · resolved</small></div></div><div class="ce-input">Reply to this moment…</div></aside>
           </div>
-          <div class="ce-timeline"><div class="ce-ruler">00:00 00:05 00:10 00:15 00:20 00:25</div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Video 1</div><div class="ce-clips"><div class="ce-clip">intro.mp4<span class="ce-marker">2</span></div><div class="ce-clip">demo.mp4<span class="ce-marker">1</span></div><div class="ce-clip alt">outro.mp4</div></div></div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Audio 1</div><div class="ce-clips"><div class="ce-clip ce-audio">mixdown.wav</div></div></div></div>
+          <div class="ce-timeline"><div class="ce-ruler">00:00 00:05 00:10 00:15 00:20 00:25</div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Video 1</div><div class="ce-clips"><div class="ce-clip">intro.mp4<span class="ce-marker">💬</span></div><div class="ce-clip">demo.mp4<span class="ce-marker active">💬</span></div><div class="ce-clip alt">outro.mp4</div></div></div><div class="ce-track-row"><div class="ce-track-name"><span class="ce-track-dot"></span>Audio 1</div><div class="ce-clips"><div class="ce-clip ce-audio">mixdown.wav</div></div></div></div>
         </div>
       </div>
     </section>
@@ -539,6 +540,16 @@
         <h2 class="balance">FFmpeg guides &amp; tutorials</h2>
         <p class="sub">Practical, copy-pasteable walkthroughs for the FFmpeg techniques behind every edit.</p>
         <div class="guides-grid">
+          <a class="guide-card" href="articles/ffmpeg-video-denoising.html">
+            <div class="k">Effects</div>
+            <div class="t">Video Denoising – Complete Guide to Noise Removal</div>
+            <div class="d">Remove grain, salt‑and‑pepper, and compression artifacts with FFmpeg's powerful denoise filters. Compare <code>hqdn3d</code>, <code>nlmeans</code>, <code>vaguedenoiser</code>, <code>bm3d</code>, and more.</div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-ken-burns-zoompan-guide.html">
+            <div class="k">Effects</div>
+            <div class="t">Ken Burns / Zoompan Effects – The Art of Motion</div>
+            <div class="d">Bring still images to life with smooth pan-and-zoom animations. Master the <code>zoompan</code> filter to create Ken Burns effects, dynamic slideshows, and cinematic camera movements.</div>
+          </a>
           <a class="guide-card" href="articles/ffmpeg-optical-flow-motion-interpolation.html">
             <div class="k">Effects</div>
             <div class="t">Optical Flow &amp; Motion Interpolation</div>

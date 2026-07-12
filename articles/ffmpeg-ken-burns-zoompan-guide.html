@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ken Burns / Zoompan Effects in FFmpeg – Complete Guide</title>
+  <meta name="description" content="Master Ken Burns pan-and-zoom effects in FFmpeg with the zoompan filter. Learn to create smooth zoom, pan, and slideshow animations with precise control." />
+  <meta name="keywords" content="ffmpeg zoompan, ffmpeg ken burns, ffmpeg pan and zoom, ffmpeg slideshow animation, ffmpeg zoom filter, ffmpeg pan effect" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-ken-burns-zoompan-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-ken-burns-zoompan-guide.html" />
+  <meta property="og:title" content="Ken Burns / Zoompan Effects in FFmpeg – Complete Guide" />
+  <meta property="og:description" content="Master Ken Burns pan-and-zoom effects in FFmpeg with the zoompan filter. Learn to create smooth zoom, pan, and slideshow animations with precise control." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Ken Burns / Zoompan Effects in FFmpeg – Complete Guide",
+      "description": "Master Ken Burns pan-and-zoom effects in FFmpeg with the zoompan filter. Learn to create smooth zoom, pan, and slideshow animations with precise control.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-08",
+      "dateModified": "2026-07-08",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-ken-burns-zoompan-guide.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the zoompan filter in FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The zoompan filter applies pan-and-zoom (Ken Burns) effects to a video stream. It allows you to zoom in or out on a specific area and pan across the image, creating smooth camera movement effects."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I create a zoom-in effect with zoompan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the expression z='min(zoom+ZOOM_RATE, MAX_ZOOM)'. For example: zoompan=z='min(zoom+0.01,1.5)':d=125:s=1920x1080:fps=25. This zooms in from 1.0x to 1.5x over 5 seconds."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I create a pan effect with zoompan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the x and y parameters with expressions. For example: x='iw/2-(iw/zoom/2)+5*t' moves the view center to the right while zooming."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I avoid black borders with zoompan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Set the output size to match the input size (s=iw:ih) and use zoom expressions that don't cause the viewport to go beyond the image boundaries. Using d=1 with a duplicate frame can help maintain the original size."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use zoompan in a slideshow with transitions?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Apply zoompan to each image individually using trim and setpts, then concatenate with xfade transitions. FFmpegLab's visual slideshow builder makes this easy with built-in Ken Burns controls."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .formula-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #fbbf24;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+    }
+    .editor-mock {
+      margin: 1.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Ken Burns / Zoompan</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Ken Burns / Zoompan Effects – The Art of Motion</h1>
+      <p class="dek">Bring still images to life with smooth pan-and-zoom animations. Master the <code>zoompan</code> filter to create Ken Burns effects, dynamic slideshows, and cinematic camera movements.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Cinematic Motion Without a Camera</a></li>
+        <li><a href="#the-symptom">The Symptom: "My Slideshow Feels Static"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Is the Ken Burns Effect?</a></li>
+        <li><a href="#zoompan-syntax">The <code>zoompan</code> Filter Syntax</a></li>
+        <li><a href="#expressions">Understanding Expressions in zoompan</a></li>
+        <li><a href="#zoom-in">Example 1: Zoom In</a></li>
+        <li><a href="#zoom-out">Example 2: Zoom Out</a></li>
+        <li><a href="#pan">Example 3: Pan Across</a></li>
+        <li><a href="#combined">Example 4: Combined Zoom + Pan</a></li>
+        <li><a href="#slideshow">Example 5: Ken Burns Slideshow</a></li>
+        <li><a href="#advanced">Advanced: Custom Motion Paths</a></li>
+        <li><a href="#troubleshooting">Troubleshooting Common Issues</a></li>
+        <li><a href="#ffmpeglab-ui">Ken Burns Made Easy with FFmpegLab</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Still images are beautiful—but motion brings them to life. The <strong>Ken Burns effect</strong>, named after the legendary documentary filmmaker, is a technique of slowly zooming in or out on a still image while panning across it. It adds a cinematic quality to slideshows, documentaries, and presentations.</p>
+
+    <p>FFmpeg's <code>zoompan</code> filter makes this effect possible—but its syntax is notoriously cryptic. The filter uses mathematical expressions for zoom level (<code>z</code>), pan position (<code>x</code>, <code>y</code>), duration (<code>d</code>), and output size (<code>s</code>). Getting the expressions right requires understanding how the filter works under the hood.</p>
+
+    <p>This guide demystifies <code>zoompan</code>, with clear examples, practical tips, and a visual approach that shows you exactly how to create stunning pan-and-zoom effects.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>zoompan</code></strong> applies pan-and-zoom to images or video.</li>
+        <li><strong>Expressions</strong> control zoom level (<code>z</code>), pan position (<code>x</code>, <code>y</code>), duration (<code>d</code>), and output size (<code>s</code>).</li>
+        <li><strong>Zoom in</strong> with <code>z='min(zoom+0.01,1.5)'</code>.</li>
+        <li><strong>Zoom out</strong> with <code>z='max(zoom-0.01,0.8)'</code>.</li>
+        <li><strong>Pan</strong> by animating <code>x</code> or <code>y</code> with time (<code>t</code>).</li>
+        <li><strong>Combine with <code>xfade</code></strong> for slideshows with Ken Burns on every image.</li>
+        <li><strong>FFmpegLab's visual controls</strong> make Ken Burns effects drag-and-drop easy.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Cinematic Motion Without a Camera</h2>
+
+    <p>The <code>zoompan</code> filter has been part of FFmpeg for years, but the documentation is minimal. The official description says: <em>"Apply Zoom & Pan effect."</em> That's it. The parameters are listed, but there's no guidance on how to use them.</p>
+
+    <p>Search online, and you'll find fragmented examples—some work, some don't. Most don't explain <em>why</em> the expressions are written the way they are. This guide fills that gap with clear explanations and practical, tested examples.</p>
+
+    <h2 id="the-symptom">The Symptom: "My Slideshow Feels Static"</h2>
+
+    <p>You've created a slideshow with FFmpeg. The images are beautiful, the transitions are smooth, and the music is perfect. But something feels off—it's <em>static</em>. Each image just sits there, frozen. You need motion, a sense of life, a cinematic quality.</p>
+
+    <p>That's exactly what the Ken Burns effect provides. And with <code>zoompan</code>, you can add it to every image in your slideshow.</p>
+
+    <h2 id="core-concepts">Core Concepts: What Is the Ken Burns Effect?</h2>
+
+    <p>The Ken Burns effect is a cinematic technique that slowly moves the camera across a still image. It typically involves:</p>
+
+    <ul>
+      <li><strong>Zoom</strong> — slowly zooming in or out on a portion of the image</li>
+      <li><strong>Pan</strong> — slowly moving the view from one part of the image to another</li>
+      <li><strong>Combination</strong> — both zooming and panning simultaneously</li>
+    </ul>
+
+    <p>The effect creates the illusion of camera movement, adding depth and storytelling to static images. It's used in documentaries, slideshows, and promotional videos.</p>
+
+    <p>The <code>zoompan</code> filter in FFmpeg generates a video by extracting a moving rectangular viewport from the input image, then scaling it to the output size.</p>
+
+    <div class="diagram">
+      <span style="color:#6b7280;">Input Image</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Zoompan</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Animated Video</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(Extracts a moving viewport and scales to output)</span>
+    </div>
+
+    <h2 id="zoompan-syntax">The <code>zoompan</code> Filter Syntax</h2>
+
+    <p>The filter takes a string of parameters, each with an expression:</p>
+
+    <div class="formula-box">
+      zoompan=z=EXPRESSION:x=EXPRESSION:y=EXPRESSION:d=DURATION:fps=FPS:s=WIDTHxHEIGHT
+    </div>
+
+    <p><strong>Parameters:</strong></p>
+
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Description</th><th>Default</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong><code>z</code></strong></td><td>Zoom factor (1.0 = no zoom, >1 = zoom in, &lt;1 = zoom out)</td><td><code>1.0</code></td></tr>
+        <tr><td><strong><code>x</code></strong></td><td>X position of the viewport center (in input pixels)</td><td><code>iw/2</code></td></tr>
+        <tr><td><strong><code>y</code></strong></td><td>Y position of the viewport center (in input pixels)</td><td><code>ih/2</code></td></tr>
+        <tr><td><strong><code>d</code></strong></td><td>Number of frames to generate</td><td><em>Required</em></td></tr>
+        <tr><td><strong><code>fps</code></strong></td><td>Output frame rate</td><td><code>25</code></td></tr>
+        <tr><td><strong><code>s</code></strong></td><td>Output size (width x height in pixels)</td><td>Input size</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Important notes:</strong></p>
+    <ul>
+      <li><code>d</code> must be specified—it's the number of frames to output.</li>
+      <li><code>z</code>, <code>x</code>, and <code>y</code> are expressions that are evaluated for each frame.</li>
+      <li>The <code>zoom</code> variable in expressions stores the previous zoom value.</li>
+      <li><code>iw</code> and <code>ih</code> are input width and height.</li>
+      <li><code>t</code> is the current frame index (starting from 0).</li>
+    </ul>
+
+    <h2 id="expressions">Understanding Expressions in zoompan</h2>
+
+    <p>The expressions use a simple syntax similar to FFmpeg's evaluation engine. Here are the key variables:</p>
+
+    <ul>
+      <li><strong><code>zoom</code></strong> — The previous frame's zoom value. Starts at <code>z</code>'s initial value.</li>
+      <li><strong><code>t</code></strong> — The current frame number (starting from 0).</li>
+      <li><strong><code>iw</code></strong> — Input image width.</li>
+      <li><strong><code>ih</code></strong> — Input image height.</li>
+      <li><strong><code>in_w</code>, <code>in_h</code></strong> — Same as <code>iw</code>, <code>ih</code>.</li>
+    </ul>
+
+    <p><strong>Common expression patterns:</strong></p>
+
+    <ul>
+      <li><strong>Linear zoom</strong> — <code>z='min(zoom+0.01,1.5)'</code> (zoom in slowly, max 1.5x)</li>
+      <li><strong>Linear zoom out</strong> — <code>z='max(zoom-0.01,0.8)'</code> (zoom out slowly, min 0.8x)</li>
+      <li><strong>Eased zoom</strong> — <code>z='1+0.5*sin(t/30)'</code> (oscillating zoom)</li>
+      <li><strong>Pan right</strong> — <code>x='iw/2 - (iw/zoom/2) + 5*t'</code> (moves the view center to the right)</li>
+      <li><strong>Pan up</strong> — <code>y='ih/2 - (ih/zoom/2) - 5*t'</code> (moves the view center upward)</li>
+    </ul>
+
+    <p><strong>The formula for centering the viewport:</strong></p>
+
+    <p>The viewport width at a given zoom is <code>iw / zoom</code>. To center the viewport, the offset from the left edge is:</p>
+
+    <div class="formula-box">
+      x_offset = (iw - (iw / zoom)) / 2
+    </div>
+
+    <p>So the center of the viewport is at <code>iw/2 - (iw/zoom/2)</code>.</p>
+
+    <h2 id="zoom-in">Example 1: Zoom In</h2>
+
+    <p>Let's create a simple zoom-in effect on an image, from 1.0x to 1.5x over 5 seconds at 25 fps (125 frames).</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Zoom in from 1.0x to 1.5x over 5 seconds
+ffmpeg -i image.jpg -vf "zoompan=z='min(zoom+0.01,1.5)':d=125:s=1920x1080:fps=25" -c:v libx264 -crf 18 -t 5 zoom_in.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Explanation:</strong></p>
+    <ul>
+      <li><code>z='min(zoom+0.01,1.5)'</code> — Increment zoom by 0.01 per frame, capped at 1.5.</li>
+      <li><code>d=125</code> — 5 seconds at 25 fps.</li>
+      <li><code>s=1920x1080</code> — Output size (1080p).</li>
+      <li><code>-t 5</code> — Truncate to 5 seconds (safety).</li>
+    </ul>
+
+    <p>The viewport is centered by default (<code>x=iw/2</code>, <code>y=ih/2</code>).</p>
+
+    <h2 id="zoom-out">Example 2: Zoom Out</h2>
+
+    <p>Zoom out from 1.2x down to 0.8x over 5 seconds.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Zoom out from 1.2x to 0.8x over 5 seconds
+ffmpeg -i image.jpg -vf "zoompan=z='1.2 - 0.4*(t/125)':d=125:s=1920x1080:fps=25" -c:v libx264 -crf 18 -t 5 zoom_out.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Here we use <code>t</code> directly: <code>1.2 - 0.4*(t/125)</code> goes from 1.2 to 0.8 linearly over 125 frames.</p>
+
+    <h2 id="pan">Example 3: Pan Across</h2>
+
+    <p>Pan from left to right while keeping zoom constant (1.0x).</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Pan from left to right (constant zoom)
+ffmpeg -i image.jpg -vf "zoompan=z=1:x='iw/2 + 100*t':d=125:s=1920x1080:fps=25" -c:v libx264 -crf 18 -t 5 pan.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Explanation:</strong></p>
+    <ul>
+      <li><code>z=1</code> — No zoom.</li>
+      <li><code>x='iw/2 + 100*t'</code> — Move the viewport center to the right by 100 pixels per frame.</li>
+      <li><code>y</code> defaults to <code>ih/2</code> (center).</li>
+    </ul>
+
+    <p>This creates a slow pan across the image. Adjust the multiplier (100) for faster/slower pan.</p>
+
+    <h2 id="combined">Example 4: Combined Zoom + Pan</h2>
+
+    <p>Zoom in while panning to a specific area—a classic Ken Burns effect.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Ken Burns: zoom in on the right side of the image
+ffmpeg -i image.jpg -vf "zoompan=z='min(zoom+0.01,1.8)':x='iw/2 - (iw/zoom/2) + 5*t':y='ih/2':d=125:s=1920x1080:fps=25" -c:v libx264 -crf 18 -t 5 kenburns_zoom_pan.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This zooms in to 1.8x while panning to the right. The expression for <code>x</code> centers the viewport based on the current zoom, then adds a drift of 5 pixels per frame.</p>
+
+    <h2 id="slideshow">Example 5: Ken Burns Slideshow</h2>
+
+    <p>Now let's apply Ken Burns to each image in a slideshow. We'll use the <code>concat</code> filter with <code>trim</code> and <code>setpts</code> to process each image independently.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Slideshow with Ken Burns on each image (3 images, 3 seconds each, with crossfades)
+ffmpeg -loop 1 -i img1.jpg -loop 1 -i img2.jpg -loop 1 -i img3.jpg \
+-filter_complex "[0:v]trim=0:3,setpts=PTS-STARTPTS,zoompan=z='min(zoom+0.02,1.5)':d=75:s=1920x1080:fps=25[v0]; \
+[1:v]trim=0:3,setpts=PTS-STARTPTS,zoompan=z='max(zoom-0.02,0.8)':d=75:s=1920x1080:fps=25[v1]; \
+[2:v]trim=0:3,setpts=PTS-STARTPTS,zoompan=z='min(zoom+0.015,1.4)':x='iw/2 - (iw/zoom/2) + 10*t':d=75:s=1920x1080:fps=25[v2]; \
+[v0][v1]xfade=transition=fade:duration=1:offset=2[o1]; \
+[o1][v2]xfade=transition=fade:duration=1:offset=5[out]" \
+-map "[out]" -c:v libx264 -crf 18 -pix_fmt yuv420p slideshow_kenburns.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>Each image gets a different Ken Burns treatment: zoom in, zoom out, and zoom+pan. The <code>xfade</code> transitions create smooth crossfades between images.</p>
+
+    <h2 id="advanced">Advanced: Custom Motion Paths</h2>
+
+    <p>You can create complex motion paths by combining expressions. For example, a sinusoidal pan:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Sinusoidal pan + zoom (ken burns with wobble)
+ffmpeg -i image.jpg -vf "zoompan=z='1+0.3*sin(t/20)':x='iw/2 - (iw/zoom/2) + 50*sin(t/15)':y='ih/2 - (ih/zoom/2) + 50*cos(t/20)':d=200:s=1920x1080:fps=25" -c:v libx264 -crf 18 -t 8 wobble.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This creates a gentle oscillating pan with varying zoom, giving a dreamy, floating effect.</p>
+
+    <h2 id="troubleshooting">Troubleshooting Common Issues</h2>
+
+    <p>Here are the most common issues with <code>zoompan</code> and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Black borders appear</strong></td>
+          <td>Viewport moves beyond image bounds</td>
+          <td>Clamp x and y: <code>x='max(0, min(iw - iw/zoom, x_expr))'</code></td>
+        </tr>
+        <tr>
+          <td><strong>Zoom doesn't change</strong></td>
+          <td>Expression uses <code>zoom</code> incorrectly</td>
+          <td>Ensure you reference <code>zoom</code> variable properly, e.g., <code>z='min(zoom+0.01,1.5)'</code></td>
+        </tr>
+        <tr>
+          <td><strong>Output is still image</strong></td>
+          <td><code>d</code> missing or set to 1</td>
+          <td>Set <code>d</code> to the number of frames desired</td>
+        </tr>
+        <tr>
+          <td><strong>Stretched video</strong></td>
+          <td>Input aspect ratio differs from output size</td>
+          <td>Set <code>s=iw:ih</code> to preserve aspect ratio, or use <code>scale</code> after</td>
+        </tr>
+        <tr>
+          <td><strong>Zoom jumps at start</strong></td>
+          <td>Initial <code>zoom</code> value not set</td>
+          <td>Set initial <code>z</code> in expression, e.g., <code>z='1.0 + 0.5*(t/100)'</code></td>
+        </tr>
+        <tr>
+          <td><strong>Motion is too fast</strong></td>
+          <td>Multipliers too large</td>
+          <td>Reduce the increments (e.g., 0.005 instead of 0.01)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ffmpeglab-ui">Ken Burns Made Easy with FFmpegLab</h2>
+
+    <p>FFmpegLab's visual slideshow builder includes <strong>built‑in Ken Burns controls</strong> that eliminate the need to write complex expressions.</p>
+
+    <div class="callout">
+      <h3>How FFmpegLab Simplifies Ken Burns</h3>
+      <ul>
+        <li><strong>Drag and drop</strong> your images into the timeline</li>
+        <li><strong>Enable Ken Burns</strong> with a single toggle</li>
+        <li><strong>Choose zoom direction</strong>: Zoom In, Zoom Out, Pan Left/Right/Up/Down, or Custom</li>
+        <li><strong>Adjust speed</strong> with a slider—instant preview</li>
+        <li><strong>Set start and end zoom levels</strong> with simple controls</li>
+        <li><strong>Preview</strong> the animation in real time</li>
+        <li><strong>Apply to all slides</strong> or customize per slide</li>
+        <li><strong>Export</strong> with one click—no command line required</li>
+      </ul>
+    </div>
+
+    <p>Here's how Ken Burns controls look in the FFmpegLab IDE:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📸 Slide 1: Ken Burns active</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🎯 Zoom: 1.0 → 1.5</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🧭 Pan: Right (100px)</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#34d399;">✅ Live preview</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280;">
+            <div style="background:#2d2d3d; height:80px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563;">🖼️ Original</div>
+            <span style="color:#6b7280;">Start (zoom 1.0)</span>
+          </div>
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280; border:2px solid #34d399;">
+            <div style="background:#2d2d3d; height:80px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563;">🎬 Ken Burns</div>
+            <span style="color:#34d399;">● Zoom: 1.0 → 1.5 | Pan: Right</span>
+          </div>
+        </div>
+        <div style="background:#1e1e2e; border-radius:6px; padding:8px; margin-bottom:12px; font-family:monospace; font-size:0.75rem; color:#a1a1aa;">
+          <div style="color:#34d399;">[kenburns]</div>
+          <div>  Effect: zoom in + pan right</div>
+          <div>  Start zoom: 1.0 | End zoom: 1.5</div>
+          <div>  Pan offset: 100px</div>
+          <div>  Duration: 3.0 seconds (75 frames)</div>
+        </div>
+        <pre class="em-code"># Generated by FFmpegLab Ken Burns Builder
+# Drag sliders to adjust zoom and pan — preview in real time</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div style="display:flex; gap:12px; padding:8px 0; font-size:0.8rem; color:#6b7280; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">🎬 <span style="color:#fff;">Ken Burns active</span></span>
+          <span style="display:flex; align-items:center; gap:4px;">🔍 <span style="color:#fff;">Zoom: 1.0 → 1.5</span></span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Preview ready</span>
+          <span style="display:flex; align-items:center; gap:4px; color:#fbbf24;">💡 Drag to adjust pan</span>
+        </div>
+      </div>
+    </div>
+
+    <p>With FFmpegLab, you can create professional Ken Burns effects without writing a single line of code—but if you want to see what's happening under the hood, the generated FFmpeg command is always visible.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the zoompan filter in FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The <code>zoompan</code> filter applies pan-and-zoom (Ken Burns) effects to a video stream. It allows you to zoom in or out on a specific area and pan across the image, creating smooth camera movement effects.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I create a zoom-in effect with zoompan?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use the expression <code>z='min(zoom+ZOOM_RATE, MAX_ZOOM)'</code>. For example: <code>zoompan=z='min(zoom+0.01,1.5)':d=125:s=1920x1080:fps=25</code>. This zooms in from 1.0x to 1.5x over 5 seconds at 25 fps.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I create a pan effect with zoompan?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use the <code>x</code> and <code>y</code> parameters with expressions. For example: <code>x='iw/2 - (iw/zoom/2) + 5*t'</code> moves the view center to the right while zooming. For a constant zoom pan, use <code>z=1</code> and animate <code>x</code> or <code>y</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I avoid black borders with zoompan?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Set the output size to match the input size (<code>s=iw:ih</code> or a fixed size) and use zoom expressions that don't cause the viewport to go beyond the image boundaries. You can clamp <code>x</code> and <code>y</code> to keep the viewport within bounds.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use zoompan in a slideshow with transitions?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Apply <code>zoompan</code> to each image individually using <code>trim</code> and <code>setpts</code>, then concatenate with <code>xfade</code> transitions. FFmpegLab's visual slideshow builder makes this easy with built‑in Ken Burns controls.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the default frame rate for zoompan?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The default frame rate is <strong>25 fps</strong>. You can change it with the <code>fps</code> parameter: <code>fps=30</code> for 30 fps.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>The <code>zoompan</code> filter is one of FFmpeg's most powerful creative tools. With a few lines of expressions, you can transform static images into dynamic cinematic sequences.</p>
+
+    <p>Mastering <code>zoompan</code> requires understanding the relationship between zoom, pan, and the viewport. The key formulas are:</p>
+
+    <ul>
+      <li><strong>Viewport size</strong> = input size / zoom</li>
+      <li><strong>Viewport center</strong> = <code>x</code>, <code>y</code></li>
+      <li><strong>Output</strong> = viewport scaled to output size</li>
+    </ul>
+
+    <p>With practice, you can create smooth zoom-ins, zoom-outs, pans, and complex motion paths. And with FFmpegLab's visual controls, you can create Ken Burns effects without writing a single line of code—just drag sliders and preview in real time.</p>
+
+    <p>Next time you're creating a slideshow or video, bring your images to life with Ken Burns. Your audience will feel the motion.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+        <li><a href="ffmpeg-color-spaces-hdr-tone-mapping.html">Color Spaces, HDR, and Tone Mapping</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
