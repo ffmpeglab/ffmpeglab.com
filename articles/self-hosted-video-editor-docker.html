@@ -96,12 +96,20 @@
     <p>The core of a self-host is one file. This brings up the server, mounts a local projects volume, and runs in offline mode so no data is sent anywhere external:</p>
 
     <div class="code-window"><div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mono fname">docker-compose.yml</span></div><pre class="mono">services:
-  ffmpeglab:
+   ffmpeglab:
     image: ffmpeglab/ide:main
     ports: ["8080:8080"]
     environment:
       - FFMPEGLAB_HOST="http://localhost:8080/webapp/?"
-# your machines. your footage. your rules.</pre></div>
+      - EVOLU_DB_HOST="http://localhost:3000"
+      - EVOLU_DB_NAME="ffmpeglab"
+      - PUBLIC_HOST="https://localhost:8080/"
+      - PEXELS_API_HOST="https://pexels.starpy.me" // https://github.com/danilaplee/next-nest/blob/main/compose.yml
+      - SUPABASE_HOST="${YOUR_SUPABASE_API_URL}"
+      - SUPABASE_ANON_KEY="${YOUR_SUPABASE_KEY}"
+  evolu:
+      image: ffmpeglab/evolu:main
+      ports: ["3000"]</pre></div>
 
     <p>Bring it up with one command:</p>
 
