@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>xstack FFmpeg Filter – Create Video Mosaics & Grids</title>
+  <meta name="description" content="Learn how to use the FFmpeg xstack filter to create video mosaics, split-screen grids, and custom multi-video layouts with ease. No more complex overlay chains." />
+  <meta name="keywords" content="ffmpeg xstack, ffmpeg video mosaic, ffmpeg grid layout, ffmpeg split screen, xstack filter, ffmpeg multi-video, ffmpeg collage" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-xstack-filter-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-xstack-filter-guide.html" />
+  <meta property="og:title" content="xstack FFmpeg Filter – Create Video Mosaics & Grids" />
+  <meta property="og:description" content="Learn how to use the FFmpeg xstack filter to create video mosaics, split-screen grids, and custom multi-video layouts with ease. No more complex overlay chains." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "xstack FFmpeg Filter – Create Video Mosaics & Grids",
+      "description": "Learn how to use the FFmpeg xstack filter to create video mosaics, split-screen grids, and custom multi-video layouts with ease. No more complex overlay chains.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-18",
+      "dateModified": "2026-07-18",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-xstack-filter-guide.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the xstack filter in FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "xstack is an FFmpeg filter that stacks multiple video inputs into a custom layout. It creates video mosaics, split-screen grids, and collages without the complex overlay and nullsrc chains that older methods required. All streams must have the same pixel format."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I create a 2x2 video grid with xstack?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use: ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -filter_complex '[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|0_h0|w0_0|w0_h0[out]' -map '[out]' output.mp4. The layout uses column-major order by default."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What's the difference between xstack and overlay for video mosaics?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "xstack simplifies video stacking by eliminating the need for a nullsrc filter and multiple overlay chains. It automatically calculates positions based on your layout specification, making it cleaner and less error-prone for multi-video layouts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use xstack to stack videos in a custom layout?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The layout parameter lets you define exact positions for each input using coordinates like w0, h0, w1, h1, etc. You can create any arrangement — side-by-side, stacked, or custom overlapping grids."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does xstack support the grid option for simpler layouts?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. In newer FFmpeg versions, xstack has a grid option. Instead of writing complex layouts, you can simply specify rows and columns (e.g., grid=2x4) and xstack will arrange the inputs automatically."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .comparison-card {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid #2d2d3d;
+      text-align: center;
+    }
+    .comparison-card h4 {
+      margin-top: 0;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .comparison-card .icon {
+      font-size: 2rem;
+      margin: 0.3rem 0;
+    }
+    .comparison-card .desc {
+      font-size: 0.8rem;
+      color: #a1a1aa;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons strong {
+      color: #fff;
+
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / xstack Filter</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>xstack FFmpeg Filter – Create Video Mosaics &amp; Grids</h1>
+      <p class="dek">Stack multiple videos into custom layouts, split-screen grids, and collages — without the complex overlay chains. Master the <code>xstack</code> filter.</p>
+      <div class="article-meta">FFmpeg tutorial · ~6 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Complex Mosaics Without the Headache</a></li>
+        <li><a href="#the-symptom">The Symptom: "I Just Want a Grid of Videos"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Is xstack?</a></li>
+        <li><a href="#syntax">xstack Syntax &amp; Parameters</a></li>
+        <li><a href="#examples">Examples: From Simple to Custom</a></li>
+        <li><a href="#advanced">Advanced: Custom Layouts &amp; Sizing</a></li>
+        <li><a href="#comparison">xstack vs. overlay – Which to Use?</a></li>
+        <li><a href="#troubleshooting">Troubleshooting Common Issues</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Creating a video mosaic — a grid of multiple videos playing simultaneously — is a common need in video production. Security surveillance, video conferencing, sports broadcasts, and social media content all use multi‑video layouts.</p>
+
+    <p>Traditionally, FFmpeg users built these layouts by chaining <code>overlay</code> filters with a <code>nullsrc</code> canvas. It works, but it's tedious, error‑prone, and hard to maintain.</p>
+
+    <p>The <strong><code>xstack</code></strong> filter changes that. It was designed specifically for stacking multiple video inputs into a custom layout[reference:0]. You define where each video goes, and <code>xstack</code> handles the positioning — no <code>nullsrc</code>, no nested overlays[reference:1].</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>xstack</code></strong> stacks video inputs into custom layouts — mosaics, grids, collages.</li>
+        <li><strong>No <code>nullsrc</code> or nested <code>overlay</code></strong> chains — cleaner and simpler[reference:2].</li>
+        <li><strong>All streams must have the same pixel format</strong> (e.g., yuv420p)[reference:3].</li>
+        <li><strong>Layouts use column‑major order</strong> by default, but can be customized[reference:4].</li>
+        <li><strong>Newer versions support a <code>grid</code> option</strong> for quick matrix layouts[reference:5].</li>
+        <li><strong>Built-in scaling</strong> — you can scale each input before stacking.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Complex Mosaics Without the Headache</h2>
+
+    <p>FFmpeg provides more than one way to create a video mosaic[reference:6]. The traditional method uses a <code>nullsrc</code> canvas and chains <code>overlay</code> filters for each video. It works for two or three videos, but quickly becomes unmanageable with four or more.</p>
+
+    <p>As the FFmpeg wiki notes, <code>xstack</code> <em>"takes the individual inputs along with a custom layout that you create, and positions the videos according to the layout"</em>[reference:7]. It figures out the positioning automatically based on your layout specification[reference:8].</p>
+
+    <p>This gap — between "I need a grid of videos" and "I don't want to write a 50‑line filtergraph" — is exactly what <code>xstack</code> fills.</p>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">Input 1</span>
+      <span class="arrow">+</span>
+      <span style="color:#fbbf24;">Input 2</span>
+      <span class="arrow">+</span>
+      <span style="color:#fbbf24;">Input 3</span>
+      <span class="arrow">+</span>
+      <span style="color:#fbbf24;">Input N</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">xstack</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Mosaic / Grid</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(No nullsrc, no nested overlays — just a clean layout)</span>
+    </div>
+
+    <h2 id="the-symptom">The Symptom: "I Just Want a Grid of Videos"</h2>
+
+    <p>You've got four video files. You want them in a 2×2 grid, playing simultaneously. You know FFmpeg can do it, but every tutorial shows a monster command with <code>nullsrc</code> and four <code>overlay</code> filters. You just want a simple, readable command.</p>
+
+    <p>That's exactly what <code>xstack</code> delivers.</p>
+
+    <h2 id="core-concepts">Core Concepts: What Is xstack?</h2>
+
+    <p>The <code>xstack</code> filter <em>"stack video inputs into custom layout"</em>[reference:9]. It takes multiple video streams and arranges them according to a layout specification.</p>
+
+    <p><strong>Key characteristics:</strong></p>
+    <ul>
+      <li><strong>All streams must have the same pixel format</strong> — e.g., <code>yuv420p</code>[reference:10].</li>
+      <li><strong>Layouts are defined using coordinates</strong> — <code>x</code> and <code>y</code> positions for each input[reference:11].</li>
+      <li><strong>Inputs can be scaled</strong> before stacking — use <code>scale</code> or <code>setsar</code> to unify sizes.</li>
+      <li><strong>Column‑major order</strong> by default, but row‑major is possible with custom layouts[reference:12].</li>
+    </ul>
+
+    <p>The filter was added to FFmpeg in 2018[reference:13], and later enhanced with a <code>grid</code> option for even simpler layouts[reference:14].</p>
+
+    <h2 id="syntax">xstack Syntax &amp; Parameters</h2>
+
+    <p>The basic syntax for <code>xstack</code> is:</p>
+
+    <pre><code>[input0][input1]...[inputN]xstack=inputs=N:layout=LAYOUT[out]</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Description</th><th>Default</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong><code>inputs</code></strong></td><td>Number of input streams[reference:15]</td><td>2</td></tr>
+        <tr><td><strong><code>layout</code></strong></td><td>Position of each input (x_y format, separated by <code>|</code>)[reference:16]</td><td><code>0_0|w0_0</code> for 2 inputs[reference:17]</td></tr>
+        <tr><td><strong><code>grid</code></strong></td><td>Fixed‑size grid (rows x columns) — newer option[reference:18]</td><td><em>None</em></td></tr>
+        <tr><td><strong><code>shortest</code></strong></td><td>Stop when the shortest input ends[reference:19]</td><td>0</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Layout coordinates:</strong></p>
+    <ul>
+      <li><strong><code>w0</code></strong>, <strong><code>h0</code></strong> — width and height of the first input</li>
+      <li><strong><code>w1</code></strong>, <strong><code>h1</code></strong> — width and height of the second input</li>
+      <li>You can use these variables to position inputs relative to each other[reference:20].</li>
+    </ul>
+
+    <p><strong>Important:</strong> <code>xstack</code> uses <strong>column‑major order</strong> by default[reference:21]. This means the first input goes to the top‑left, the second goes below it, the third goes to the right of the first, and so on. You can override this with a custom layout.</p>
+
+    <h2 id="examples">Examples: From Simple to Custom</h2>
+
+    <h3>Example 1: 2×2 Grid (Column‑Major)</h3>
+
+    <p>This is the most common use case — four videos in a 2×2 grid.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># 2x2 grid with column-major layout
+ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 \
+-filter_complex "[0:v]setpts=PTS-STARTPTS,scale=qvga[a0]; \
+                 [1:v]setpts=PTS-STARTPTS,scale=qvga[a1]; \
+                 [2:v]setpts=PTS-STARTPTS,scale=qvga[a2]; \
+                 [3:v]setpts=PTS-STARTPTS,scale=qvga[a3]; \
+                 [a0][a1][a2][a3]xstack=inputs=4:layout=0_0|0_h0|w0_0|w0_h0[out]" \
+-map "[out]" -c:v libx264 -t 30 output_2x2.mkv</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Explanation:</strong></p>
+    <ul>
+      <li><code>scale=qvga</code> — scales each input to 320×240 (QVGA) for uniform size[reference:22].</li>
+      <li><code>setpts=PTS-STARTPTS</code> — resets timestamps to start at 0[reference:23].</li>
+      <li><code>layout=0_0|0_h0|w0_0|w0_h0</code> — positions: top‑left, bottom‑left, top‑right, bottom‑right[reference:24].</li>
+    </ul>
+
+    <p>As the FFmpeg wiki explains: <em>"When there are more than two images in a sequence (either vertical or horizontal), it becomes necessary to add widths or heights together"</em>[reference:25].</p>
+
+    <h3>Example 2: 1×4 Vertical Stack</h3>
+
+    <p>Stack four videos vertically.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Vertical stack (1x4) with column-major order
+ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 \
+-filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|0_h0|0_h0+h1|0_h0+h1+h2[out]" \
+-map "[out]" -c:v libx264 output_vertical.mkv</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>The Y coordinates accumulate: <code>0</code>, <code>h0</code>, <code>h0+h1</code>, <code>h0+h1+h2</code>[reference:26].</p>
+
+    <h3>Example 3: 1×4 Horizontal Stack</h3>
+
+    <p>Stack four videos horizontally.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Horizontal stack (4x1) with custom row-major layout
+ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 \
+-filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|w0+w1_0|w0+w1+w2_0[out]" \
+-map "[out]" -c:v libx264 output_horizontal.mkv</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This uses row‑major order: X coordinates accumulate, Y stays at 0.</p>
+
+    <h3>Example 4: Using the <code>grid</code> Option (Newer FFmpeg)</h3>
+
+    <p>In newer FFmpeg versions, you can use the <code>grid</code> option for even simpler layouts[reference:27].</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># 2x3 grid using the grid option (requires FFmpeg 5.1+)
+ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -i video5.mp4 -i video6.mp4 \
+-filter_complex "[0:v][1:v][2:v][3:v][4:v][5:v]xstack=inputs=6:grid=2x3[out]" \
+-map "[out]" -c:v libx264 output_grid.mkv</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>The <code>grid</code> option is <em>"of the form &lt;rows&gt;x&lt;columns&gt; (e.g. 2x4)"</em>[reference:28]. When using this option, <em>"all the input streams must have the same width and height"</em>[reference:29].</p>
+
+    <p><strong>Note:</strong> <em>"Either grid or layout option can be specified at a time. Specifying both will result in an error"</em>[reference:30].</p>
+
+    <h2 id="advanced">Advanced: Custom Layouts &amp; Sizing</h2>
+
+    <p>The real power of <code>xstack</code> is its ability to handle <strong>custom layouts</strong> with videos of different sizes.</p>
+
+    <h3>Custom Layout with Different Input Sizes</h3>
+
+    <p>If your inputs have different sizes, you can scale them individually before stacking, or use the <code>wN</code>/<code>hN</code> variables in the layout to position them correctly.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Custom layout with mixed sizes
+ffmpeg -i big.mp4 -i small.mp4 \
+-filter_complex "[0:v]scale=1280:720[a0];[1:v]scale=640:360[a1];[a0][a1]xstack=inputs=2:layout=0_0|0_360[out]" \
+-map "[out]" -c:v libx264 output_custom.mkv</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This places the scaled small video below the big video, creating a picture‑in‑picture effect.</p>
+
+    <h3>Adding Audio</h3>
+
+    <p><code>xstack</code> handles video only. For audio, use <code>amix</code> or <code>amerge</code> in the same filtergraph.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Video mosaic + mixed audio
+ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 \
+-filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|0_h0|w0_0|w0_h0[out]; \
+                 [0:a][1:a][2:a][3:a]amix=inputs=4[aout]" \
+-map "[out]" -map "[aout]" -c:v libx264 -c:a aac output_with_audio.mkv</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="comparison">xstack vs. overlay – Which to Use?</h2>
+
+    <p>Both <code>xstack</code> and <code>overlay</code> can create video mosaics, but they have different strengths.</p>
+
+    <div class="pros-cons">
+      <div style="background: #1e1e2e; border-radius: 8px; padding: 1.25rem; border: 1px solid #34d399;">
+        <h4 style="color: #34d399; margin-top: 0;">✅ xstack Advantages</h4>
+        <ul style="color: #a1a1aa; font-size: 0.9rem;">
+          <li><strong>Cleaner syntax</strong> — no <code>nullsrc</code> or nested overlays[reference:31]</li>
+          <li><strong>Built‑in layout handling</strong> — positions videos automatically</li>
+          <li><strong>Easier to maintain</strong> — especially with many inputs</li>
+          <li><strong><code>grid</code> option</strong> — quick matrix layouts[reference:32]</li>
+        </ul>
+      </div>
+      <div style="background: #1e1e2e; border-radius: 8px; padding: 1.25rem; border: 1px solid #fbbf24;">
+        <h4 style="color: #fbbf24; margin-top: 0;">✅ overlay Advantages</h4>
+        <ul style="color: #a1a1aa; font-size: 0.9rem;">
+          <li><strong>More flexible</strong> — can overlay with transparency (alpha channel)</li>
+          <li><strong>Works with any pixel format</strong> — no format restrictions</li>
+          <li><strong>Better for PIP</strong> — one video on top of another</li>
+          <li><strong>More widely known</strong> — more examples online</li>
+        </ul>
+      </div>
+    </div>
+
+    <p><strong>Recommendation:</strong> Use <code>xstack</code> for grids and mosaics where all videos are equal. Use <code>overlay</code> for picture‑in‑picture or when you need transparency.</p>
+
+    <h2 id="troubleshooting">Troubleshooting Common Issues</h2>
+
+    <table>
+      <thead>
+        <tr><th>Issue</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>"Pixel format mismatch"</strong></td>
+          <td>Inputs have different pixel formats[reference:33]</td>
+          <td>Use <code>format=yuv420p</code> on all inputs before stacking</td>
+        </tr>
+        <tr>
+          <td><strong>"Layout error: invalid coordinates"</strong></td>
+          <td>Layout string syntax is wrong</td>
+          <td>Check the format: <code>x_y</code> separated by <code>|</code></td>
+        </tr>
+        <tr>
+          <td><strong>Black gaps appear</strong></td>
+          <td>Inputs have different sizes[reference:34]</td>
+          <td>Scale all inputs to the same size before stacking</td>
+        </tr>
+        <tr>
+          <td><strong>"Inputs count mismatch"</strong></td>
+          <td><code>inputs=N</code> doesn't match number of streams</td>
+          <td>Ensure <code>inputs=N</code> matches the number of input labels</td>
+        </tr>
+        <tr>
+          <td><strong>Audio out of sync</strong></td>
+          <td>Audio not mixed or filtered correctly</td>
+          <td>Use <code>amix</code> or <code>amerge</code> with <code>adelay</code> if needed</td>
+        </tr>
+        <tr>
+          <td><strong>Grid option not recognized</strong></td>
+          <td>FFmpeg version too old</td>
+          <td>Use FFmpeg 5.1 or newer, or use <code>layout</code> instead</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the xstack filter in FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>xstack</code> is an FFmpeg filter that stacks multiple video inputs into a custom layout[reference:35]. It creates video mosaics, split-screen grids, and collages without the complex <code>overlay</code> and <code>nullsrc</code> chains that older methods required[reference:36]. All streams must have the same pixel format[reference:37].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I create a 2x2 video grid with xstack?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use: <code>ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -filter_complex '[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|0_h0|w0_0|w0_h0[out]' -map '[out]' output.mp4</code>. The layout uses column-major order by default[reference:38].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between xstack and overlay for video mosaics?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>xstack</code> simplifies video stacking by eliminating the need for a <code>nullsrc</code> filter and multiple <code>overlay</code> chains[reference:39]. It automatically calculates positions based on your layout specification, making it cleaner and less error‑prone for multi‑video layouts.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use xstack to stack videos in a custom layout?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. The <code>layout</code> parameter lets you define exact positions for each input using coordinates like <code>w0</code>, <code>h0</code>, <code>w1</code>, <code>h1</code>, etc. You can create any arrangement — side‑by‑side, stacked, or custom overlapping grids[reference:40].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does xstack support the grid option for simpler layouts?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. In newer FFmpeg versions (5.1+), <code>xstack</code> has a <code>grid</code> option[reference:41]. Instead of writing complex layouts, you can simply specify rows and columns (e.g., <code>grid=2x4</code>) and <code>xstack</code> will arrange the inputs automatically[reference:42].</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does xstack handle audio automatically?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No. <code>xstack</code> processes video only. To mix audio from multiple inputs, use <code>amix</code> or <code>amerge</code> in the same filtergraph and map the audio output separately.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>The <code>xstack</code> filter is one of FFmpeg's most elegant solutions for multi‑video layouts. It turns a traditionally complex operation — stacking videos into a grid or mosaic — into a clean, readable filtergraph.</p>
+
+    <p>Whether you're building a 2×2 surveillance grid, a 3×3 video conference layout, or a custom collage with mixed sizes, <code>xstack</code> gives you the control you need without the headache of nested overlays.</p>
+
+    <p><strong>Key takeaways for your workflow:</strong></p>
+    <ul>
+      <li>Use <code>scale</code> to unify input sizes</li>
+      <li>Use <code>format</code> to ensure matching pixel formats</li>
+      <li>Use <code>grid</code> for quick matrix layouts (FFmpeg 5.1+)</li>
+      <li>Mix audio separately with <code>amix</code></li>
+    </ul>
+
+    <p>Next time you need a video mosaic, reach for <code>xstack</code>. Your filtergraphs will thank you.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-filter-complex-effects.html">filter_complex Effects, by Example</a></li>
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg xfade transitions guide</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-gui-libraries-comparison.html">FFmpeg GUI Libraries Compared</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
