@@ -37,7 +37,6 @@
   <meta name="twitter:title" content="FFmpegLab — The FFmpeg-Native Video Editor" />
   <meta name="twitter:description" content="Video editing, down to the FFmpeg command. Edit the raw render script, build custom xfade/amix effects, and run it all offline — your footage never leaves your machine." />
   <meta name="twitter:image" content="https://ffmpeglab.com/og-image.png" />
-
   <!-- Structured data -->
   <script type="application/ld+json">
   {
@@ -72,6 +71,8 @@
   }
   </script>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -92,6 +93,7 @@
       background: #fff;
       -webkit-font-smoothing: antialiased;
       line-height: 1.5;
+      overflow-x:hidden;
     }
     a { text-decoration: none; color: inherit; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
@@ -286,6 +288,8 @@
     .guides .sub { margin-top: 0.75rem; font-size: 1.125rem; color: var(--muted); max-width: 40rem; }
     .guides-grid { margin-top: 2.5rem; display: grid; gap: 1rem; grid-template-columns: 1fr; }
     .guide-card { display: block; border: 1px solid #ECE9F3; background: #fff; border-radius: 0.75rem; padding: 1.5rem; transition: border-color .15s; }
+    .guide-card.ribbon {position:relative;display:block;overflow:hidden;padding:28px 26px 26px 26px;border:1px solid #d8d2df;border-radius:16px;background:#ffffff;color:#211b3a;text-decoration:none;box-shadow:0 14px 32px rgba(33,27,58,0.08);}
+    .template-ribbon {position:absolute;z-index:2;top:20px;right:-43px;width:150px;padding:7px 0;background:var(--orange);color:#ffffff;font-size:10px;font-weight:700;line-height:1;letter-spacing:1.5px;text-align:center;text-transform:uppercase;transform:rotate(45deg);box-shadow:0 4px 10px rgba(33,27,58,0.22);}
     .guide-card:hover { border-color: var(--orange); }
     .guide-card .k { font-family: ui-monospace, monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--orange); }
     .guide-card .t { margin-top: 0.5rem; font-size: 1.15rem; font-weight: 700; color: var(--ink); }
@@ -546,15 +550,55 @@
         <h2 class="balance">FFmpeg guides &amp; tutorials</h2>
         <p class="sub">Practical, copy-pasteable walkthroughs for the FFmpeg techniques behind every edit.</p>
         <div class="guides-grid">
-          <a class="guide-card" href="articles/ffmpeg-xstack-filter-guide.html">
+          <a class="guide-card ribbon" href="articles/ffmpeg-xstack-filter-guide.html">
+            <span
+              aria-label="New"
+              class="template-ribbon"
+            >New</span>
             <div class="k">Effects</div>
             <div class="t">xstack FFmpeg Filter – Create Video Mosaics &amp; Grids</div>
             <div class="d">Stack multiple videos into custom layouts, split-screen grids, and collages — without the complex overlay chains. Master the <code>xstack</code> filter.</div>
+          </a>
+          <a class="guide-card ribbon" href="articles/ffmpeg-ken-burns-zoompan-guide.html">
+            <span
+              aria-label="New"
+              class="template-ribbon"
+            >New</span>
+            <div class="k">Effects</div>
+            <div class="t">Ken Burns / Zoompan Effects – The Art of Motion</div>
+            <div class="d">Bring still images to life with smooth pan-and-zoom animations. Master the <code>zoompan</code> filter to create Ken Burns effects, dynamic slideshows, and cinematic camera movements.</div>
+          </a>
+          <a class="guide-card ribbon" href="articles/ffmpeg-video-to-gif.html">
+            <span
+              aria-label="Template included"
+              class="template-ribbon"
+            >Template</span>
+            <div class="k">GIF</div>
+            <div class="t">Convert video to GIF</div>
+            <div class="d">A quick one-liner plus the palettegen/paletteuse method for crisp, banding-free GIFs.</div>
+          </a>
+          <a class="guide-card ribbon" href="articles/ffmpeg-audio-mixing-amix-guide.html">
+            <span
+              aria-label="Template included"
+              class="template-ribbon"
+            >Template</span>
+            <div class="k">Audio</div>
+            <div class="t">Mixing audio with amix</div>
+            <div class="d">Layer music, voiceover, and effects; balance levels; duck with sidechaincompress; crossfade tracks.</div>
           </a>
           <a class="guide-card" href="articles/ffmpeg-gui-libraries-comparison.html">
             <div class="k">Product</div>
             <div class="t">FFmpeg GUI Libraries Compared – FFmpegLab vs. The Competition</div>
             <div class="d">HandBrake, Shutter Encoder, StaxRip, and a dozen more—all compared. Plus, why FFmpegLab's IDE-first, collaborative approach is a game-changer for teams and developers.</div>
+          </a>
+          <a class="guide-card ribbon" href="articles/ffmpeg-xfade-transitions-guide.html">
+            <span
+              aria-label="Template included"
+              class="template-ribbon"
+            >Template</span>
+            <div class="k">Transitions</div>
+            <div class="t">FFmpeg xfade transitions guide</div>
+            <div class="d">Syntax, duration &amp; offset, all 30+ presets, audio crossfades, and chaining transitions across clips.</div>
           </a>
           <a class="guide-card" href="articles/mobile-web-video-editor.html">
             <div class="k">Product</div>
@@ -575,11 +619,6 @@
             <div class="k">Effects</div>
             <div class="t">Video Denoising – Complete Guide to Noise Removal</div>
             <div class="d">Remove grain, salt‑and‑pepper, and compression artifacts with FFmpeg's powerful denoise filters. Compare <code>hqdn3d</code>, <code>nlmeans</code>, <code>vaguedenoiser</code>, <code>bm3d</code>, and more.</div>
-          </a>
-          <a class="guide-card" href="articles/ffmpeg-ken-burns-zoompan-guide.html">
-            <div class="k">Effects</div>
-            <div class="t">Ken Burns / Zoompan Effects – The Art of Motion</div>
-            <div class="d">Bring still images to life with smooth pan-and-zoom animations. Master the <code>zoompan</code> filter to create Ken Burns effects, dynamic slideshows, and cinematic camera movements.</div>
           </a>
           <a class="guide-card" href="articles/ffmpeg-optical-flow-motion-interpolation.html">
             <div class="k">Effects</div>
@@ -641,20 +680,10 @@
             <div class="t">Dynamic Runtime Commands &amp; Timeline Editing in FFmpeg</div>
             <div class="d">Send interactive commands to FFmpeg while it's running to change filter parameters on the fly. Master <code>sendcmd</code>, <code>zmq</code>, and timeline expressions for dynamic overlays, opacity fades, and real‑time adjustments.</div>
           </a>
-          <a class="guide-card" href="articles/ffmpeg-xfade-transitions-guide.html">
-            <div class="k">Transitions</div>
-            <div class="t">FFmpeg xfade transitions guide</div>
-            <div class="d">Syntax, duration &amp; offset, all 30+ presets, audio crossfades, and chaining transitions across clips.</div>
-          </a>
           <a class="guide-card" href="articles/ffmpeg-filter-complex-effects.html">
             <div class="k">Effects</div>
             <div class="t">filter_complex effects, by example</div>
             <div class="d">Overlay, scale, pad, crop, color correction, and chroma key — chained into one custom filter graph.</div>
-          </a>
-          <a class="guide-card" href="articles/ffmpeg-audio-mixing-amix-guide.html">
-            <div class="k">Audio</div>
-            <div class="t">Mixing audio with amix</div>
-            <div class="d">Layer music, voiceover, and effects; balance levels; duck with sidechaincompress; crossfade tracks.</div>
           </a>
           <a class="guide-card" href="articles/offline-private-video-editor.html">
             <div class="k">Privacy</div>
@@ -731,11 +760,6 @@
             <div class="t">Remove &amp; mute audio</div>
             <div class="d">Strip sound with -an, mute a section with the volume filter, or replace the track.</div>
           </a>
-          <a class="guide-card" href="articles/ffmpeg-video-to-gif.html">
-            <div class="k">GIF</div>
-            <div class="t">Convert video to GIF</div>
-            <div class="d">A quick one-liner plus the palettegen/paletteuse method for crisp, banding-free GIFs.</div>
-          </a>
           <a class="guide-card" href="articles/ffmpeg-add-watermark-logo.html">
             <div class="k">Watermark</div>
             <div class="t">Add a watermark or logo</div>
@@ -755,6 +779,67 @@
       </div>
     </section>
 
+<section
+  id="newsletter"
+  data-ffmpeglab-newsletter
+  data-endpoint="/_ploy/form-submit"
+  data-form-name="ffmpeglab-newsletter"
+  data-source="embedded-newsletter"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+>
+  <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="amber" aria-hidden="true" style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;"></div>
+
+  <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+    <div
+      data-newsletter-glass
+      style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);"
+    >
+      <div style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+        <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+          <div style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">✦&nbsp; Fresh from the render queue</div>
+          <h2 style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+          <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+          <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp; Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise</div>
+        </div>
+
+        <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+          <div data-newsletter-success hidden style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+            <span style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+            <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You’re on the list.</h3>
+            <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is headed your way.</p>
+          </div>
+
+          <form data-newsletter-form style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+            <div style="display:table;width:100%;table-layout:fixed;">
+              <div style="display:table-cell;vertical-align:middle;">
+                <label for="newsletter-embed-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+                <input
+                  id="newsletter-embed-email"
+                  data-newsletter-email
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;"
+                />
+              </div>
+              <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                <button data-newsletter-submit type="submit" style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp; →</button>
+              </div>
+            </div>
+            <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+              <span>One useful email at a time.</span>
+              <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went wrong. Try again.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
     <!-- ===== Closing CTA ===== -->
     <section class="closing">
       <div class="container inner">
@@ -766,6 +851,7 @@
       </div>
     </section>
   </main>
+  
 
   <!-- ===== Footer ===== -->
   <footer class="site">

@@ -20,6 +20,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../blog.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -126,6 +128,67 @@ ffmpeg -i in.mp4 -vf "vflip" -c:a copy out.mp4</pre><div class="em-preview"><div
     </div>
   </section>
 
+<section
+  id="newsletter"
+  data-ffmpeglab-newsletter
+  data-endpoint="/_ploy/form-submit"
+  data-form-name="ffmpeglab-newsletter"
+  data-source="embedded-newsletter"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+>
+  <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="amber" aria-hidden="true" style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;"></div>
+
+  <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+    <div
+      data-newsletter-glass
+      style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);"
+    >
+      <div style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+        <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+          <div style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">✦&nbsp; Fresh from the render queue</div>
+          <h2 style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+          <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+          <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp; Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise</div>
+        </div>
+
+        <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+          <div data-newsletter-success hidden style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+            <span style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+            <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You’re on the list.</h3>
+            <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is headed your way.</p>
+          </div>
+
+          <form data-newsletter-form style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+            <div style="display:table;width:100%;table-layout:fixed;">
+              <div style="display:table-cell;vertical-align:middle;">
+                <label for="newsletter-embed-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+                <input
+                  id="newsletter-embed-email"
+                  data-newsletter-email
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;"
+                />
+              </div>
+              <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                <button data-newsletter-submit type="submit" style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp; →</button>
+              </div>
+            </div>
+            <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+              <span>One useful email at a time.</span>
+              <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went wrong. Try again.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
   <section class="cta-band">
     <div class="container inner">
       <h2>Rotate, flip, and fix orientation — in your browser.</h2>

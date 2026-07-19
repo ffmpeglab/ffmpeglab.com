@@ -2,259 +2,259 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ffmpeglab.com/</loc>
-    <lastmod>2026-07-17</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-xfade-transitions-guide.html</loc>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-filter-complex-effects.html</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-audio-mixing-amix-guide.html</loc>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/offline-private-video-editor.html</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/self-hosted-video-editor-docker.html</loc>
-    <lastmod>2026-07-16</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-compress-video-reduce-file-size.html</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-convert-video-format.html</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-trim-cut-video.html</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-add-text-subtitles-video.html</loc>
-    <lastmod>2026-06-23</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-speed-up-slow-down-video.html</loc>
-    <lastmod>2026-06-24</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-extract-frames-thumbnails.html</loc>
-    <lastmod>2026-06-24</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-rotate-flip-video.html</loc>
-    <lastmod>2026-06-24</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-fade-in-out.html</loc>
-    <lastmod>2026-06-24</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-crop-video.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-resize-scale-video.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-merge-concatenate-videos.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-extract-audio-from-video.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-remove-mute-audio.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-video-to-gif.html</loc>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-add-watermark-logo.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-change-frame-rate-fps.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-loop-video.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-stabilize-shaky-video.html</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-sidechain-compression.html</loc>
-    <lastmod>2026-07-08</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-metadata.html</loc>
-    <lastmod>2026-07-08</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-debugging-troubleshooting-guide.html</loc>
-    <lastmod>2026-06-28</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-mask-overlay-compositing.html</loc>
-    <lastmod>2026-06-28</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-roi-encoding.html</loc>
-    <lastmod>2026-06-29</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-lens-correction.html</loc>
-    <lastmod>2026-07-08</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-dynamic-runtime-command.html</loc>
-    <lastmod>2026-06-29</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-color-spacing.html</loc>
-    <lastmod>2026-07-08</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-advanced-audio-processing.html</loc>
-    <lastmod>2026-07-07</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-optical-flow-motion-interpolation.html</loc>
-    <lastmod>2026-07-09</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-scene-detection-automated-editing.html</loc>
-    <lastmod>2026-07-09</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/collaborative-video-editor-live-comments.html</loc>
-    <lastmod>2026-07-11</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-video-denoising.html</loc>
-    <lastmod>2026-07-13</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-ken-burns-zoompan-guide.html</loc>
-    <lastmod>2026-07-13</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-bitstream-filters.html</loc>
-    <lastmod>2026-07-14</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/figma-for-video-collaborative-editing.html</loc>
-    <lastmod>2026-07-15</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/mobile-web-video-editor.html</loc>
-    <lastmod>2026-07-16</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-gui-libraries-comparison.html</loc>
-    <lastmod>2026-07-16</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-xstack-filter-guide.html</loc>
-    <lastmod>2026-07-17</lastmod>
+    <lastmod>2026-07-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
