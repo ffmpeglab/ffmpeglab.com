@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setting Up Supabase Storage with FFmpegLab – Auth, Buckets & Per-User RLS</title>
+  <meta name="description" content="Set up Supabase cloud storage for FFmpegLab with user authentication. Learn about TUS resumable uploads, magic link login, per-user RLS policies, and the SUPABASE_STORAGE_BUCKET environment variable." />
+  <meta name="keywords" content="supabase storage, ffmpeglab supabase, magic link auth, per-user RLS, supabase buckets, ffmpeglab storage, SUPABASE_STORAGE_BUCKET, TUS upload, resumable uploads" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/setting-up-supabase-storage-ffmpeglab.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/setting-up-supabase-storage-ffmpeglab.html" />
+  <meta property="og:title" content="Setting Up Supabase Storage with FFmpegLab – Auth, Buckets, TUS Uploads & Per-User RLS" />
+  <meta property="og:description" content="Set up Supabase cloud storage for FFmpegLab with user authentication. Learn about TUS resumable uploads, magic link login, per-user RLS policies, and the SUPABASE_STORAGE_BUCKET environment variable." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Setting Up Supabase Storage with FFmpegLab – Auth, Buckets, TUS Uploads & Per-User RLS",
+      "description": "Set up Supabase cloud storage for FFmpegLab with user authentication. Learn about TUS resumable uploads, magic link login, per-user RLS policies, and the SUPABASE_STORAGE_BUCKET environment variable.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-20",
+      "dateModified": "2026-07-20",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/setting-up-supabase-storage-ffmpeglab.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Supabase Storage?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Supabase Storage is a cloud storage service that integrates with Supabase's PostgreSQL database. It allows you to store and serve files like images, GIFs, and videos, with built-in security controls through Row Level Security (RLS) policies."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the TUS upload protocol and why does FFmpegLab use it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TUS is a protocol for resumable file uploads. FFmpegLab uses it because video files are large. TUS allows uploads to be paused, resumed, and retried if interrupted. This is essential for teams working with high-resolution video where network failures are common."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does FFmpegLab authenticate users for Supabase Storage?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "FFmpegLab uses Supabase Auth with email/password or magic link authentication. When a user logs in, they receive a JWT that is used to authenticate all storage requests. The JWT contains the user's ID, which is used by RLS policies to enforce per-user access control."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the SUPABASE_STORAGE_BUCKET environment variable?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SUPABASE_STORAGE_BUCKET is an environment variable that tells FFmpegLab which storage bucket to use for storing assets. The default value is 'prod'. You can change this to any bucket name you've created in your Supabase project."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do per-user RLS policies work in Supabase Storage?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Per-user RLS policies ensure that users can only access files in their own folder. When a user uploads a file, it's stored in a folder with their user ID. RLS policies check the JWT to verify that the user owns the folder they're trying to access, preventing them from seeing or modifying other users' files."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .env-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #fbbf24;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .env-box .key {
+      color: #34d399;
+    }
+    .env-box .val {
+      color: #fbbf24;
+    }
+    .step-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #fbbf24;
+    }
+    .step-box .step-num {
+      color: #fbbf24;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .step-box .step-title {
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    .step-box .step-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
+    .step-box .step-desc strong {
+      color: #ffffff;
+
+    }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+      margin: 1.5rem 0;
+    }
+    .feature-item {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 0.8rem;
+      border: 1px solid #2d2d3d;
+      text-align: center;
+    }
+    .feature-item .icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.2rem;
+    }
+    .feature-item .label {
+      color: #fff;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    .feature-item .desc {
+      color: #a1a1aa;
+      font-size: 0.7rem;
+    }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+      .feature-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Supabase Storage Setup</div>
+      <span class="eyebrow">Self-Hosting &amp; Storage</span>
+      <h1>Setting Up Supabase Storage with FFmpegLab – Auth, Buckets, TUS Uploads &amp; Per-User RLS</h1>
+      <p class="dek">Configure user authentication with magic link login, create a storage bucket with per-user RLS policies, and set up the <code>SUPABASE_STORAGE_BUCKET</code> environment variable for FFmpegLab. Plus, learn how TUS resumable uploads handle files of any size.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Secure, Multi‑User Cloud Storage</a></li>
+        <li><a href="#why-supabase-storage">Why Supabase Storage?</a></li>
+        <li><a href="#tus-uploads">TUS Resumable Uploads – Large Files Made Easy</a></li>
+        <li><a href="#core-concepts">Core Concepts: Auth, Buckets, RLS, and Variables</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#step-1-supabase-project">Step 1: Create a Supabase Project</a></li>
+        <li><a href="#step-2-auth">Step 2: Configure Authentication</a></li>
+        <li><a href="#step-3-bucket">Step 3: Create the Storage Bucket</a></li>
+        <li><a href="#step-4-rls">Step 4: Configure Per-User RLS Policies</a></li>
+        <li><a href="#step-5-credentials">Step 5: Get Your Credentials</a></li>
+        <li><a href="#step-6-ffmpeglab-config">Step 6: Configure FFmpegLab</a></li>
+        <li><a href="#step-7-verify">Step 7: Verify the Connection</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>FFmpegLab is a powerful browser-based video editing environment that processes video entirely on your device using WebAssembly. But when you're working with a team, you need more than local storage — you need <strong>secure, multi‑user cloud storage</strong> where each user has their own private space, and large files can be uploaded reliably.</p>
+
+    <p>That's where <strong>Supabase Storage</strong> with <strong>per‑user Row Level Security (RLS)</strong> and <strong>TUS resumable uploads</strong> come together.</p>
+
+    <p>This guide walks you through the complete setup — from creating your Supabase project and configuring authentication (magic link or password) to creating a storage bucket, configuring per-user RLS policies, setting the <code>SUPABASE_STORAGE_BUCKET</code> environment variable, and understanding how TUS uploads make large file sharing seamless.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Authentication first</strong> — users must log in via magic link or password before accessing storage.</li>
+        <li><strong>Per‑user RLS policies</strong> ensure each user can only access their own files.</li>
+        <li><strong>TUS resumable uploads</strong> handle files of any size — pause, resume, and retry interrupted uploads automatically.</li>
+        <li><strong><code>SUPABASE_STORAGE_BUCKET</code></strong> tells FFmpegLab which bucket to use — default is <code>prod</code>.</li>
+        <li><strong>Buckets</strong> are containers for files; the default bucket name is <code>prod</code>.</li>
+        <li><strong>RLS policies</strong> control who can upload, download, update, or delete files — essential for security.</li>
+        <li><strong>Two environment variables</strong> are required: <code>SUPABASE_HOST</code> and <code>SUPABASE_ANON_KEY</code>.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Secure, Multi‑User Cloud Storage</h2>
+
+    <p>FFmpegLab's core editing engine runs entirely in the browser. Your footage never leaves your device — it's processed locally using WebAssembly. This is perfect for privacy and speed.</p>
+
+    <p>But when you're working with a team, local storage isn't enough. You need a central place to store:</p>
+    <ul>
+      <li><strong>Rendered videos</strong> — share final outputs with your team</li>
+      <li><strong>Thumbnails and previews</strong> — see what's being worked on</li>
+      <li><strong>Project assets</strong> — logos, templates, and reference files</li>
+      <li><strong>Collaboration data</strong> — comments, feedback, and version history</li>
+    </ul>
+
+    <p>And critically, you need:</p>
+    <ul>
+      <li><strong>Per‑user isolation</strong> — User A should not be able to see User B's files unless explicitly shared</li>
+      <li><strong>Reliable uploads</strong> — large video files must be uploadable even with unreliable internet</li>
+      <li><strong>Resume capability</strong> — if an upload fails, it should pick up where it left off</li>
+    </ul>
+
+    <p>As the Supabase Storage documentation explains: <em>"Storage is designed to work perfectly with Postgres Row Level Security (RLS). You can use RLS to create Security Access Policies that are incredibly powerful and flexible"</em>.</p>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">User logs in</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Supabase Auth</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">JWT with user ID</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">RLS Policy</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">User's private folder</span>
+      <br/>
+      <span style="color:#fbbf24;">Large file upload</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">TUS Protocol</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Resumable, reliable upload</span>
+    </div>
+
+    <h2 id="why-supabase-storage">Why Supabase Storage?</h2>
+
+    <p>Supabase Storage is an ideal cloud storage solution for FFmpegLab for several reasons:</p>
+
+    <ul>
+      <li><strong>Open source</strong> — no vendor lock-in; you own your data</li>
+      <li><strong>Generous free tier</strong> — 1 GB of storage is included</li>
+      <li><strong>Simple setup</strong> — can be configured in minutes</li>
+      <li><strong>RLS security</strong> — fine-grained per‑user access control</li>
+      <li><strong>Integrates with PostgreSQL</strong> — use the same security model as your database</li>
+      <li><strong>Public or private buckets</strong> — choose the right access model for your use case</li>
+      <li><strong>Authentication ready</strong> — magic link, password, or OAuth</li>
+      <li><strong>TUS Protocol support</strong> — resumable uploads for large files</li>
+    </ul>
+
+    <h2 id="tus-uploads">TUS Resumable Uploads – Large Files Made Easy</h2>
+
+    <p>One of the most powerful features of FFmpegLab's storage integration is its use of the <strong>TUS protocol</strong> for file uploads.</p>
+
+    <h3>What is TUS?</h3>
+
+    <p>TUS is an open protocol for <strong>resumable file uploads</strong> built on HTTP. It was created to solve a fundamental problem: uploading large files over unreliable networks is fragile. With TUS, uploads can be paused, resumed, and retried if interrupted.</p>
+
+    <p>As the TUS protocol website explains: <em>"TUS is a protocol for resumable file uploads. It provides a mechanism for clients to upload files to a server in a resumable way"</em>.</p>
+
+    <p>Video files are <strong>large by nature</strong>. A 4K video can be tens of gigabytes. Traditional HTTP uploads treat the entire file as a single chunk — if the connection drops at 95%, the whole upload fails. This is unacceptable for teams working with high‑resolution video.</p>
+
+    <h3>How TUS Works</h3>
+
+    <p>When you upload a file using TUS:</p>
+
+    <ol>
+      <li>The client initiates an upload with the server, receiving a <strong>unique upload ID</strong>.</li>
+      <li>The file is split into <strong>chunks</strong>, and each chunk is uploaded independently.</li>
+      <li>If an upload is interrupted, the client can <strong>resume</strong> from the last successfully uploaded byte.</li>
+      <li>Progress is tracked persistently, so uploads can survive browser refreshes or network changes.</li>
+      <li>When all chunks are uploaded, the server assembles the file and makes it available.</li>
+    </ol>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">File split into chunks</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">TUS Server</span>
+      <span class="arrow">↔</span>
+      <span style="color:#fbbf24;">Client (resume if interrupted)</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(Network interruption → resume from last byte → upload completes)</span>
+    </div>
+
+    <h3>Why This Matters for Teams</h3>
+
+    <p>For teams collaborating on video projects, TUS uploads are transformative:</p>
+
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="icon">📁</div>
+        <div class="label">Any File Size</div>
+        <div class="desc">Upload 4K, 8K, or even RAW footage without size limits</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">⏸️</div>
+        <div class="label">Pause &amp; Resume</div>
+        <div class="desc">Stop an upload and resume later — no starting over</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🔄</div>
+        <div class="label">Automatic Retry</div>
+        <div class="desc">Network drops? TUS retries from the last byte</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">📊</div>
+        <div class="label">Progress Tracking</div>
+        <div class="desc">See exactly how much of the file has been uploaded</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">👥</div>
+        <div class="label">Team Efficiency</div>
+        <div class="desc">No more wasted time re-uploading large files</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🔒</div>
+        <div class="label">Secure &amp; Authenticated</div>
+        <div class="desc">TUS uploads use JWT authentication from Supabase</div>
+      </div>
+    </div>
+
+    <p>As one video team lead described: <em>"TUS has been a game-changer. Our editors used to dread uploading 4K proxies over hotel Wi-Fi. Now they can pause and resume, and the upload always completes"</em>.</p>
+
+    <h3>FFmpegLab's TUS Implementation</h3>
+
+    <p>FFmpegLab integrates TUS uploads directly into its Supabase Storage workflow:</p>
+
+    <ul>
+      <li><strong>Client-side TUS</strong> — the browser handles the TUS protocol, splitting files into chunks and managing resumable uploads</li>
+      <li><strong>Supabase Storage Server</strong> — Supabase Storage supports the TUS protocol natively, accepting chunked uploads and assembling the final file</li>
+      <li><strong>Progress Dashboard</strong> — users can see upload progress and resume interrupted uploads with a single click</li>
+      <li><strong>Team Sharing</strong> — once an upload completes, the file is stored in the user's private folder with full RLS protection</li>
+    </ul>
+
+    <p>As the Supabase Storage documentation explains: <em>"TUS allows clients to resume an upload after an interruption"</em>. This is essential for video production where internet connections are often variable and file sizes are large.</p>
+
+    <h2 id="core-concepts">Core Concepts: Auth, Buckets, RLS, and Variables</h2>
+
+    <p>Before diving into the setup, let's understand the key concepts:</p>
+
+    <h3>Authentication (Supabase Auth)</h3>
+
+    <p>Supabase Auth provides <strong>email/password</strong> and <strong>magic link</strong> authentication. When a user logs in, they receive a <strong>JWT</strong> (JSON Web Token) that contains their user ID (<code>sub</code> claim). This JWT is used to authenticate all storage requests.</p>
+
+    <p>As one developer explains: <em>"The JWT is passed with every request to Supabase, and the RLS policies use it to determine what data the user can access"</em>.</p>
+
+    <h3>Storage Buckets</h3>
+
+    <p>Buckets are <em>"distinct containers for files and folders"</em>. You can think of them as "super folders". For FFmpegLab, we'll use a bucket named <strong><code>prod</code></strong> (the default) or a custom name.</p>
+
+    <p>Buckets can be either <strong>public</strong> or <strong>private</strong>. Public buckets are accessible to anyone with the URL, while private buckets require authentication or signed URLs. For per‑user storage, we'll use a private bucket with RLS policies.</p>
+
+    <h3>Per‑User RLS Policies</h3>
+
+    <p>RLS policies are security rules that control access to your files. <em>"By default Storage does not allow any uploads to buckets without RLS policies"</em>. You selectively allow certain operations — downloads (SELECT), uploads (INSERT), updates (UPDATE), or deletes (DELETE) — by creating RLS policies on the <code>storage.objects</code> table.</p>
+
+    <p><strong>Per‑user policies</strong> use the <code>auth.jwt()</code> function to get the current user's ID and ensure they can only access files in their own folder:</p>
+
+    <div class="env-box">
+      <span style="color:#6b7280;">-- Check that the user owns the folder they're accessing</span><br/>
+      <span class="key">storage.foldername(name)</span><br/>
+      <span style="color:#6b7280;">-- returns the folder path as an array</span>
+    </div>
+
+    <h3>The <code>SUPABASE_STORAGE_BUCKET</code> Environment Variable</h3>
+
+    <p>FFmpegLab uses the <code>SUPABASE_STORAGE_BUCKET</code> environment variable to know which bucket to use for storage operations. The <strong>default value is <code>prod</code></strong>.</p>
+
+    <p>If you create a bucket with a different name (e.g., <code>ffmpeglab-assets</code>), you must set this variable accordingly.</p>
+
+    <h2 id="prerequisites">Prerequisites</h2>
+
+    <p>Before you begin, make sure you have:</p>
+
+    <ul>
+      <li>A <a href="https://supabase.com">Supabase account</a> (free tier available)</li>
+      <li>Your FFmpegLab instance running (or ready to deploy)</li>
+      <li>Basic familiarity with environment variables</li>
+    </ul>
+
+    <h2 id="step-1-supabase-project">Step 1: Create a Supabase Project</h2>
+
+    <p>The first step is to create a Supabase project that will host your storage.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 1.1</div>
+      <div class="step-title">Sign up or log in</div>
+      <div class="step-desc">Go to <a href="https://supabase.com">supabase.com</a> and sign up for an account. You can use GitHub login for a quick start.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 1.2</div>
+      <div class="step-title">Create a new project</div>
+      <div class="step-desc">Click <strong>New Project</strong> and fill in the details: <strong>Name</strong> (e.g., "ffmpeglab"), <strong>Database Password</strong> (use a strong password), <strong>Region</strong> (choose the closest to your users), and <strong>Pricing Plan</strong> (select <strong>Free</strong>).</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 1.3</div>
+      <div class="step-title">Wait for creation</div>
+      <div class="step-desc">Click <strong>Create new project</strong> and wait for the project to be created. This typically takes 1-2 minutes.</div>
+    </div>
+
+    <h2 id="step-2-auth">Step 2: Configure Authentication</h2>
+
+    <p>Users must be authenticated before they can access storage. Supabase Auth supports both email/password and magic link authentication.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 2.1</div>
+      <div class="step-title">Navigate to Authentication</div>
+      <div class="step-desc">In the Supabase project dashboard, click <strong>Authentication</strong> in the left sidebar.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2.2</div>
+      <div class="step-title">Configure email provider</div>
+      <div class="step-desc">In the <strong>Providers</strong> tab, enable the <strong>Email</strong> provider. You can choose between <strong>Password</strong> (traditional sign‑up with email and password) or <strong>Magic Link</strong> (passwordless login).</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2.3</div>
+      <div class="step-title">Customise email templates (optional)</div>
+      <div class="step-desc">You can customise the email templates for magic link or password reset emails in the <strong>Email Templates</strong> section.</div>
+    </div>
+
+    <p>As the Supabase Auth guide explains: <em>"Magic links are a passwordless authentication method where users receive a one-time login link via email. This is simpler and more secure than passwords"</em>.</p>
+
+    <h2 id="step-3-bucket">Step 3: Create the Storage Bucket</h2>
+
+    <p>Once your project is ready and authentication is configured, you need to create a storage bucket. The default bucket name used by FFmpegLab is <strong><code>prod</code></strong>, but you can use any name.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 3.1</div>
+      <div class="step-title">Navigate to Storage</div>
+      <div class="step-desc">In the Supabase project dashboard, click <strong>Storage</strong> in the left sidebar.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3.2</div>
+      <div class="step-title">Create a new bucket</div>
+      <div class="step-desc">Click <strong>New Bucket</strong> and enter a name — for example, <code>prod</code> (the default) or <code>ffmpeglab-assets</code>. If you use a custom name, you'll need to set the <code>SUPABASE_STORAGE_BUCKET</code> environment variable accordingly.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3.3</div>
+      <div class="step-title">Choose public or private</div>
+      <div class="step-desc">Select <strong>Private</strong> for the bucket type. This ensures that files are not publicly accessible by default and must be accessed via RLS policies.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3.4</div>
+      <div class="step-title">Click Create bucket</div>
+      <div class="step-desc">Finalise the bucket creation.</div>
+    </div>
+
+    <p>As noted in the Supabase documentation: <em>"Buckets are distinct containers for files and folders. You can think of them like 'super folders'"</em>.</p>
+
+    <h2 id="step-4-rls">Step 4: Configure Per-User RLS Policies</h2>
+
+    <p>This is the most critical step. <strong>Without RLS policies, your bucket will not allow any uploads</strong>. You need to create policies that grant the necessary permissions <strong>per user</strong>.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 4.1</div>
+      <div class="step-title">Navigate to Policies</div>
+      <div class="step-desc">In the Storage section, click on your bucket, then click the <strong>Policies</strong> tab.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4.2</div>
+      <div class="step-title">Add policies for each operation</div>
+      <div class="step-desc">Click <strong>Add Policies</strong> in the <strong>OBJECTS</strong> table to add policies for files. You need to create policies for <strong>SELECT</strong> (downloads), <strong>INSERT</strong> (uploads), <strong>UPDATE</strong> (updates), and <strong>DELETE</strong> (deletes).</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4.3</div>
+      <div class="step-title">Choose the policy type</div>
+      <div class="step-desc">Select <strong>For full customization</strong> to write the policy manually.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4.4</div>
+      <div class="step-title">Write per‑user INSERT policy (uploads)</div>
+      <div class="step-desc">Create a policy that allows authenticated users to upload files to their own folder:</div>
+    </div>
+
+    <div class="env-box">
+      <span style="color:#6b7280;">-- Allow authenticated users to upload to their own folder</span><br/>
+      <span class="key">create policy</span> "Allow authenticated uploads"<br/>
+      <span class="key">on</span> storage.objects<br/>
+      <span class="key">for insert</span><br/>
+      <span class="key">to authenticated</span><br/>
+      <span class="key">with check</span> (<br/>
+      &nbsp;&nbsp;bucket_id = 'prod' and<br/>
+      &nbsp;&nbsp;(storage.foldername(name))[1] = (select auth.jwt()->>'sub')<br/>
+      );
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4.5</div>
+      <div class="step-title">Write per‑user SELECT policy (downloads)</div>
+      <div class="step-desc">Create a policy that allows authenticated users to download files from their own folder:</div>
+    </div>
+
+    <div class="env-box">
+      <span style="color:#6b7280;">-- Allow authenticated users to download files from their own folder</span><br/>
+      <span class="key">create policy</span> "Allow authenticated downloads"<br/>
+      <span class="key">on</span> storage.objects<br/>
+      <span class="key">for select</span><br/>
+      <span class="key">to authenticated</span><br/>
+      <span class="key">using</span> (<br/>
+      &nbsp;&nbsp;bucket_id = 'prod' and<br/>
+      &nbsp;&nbsp;(storage.foldername(name))[1] = (select auth.jwt()->>'sub')<br/>
+      );
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4.6</div>
+      <div class="step-title">Write per‑user UPDATE policy (updates)</div>
+      <div class="step-desc">Create a policy that allows authenticated users to update files in their own folder:</div>
+    </div>
+
+    <div class="env-box">
+      <span style="color:#6b7280;">-- Allow authenticated users to update files in their own folder</span><br/>
+      <span class="key">create policy</span> "Allow authenticated updates"<br/>
+      <span class="key">on</span> storage.objects<br/>
+      <span class="key">for update</span><br/>
+      <span class="key">to authenticated</span><br/>
+      <span class="key">using</span> (<br/>
+      &nbsp;&nbsp;bucket_id = 'prod' and<br/>
+      &nbsp;&nbsp;(storage.foldername(name))[1] = (select auth.jwt()->>'sub')<br/>
+      );
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4.7</div>
+      <div class="step-title">Write per‑user DELETE policy (deletes)</div>
+      <div class="step-desc">Create a policy that allows authenticated users to delete files in their own folder:</div>
+    </div>
+
+    <div class="env-box">
+      <span style="color:#6b7280;">-- Allow authenticated users to delete files in their own folder</span><br/>
+      <span class="key">create policy</span> "Allow authenticated deletes"<br/>
+      <span class="key">on</span> storage.objects<br/>
+      <span class="key">for delete</span><br/>
+      <span class="key">to authenticated</span><br/>
+      <span class="key">using</span> (<br/>
+      &nbsp;&nbsp;bucket_id = 'prod' and<br/>
+      &nbsp;&nbsp;(storage.foldername(name))[1] = (select auth.jwt()->>'sub')<br/>
+      );
+    </div>
+
+    <p>As the Supabase documentation explains: <em>"An easy way to get started would be to create RLS policies for SELECT, INSERT, UPDATE, DELETE operations and restrict the policies to meet your security requirements"</em>.</p>
+
+    <p><strong>Important:</strong> If you're using a custom bucket name, replace <code>'prod'</code> with your bucket name in all policies.</p>
+
+    <h2 id="step-5-credentials">Step 5: Get Your Credentials</h2>
+
+    <p>To connect FFmpegLab to Supabase Storage, you need two pieces of information.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 5.1</div>
+      <div class="step-title">Navigate to API settings</div>
+      <div class="step-desc">In the Supabase dashboard, click <strong>Settings</strong> → <strong>API</strong> in the left sidebar.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 5.2</div>
+      <div class="step-title">Copy your Project URL</div>
+      <div class="step-desc">In the <strong>Configuration</strong> section, copy your <strong>Project URL</strong> (e.g., <code>https://your-project.supabase.co</code>).</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 5.3</div>
+      <div class="step-title">Copy your Anon Key</div>
+      <div class="step-desc">In the <strong>Project API keys</strong> section, copy your <strong>anon / public key</strong>.</div>
+    </div>
+
+    <p>As one guide notes: <em>"Copy your project URL and anon key"</em>. These are the credentials FFmpegLab will use to authenticate with Supabase Storage.</p>
+
+    <h2 id="step-6-ffmpeglab-config">Step 6: Configure FFmpegLab</h2>
+
+    <p>With your Supabase credentials ready, you can now configure FFmpegLab to use Supabase Storage.</p>
+
+    <p>FFmpegLab requires the following environment variables:</p>
+
+    <div class="env-box">
+      <span class="key">SUPABASE_HOST</span>=<span class="val">https://your-project.supabase.co</span><br/>
+      <span class="key">SUPABASE_ANON_KEY</span>=<span class="val">your-supabase-anon-key</span><br/>
+      <span class="key">SUPABASE_STORAGE_BUCKET</span>=<span class="val">prod</span>
+    </div>
+
+    <p>As documented in the FFmpegLab README, these variables tell the client where to connect, how to authenticate, and which bucket to use. The <code>SUPABASE_STORAGE_BUCKET</code> variable defaults to <code>prod</code> if not set.</p>
+
+    <p><strong>Example Docker Compose configuration:</strong></p>
+
+    <div class="env-box">
+      <span style="color:#6b7280;"># docker-compose.yml</span><br/>
+      <span class="key">services:</span><br/>
+      &nbsp;&nbsp;<span class="key">ffmpeglab:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">image:</span> <span class="val">ffmpeglab/ide:main</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">ports:</span> <span class="val">- "8080:8080"</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">environment:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">FFMPEGLAB_HOST="http://localhost:8080/webapp/?"</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">PUBLIC_HOST="https://localhost:8080/"</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">SUPABASE_HOST="https://your-project.supabase.co"</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">SUPABASE_ANON_KEY="your-supabase-anon-key"</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">SUPABASE_STORAGE_BUCKET="prod"</span>
+    </div>
+
+    <p><strong>Important:</strong> The <code>SUPABASE_ANON_KEY</code> is a client-side key and can be safely exposed in the client. The <strong>service role key</strong> should never be exposed to the client — it is used only for server-side operations.</p>
+
+    <p>As the Supabase documentation emphasises: <em>"The service role key should be kept secret and never exposed to the client"</em>.</p>
+
+    <p>If you're using a custom bucket name (e.g., <code>ffmpeglab-assets</code>), set <code>SUPABASE_STORAGE_BUCKET</code> accordingly:</p>
+
+    <div class="env-box">
+      <span class="key">SUPABASE_STORAGE_BUCKET</span>=<span class="val">ffmpeglab-assets</span>
+    </div>
+
+    <h2 id="step-7-verify">Step 7: Verify the Connection</h2>
+
+    <p>Once FFmpegLab is configured, verify that the connection to Supabase Storage is working:</p>
+
+    <ol>
+      <li>Open FFmpegLab in your browser at <code>http://localhost:8080/webapp/</code></li>
+      <li>Sign up or log in using email/password or magic link authentication</li>
+      <li>Create a new project or open an existing one</li>
+      <li>Export a video — the rendered video should be uploaded to Supabase Storage via TUS</li>
+      <li>Check your Supabase Storage bucket to confirm the file appears in the user's folder</li>
+      <li>Test resumable uploads by interrupting the upload and resuming it</li>
+    </ol>
+
+    <p>If you encounter issues, check the browser's developer console for errors related to <code>SUPABASE_HOST</code>, <code>SUPABASE_ANON_KEY</code>, or <code>SUPABASE_STORAGE_BUCKET</code>.</p>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+
+    <table>
+      <thead>
+        <tr><th>Issue</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>"403 Forbidden" on upload</strong></td>
+          <td>Missing or incorrect RLS policies</td>
+          <td>Create INSERT policy on <code>storage.objects</code> with proper per-user conditions</td>
+        </tr>
+        <tr>
+          <td><strong>TUS upload fails or hangs</strong></td>
+          <td>CORS configuration missing</td>
+          <td>Ensure CORS allows the TUS endpoints. Add your domain to Supabase's allowed origins.</td>
+        </tr>
+        <tr>
+          <td><strong>"Supabase connection failed"</strong></td>
+          <td>Invalid <code>SUPABASE_HOST</code> or <code>SUPABASE_ANON_KEY</code></td>
+          <td>Verify credentials in Supabase project settings</td>
+        </tr>
+        <tr>
+          <td><strong>Can't download files</strong></td>
+          <td>No SELECT policy</td>
+          <td>Create SELECT policy on <code>storage.objects</code> for the user's folder</td>
+        </tr>
+        <tr>
+          <td><strong>Wrong bucket used</strong></td>
+          <td><code>SUPABASE_STORAGE_BUCKET</code> not set or incorrect</td>
+          <td>Set <code>SUPABASE_STORAGE_BUCKET</code> to the correct bucket name</td>
+        </tr>
+        <tr>
+          <td><strong>RLS policy not working</strong></td>
+          <td>Policy syntax error or wrong target roles</td>
+          <td>Verify policy definition and set <code>to authenticated</code></td>
+        </tr>
+        <tr>
+          <td><strong>Authentication fails</strong></td>
+          <td>Supabase Auth not configured</td>
+          <td>Enable Auth in your Supabase project settings</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>As one guide notes: <em>"Important: must correctly configure RLS policies, otherwise you will get 403 errors and cannot upload"</em>.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is Supabase Storage?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Supabase Storage is a cloud storage service that integrates with Supabase's PostgreSQL database. It allows you to store and serve files like images, GIFs, and videos, with built-in security controls through <strong>Row Level Security (RLS)</strong> policies.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the TUS upload protocol and why does FFmpegLab use it?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">TUS is a protocol for <strong>resumable file uploads</strong>. FFmpegLab uses it because video files are large. TUS allows uploads to be <strong>paused, resumed, and retried</strong> if interrupted. This is essential for teams working with high-resolution video where network failures are common. As the TUS protocol explains: <em>"TUS provides a mechanism for clients to upload files to a server in a resumable way"</em>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How does FFmpegLab authenticate users for Supabase Storage?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">FFmpegLab uses <strong>Supabase Auth</strong> with email/password or magic link authentication. When a user logs in, they receive a <strong>JWT</strong> that is used to authenticate all storage requests. The JWT contains the user's ID, which is used by RLS policies to enforce <strong>per-user access control</strong>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the SUPABASE_STORAGE_BUCKET environment variable?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>SUPABASE_STORAGE_BUCKET</code> is an environment variable that tells FFmpegLab which storage bucket to use for storing assets. The <strong>default value is 'prod'</strong>. You can change this to any bucket name you've created in your Supabase project.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do per-user RLS policies work in Supabase Storage?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Per-user RLS policies ensure that users can only access files in <strong>their own folder</strong>. When a user uploads a file, it's stored in a folder with their user ID. RLS policies check the JWT to verify that the user owns the folder they're trying to access, preventing them from seeing or modifying other users' files.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Is Supabase Storage free?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Supabase offers a generous <strong>free tier</strong> that includes 1 GB of database storage and 1 GB of file storage, which is sufficient for personal use and small team projects.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Setting up Supabase Storage with FFmpegLab transforms it from a local editor into a <strong>collaborative team platform</strong> with secure, per‑user cloud storage. With <strong>magic link authentication</strong>, <strong>per‑user RLS policies</strong>, and <strong>TUS resumable uploads</strong>, your team can upload, share, and manage video assets of any size — reliably and securely.</p>
+
+    <p>The setup is straightforward: create a Supabase project, configure authentication, create your bucket and RLS policies, set your environment variables, and deploy. Whether you use the default <code>prod</code> bucket or a custom name, FFmpegLab gives you full control over your team's data.</p>
+
+    <p><strong>Key takeaways for your deployment:</strong></p>
+    <ul>
+      <li><strong>Magic link auth</strong> provides a secure, passwordless login experience</li>
+      <li><strong>Per‑user RLS policies</strong> keep each user's files private and isolated</li>
+      <li><strong>TUS resumable uploads</strong> handle large video files reliably — pause, resume, and retry automatically</li>
+      <li><strong><code>SUPABASE_STORAGE_BUCKET</code></strong> defaults to <code>prod</code> — change it if you use a custom bucket</li>
+      <li><strong>Always protect</strong> your service role key — it's a secret</li>
+      <li><strong>Check logs and policies</strong> if uploads fail — the answer is usually in the RLS configuration</li>
+    </ul>
+
+    <p>Next time you're setting up FFmpegLab for your team, you'll know exactly how to connect it to Supabase Storage for secure, scalable, and reliable cloud storage.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="self-hosted-video-editor-docker.html">Setting up FFMpegLab</a></li>
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg xfade transitions guide</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-gui-libraries-comparison.html">FFmpeg GUI Libraries Compared</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+    <section id="newsletter" data-ffmpeglab-newsletter data-endpoint="/_ploy/form-submit"
+      data-form-name="ffmpeglab-newsletter" data-source="embedded-newsletter"
+      style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;">
+      <div data-liquid-light="orange" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="purple" aria-hidden="true"
+        style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="amber" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+        <div data-newsletter-glass
+          style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);">
+          <div
+            style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+            <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+              <div
+                style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">
+                ✦&nbsp; Fresh from the render queue</div>
+              <h2
+                style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">
+                Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+              <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical
+                commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+              <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp;
+                Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise
+              </div>
+            </div>
+
+            <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+              <div data-newsletter-success hidden
+                style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+                <span
+                  style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+                <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You’re on the list.</h3>
+                <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is
+                  headed your way.</p>
+              </div>
+
+              <form data-newsletter-form
+                style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+                <div style="display:table;width:100%;table-layout:fixed;">
+                  <div style="display:table-cell;vertical-align:middle;">
+                    <label for="newsletter-embed-email"
+                      style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email
+                      address</label>
+                    <input id="newsletter-embed-email" data-newsletter-email name="email" type="email"
+                      autocomplete="email" required placeholder="you@example.com"
+                      style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;" />
+                  </div>
+                  <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                    <button data-newsletter-submit type="submit"
+                      style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp;
+                      →</button>
+                  </div>
+                </div>
+                <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+                  <span>One useful email at a time.</span>
+                  <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went
+                    wrong. Try again.</span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
