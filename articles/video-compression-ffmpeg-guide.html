@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Compression with FFmpeg – Complete Guide to Reducing File Size</title>
+  <meta name="description" content="Master video compression with FFmpeg. Learn CRF, codec selection, presets, two-pass encoding, hardware acceleration, and audio compression to reduce file size while preserving quality." />
+  <meta name="keywords" content="ffmpeg video compression, ffmpeg reduce file size, crf ffmpeg, libx264, libx265, h264 vs h265, ffmpeg two-pass, ffmpeg hardware encoding, nvenc, qsv" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/video-compression-ffmpeg-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/video-compression-ffmpeg-guide.html" />
+  <meta property="og:title" content="Video Compression with FFmpeg – Complete Guide to Reducing File Size" />
+  <meta property="og:description" content="Master video compression with FFmpeg. Learn CRF, codec selection, presets, two-pass encoding, hardware acceleration, and audio compression." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Video Compression with FFmpeg – Complete Guide to Reducing File Size",
+      "description": "Master video compression with FFmpeg. Learn CRF, codec selection, presets, two-pass encoding, hardware acceleration, and audio compression to reduce file size while preserving quality.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-24",
+      "dateModified": "2026-07-24",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/video-compression-ffmpeg-guide.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the best CRF value for video compression?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The best CRF value depends on your quality needs. For near-lossless archival, use CRF 17-18. For general use, CRF 23 is the default and offers a good balance. For streaming or smaller files, CRF 26-28 works well. CRF 0 is mathematically lossless but produces enormous files."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Should I use H.264 or H.265 for compression?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "H.265 (HEVC) offers 25-50% better compression than H.264, meaning smaller files for the same quality. However, H.265 encoding is much slower and has less device compatibility. Use H.264 for maximum compatibility; use H.265 for archival or when file size is critical."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the difference between CRF and bitrate encoding?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CRF (Constant Rate Factor) maintains consistent quality across the video by allocating more bits to complex scenes and fewer to simple ones. Bitrate encoding targets a specific data rate, resulting in consistent file size but variable quality. CRF is generally preferred for most use cases."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does hardware acceleration reduce compression quality?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Hardware encoders (NVENC, QSV, AMF) are faster but typically produce slightly larger files at the same quality compared to software encoders (libx264, libx265). For professional archival, use software encoding. For rapid transcoding or streaming, hardware acceleration is a great choice."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I compress a video for YouTube or social media?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use H.264 with CRF 18-23, preset slow, yuv420p pixel format, AAC audio at 128-192kbps, and add -movflags +faststart for web streaming. For YouTube specifically, 1080p at 8-12 Mbps or 4K at 35-45 Mbps is recommended."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .env-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #fbbf24;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .env-box .key {
+      color: #34d399;
+    }
+    .env-box .val {
+      color: #fbbf24;
+    }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .step-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #fbbf24;
+    }
+    .step-box .step-num {
+      color: #fbbf24;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .step-box .step-title {
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    .step-box .step-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+      margin: 1.5rem 0;
+    }
+    .feature-item {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 0.8rem;
+      border: 1px solid #2d2d3d;
+      text-align: center;
+    }
+    .feature-item .icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.2rem;
+    }
+    .feature-item .label {
+      color: #fff;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    .feature-item .desc {
+      color: #a1a1aa;
+      font-size: 0.7rem;
+    }
+    .badge-codec {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-h264 { background: #3b82f6; color: #fff; }
+    .badge-h265 { background: #8b5cf6; color: #fff; }
+    .badge-av1 { background: #ef4444; color: #fff; }
+    .badge-vp9 { background: #f59e0b; color: #fff; }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+      .feature-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Video Compression</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Video Compression with FFmpeg – Complete Guide to Reducing File Size</h1>
+      <p class="dek">Master CRF, codec selection, presets, two-pass encoding, and hardware acceleration to reduce file size while preserving quality.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Balancing Quality and File Size</a></li>
+        <li><a href="#why-compress">Why Video Compression Matters</a></li>
+        <li><a href="#core-concepts">Core Concepts: How Video Compression Works</a></li>
+        <li><a href="#crf">Constant Rate Factor (CRF) – The Quality Knob</a></li>
+        <li><a href="#presets">Presets – Speed vs. Compression</a></li>
+        <li><a href="#codecs">Choosing a Codec: H.264, H.265, AV1, and VP9</a></li>
+        <li><a href="#basic-command">Basic Compression Command</a></li>
+        <li><a href="#two-pass">Two-Pass Encoding – Targeting a Specific File Size</a></li>
+        <li><a href="#hardware-acceleration">Hardware Acceleration – NVENC, QSV, and VAAPI</a></li>
+        <li><a href="#audio-compression">Audio Compression – Don't Forget the Sound</a></li>
+        <li><a href="#advanced-techniques">Advanced Techniques: Downscaling, Frame Rate, and More</a></li>
+        <li><a href="#platform-guide">Platform-Specific Recommendations</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Uncompressed video is enormous. A single minute of 4K footage can easily exceed 10 GB. To store, share, and stream video, you need <strong>compression</strong> — the process of reducing file size while preserving as much visual quality as possible.</p>
+
+    <p>FFmpeg gives you <strong>complete control</strong> over video compression. You can choose the codec, adjust quality settings, balance speed against file size, and even leverage hardware acceleration for lightning‑fast encodes.</p>
+
+    <p>This guide walks you through everything you need to know about video compression with FFmpeg — from basic commands to advanced techniques used by professionals.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>CRF (Constant Rate Factor)</strong> is the easiest way to control quality vs. file size. Lower = better quality, higher = smaller file.</li>
+        <li><strong>H.264 (libx264)</strong> is the most compatible codec. <strong>H.265 (libx265)</strong> offers 25‑50% better compression at the cost of speed.</li>
+        <li><strong>Presets</strong> balance encoding speed and compression efficiency. Use the slowest preset you have patience for.</li>
+        <li><strong>Two‑pass encoding</strong> is used when you need to hit a specific file size or bitrate target.</li>
+        <li><strong>Hardware acceleration</strong> (NVENC, QSV, VAAPI) can speed up encoding by 5‑10×.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Balancing Quality and File Size</h2>
+
+    <p>Most FFmpeg tutorials show you one command and stop. But compression is a balancing act — you're trading file size for quality and encoding time. The "right" settings depend on your use case: archival, streaming, social media, or mobile delivery.</p>
+
+    <p>As the Cloudinary guide explains: <em>"FFmpeg provides us with complete control over video compression through options such as resolution, bitrate, and codec settings"</em>[reference:0]. But with so many options, it's easy to get lost.</p>
+
+    <p>This guide gives you a practical framework for making the right choices.</p>
+
+    <h2 id="why-compress">Why Video Compression Matters</h2>
+
+    <p>Video compression is essential for several reasons[reference:1]:</p>
+
+    <ul>
+      <li><strong>Save storage space</strong> — compressed videos take up significantly less space on your hard drive or cloud storage.</li>
+      <li><strong>Faster uploads and sharing</strong> — smaller files upload faster and are easier to email or share.</li>
+      <li><strong>Smoother streaming</strong> — compressed videos consume less bandwidth, reducing buffering for viewers.</li>
+      <li><strong>Lower bandwidth costs</strong> — if you host videos yourself, smaller files mean lower delivery costs.</li>
+      <li><strong>Mobile-friendly</strong> — compressed videos consume less cellular data, making them ideal for mobile viewers.</li>
+    </ul>
+
+    <h2 id="core-concepts">Core Concepts: How Video Compression Works</h2>
+
+    <p>Video compression works by <strong>removing redundant information</strong>. There are two main types of redundancy:</p>
+
+    <ul>
+      <li><strong>Spatial redundancy</strong> — within a single frame, adjacent pixels are often similar. Compression algorithms can group similar pixels together.</li>
+      <li><strong>Temporal redundancy</strong> — between consecutive frames, most of the image doesn't change. Compression algorithms only store the differences between frames.</li>
+    </ul>
+
+    <p>Different codecs use different algorithms to find and remove redundancy, which is why some codecs compress better than others.</p>
+
+    <h2 id="crf">Constant Rate Factor (CRF) – The Quality Knob</h2>
+
+    <p><strong>CRF (Constant Rate Factor)</strong> is the most important setting for video compression. It controls the balance between quality and file size[reference:2].</p>
+
+    <p>The CRF scale is <strong>0 to 51</strong>, where[reference:3]:</p>
+    <ul>
+      <li><strong>0</strong> — Lossless (enormous files)</li>
+      <li><strong>17-18</strong> — Visually lossless (virtually indistinguishable from the original)[reference:4]</li>
+      <li><strong>23</strong> — Default, good balance of quality and size[reference:5]</li>
+      <li><strong>28</strong> — More compression, noticeable artifacts</li>
+      <li><strong>51</strong> — Worst quality</li>
+    </ul>
+
+    <p>As the FFmpeg wiki explains: <em>"Use this mode if you want to retain good visual quality and don't care about the exact bitrate or filesize of the encoded file"</em>[reference:6].</p>
+
+    <p><strong>Recommended CRF values:</strong></p>
+    <ul>
+      <li><strong>17-18</strong> — Archival, near‑lossless quality</li>
+      <li><strong>20</strong> — High quality, slightly better than default[reference:7]</li>
+      <li><strong>23</strong> — Default, good for general use[reference:8]</li>
+      <li><strong>26-28</strong> — For streaming or when file size is critical[reference:9]</li>
+    </ul>
+
+    <p>As one guide notes: <em>"Lower values mean higher quality. 23 produces some compression artifacts but is often good enough. Choose 20 if you want better quality with still reasonably small video files"</em>[reference:10].</p>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">CRF 17</span>
+      <span style="color:#6b7280;"> (Largest file, best quality)</span>
+      <br/>
+      <span class="arrow">↓</span>
+      <br/>
+      <span style="color:#fbbf24;">CRF 23</span>
+      <span style="color:#6b7280;"> (Default — good balance)</span>
+      <br/>
+      <span class="arrow">↓</span>
+      <br/>
+      <span style="color:#fbbf24;">CRF 28</span>
+      <span style="color:#6b7280;"> (Smallest file, acceptable quality)</span>
+    </div>
+
+    <h2 id="presets">Presets – Speed vs. Compression</h2>
+
+    <p>The <strong>preset</strong> determines how much CPU time the encoder spends on compression. Slower presets produce <strong>smaller files at the same quality</strong> — but they take longer to encode[reference:11].</p>
+
+    <p>Available presets, from fastest to slowest[reference:12]:</p>
+
+    <pre><code>ultrafast → superfast → veryfast → faster → fast → medium → slow → slower → veryslow → placebo</code></pre>
+
+    <p>As the FFmpeg wiki advises: <em>"Use the slowest preset you have patience for. Ignore placebo as it provides insignificant returns for a significant increase in encoding time"</em>[reference:13].</p>
+
+    <p><strong>Recommended presets:</strong></p>
+    <ul>
+      <li><strong><code>ultrafast</code></strong> — Fastest, but largest files. Use for testing.</li>
+      <li><strong><code>veryfast</code></strong> — Good for live streaming[reference:14]</li>
+      <li><strong><code>medium</code></strong> — Default, reasonable balance[reference:15]</li>
+      <li><strong><code>slow</code></strong> — Better compression, good for most uses</li>
+      <li><strong><code>veryslow</code></strong> — Best compression, use for archival</li>
+    </ul>
+
+    <h2 id="codecs">Choosing a Codec: H.264, H.265, AV1, and VP9</h2>
+
+    <p>The codec determines the compression algorithm. Different codecs offer different trade-offs between compatibility, compression efficiency, and encoding speed.</p>
+
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="icon">🎬</div>
+        <div class="label">H.264 (libx264)</div>
+        <div class="desc"><span class="badge-codec badge-h264">Most Compatible</span><br/>Fast encoding, plays everywhere. Default choice for most users.</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🎥</div>
+        <div class="label">H.265 (libx265)</div>
+        <div class="desc"><span class="badge-codec badge-h265">Best Compression</span><br/>25‑50% smaller files[reference:16]. Slower, less compatible.</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🚀</div>
+        <div class="label">AV1 (libaom / SVT-AV1)</div>
+        <div class="desc"><span class="badge-codec badge-av1">Emerging</span><br/>Royalty‑free, best compression, extremely slow[reference:17].</div>
+      </div>
+      <div class="feature-item">
+        <div class="icon">📺</div>
+        <div class="label">VP9 (libvpx-vp9)</div>
+        <div class="desc"><span class="badge-codec badge-vp9">Web Optimized</span><br/>Royalty‑free, good for web, slower than H.264[reference:18].</div>
+      </div>
+    </div>
+
+    <h3>H.264 (libx264) – The Gold Standard</h3>
+
+    <p>H.264, also known as AVC, is <strong>the most widely supported video codec</strong>. It works on virtually every device, browser, and platform[reference:19]. It offers excellent quality at reasonable file sizes and encodes quickly.</p>
+
+    <p>As the FFmpeg wiki states: <em>"This guide assumes that you will be using the libx264 encoder, which currently offers the best possible quality at fast encoding speeds"</em>[reference:20].</p>
+
+    <p><strong>Use H.264 when:</strong> You need maximum compatibility, you're encoding for the web, or you want fast encoding.</p>
+
+    <h3>H.265 (libx265) – Better Compression, Slower Speed</h3>
+
+    <p>H.265, also known as HEVC, offers <strong>25‑50% better compression than H.264</strong> — meaning significantly smaller files for the same quality[reference:21][reference:22]. The gains are most noticeable at 1080p and higher resolutions[reference:23].</p>
+
+    <p>However, H.265 encoding is <strong>much slower</strong> than H.264, and device support is not as universal.</p>
+
+    <p><strong>Use H.265 when:</strong> File size is critical, you're encoding for archival, or your target platform supports HEVC (e.g., modern smartphones, smart TVs).</p>
+
+    <h3>AV1 – The Future of Video</h3>
+
+    <p>AV1 is a royalty‑free codec that offers <strong>even better compression than H.265</strong>. It's supported by Netflix, YouTube, and major browsers. However, encoding is <strong>extremely slow</strong> — often 10‑100× slower than H.264[reference:24].</p>
+
+    <p><strong>Use AV1 when:</strong> You have time to spare and want the absolute smallest files for web delivery.</p>
+
+    <h3>VP9 – Google's Web‑Focused Codec</h3>
+
+    <p>VP9 is Google's royalty‑free codec, used by YouTube for high‑quality streams. It offers better compression than H.264 but is slower to encode[reference:25].</p>
+
+    <p><strong>Use VP9 when:</strong> You're encoding for the web and want royalty‑free compression.</p>
+
+    <h2 id="basic-command">Basic Compression Command</h2>
+
+    <p>Here's the simplest command to compress a video with FFmpeg[reference:26][reference:27]:</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx264 -crf 23 -preset medium -c:a aac -b:a 128k output.mp4
+    </div>
+
+    <p><strong>What this does:</strong></p>
+    <ul>
+      <li><code>-c:v libx264</code> — Use the H.264 codec</li>
+      <li><code>-crf 23</code> — Quality setting (default)[reference:28]</li>
+      <li><code>-preset medium</code> — Balance between speed and compression[reference:29]</li>
+      <li><code>-c:a aac</code> — Use AAC audio</li>
+      <li><code>-b:a 128k</code> — Audio bitrate of 128 kbps</li>
+    </ul>
+
+    <p>As one guide notes: <em>"A great starting point is to use the H.264 codec with CRF"</em>[reference:30].</p>
+
+    <p><strong>For higher quality, archive‑ready compression:</strong></p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx264 -crf 18 -preset slow -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4
+    </div>
+
+    <p><strong>For smaller files (streaming, social media):</strong></p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx264 -crf 28 -preset fast -c:a aac -b:a 96k output.mp4
+    </div>
+
+    <h2 id="two-pass">Two-Pass Encoding – Targeting a Specific File Size</h2>
+
+    <p>CRF encoding doesn't let you control the exact file size. If you need to hit a specific file size or bitrate target — for example, a 100 MB limit for email — you need <strong>two‑pass encoding</strong>[reference:31].</p>
+
+    <p>Two‑pass encoding works by:</p>
+    <ol>
+      <li><strong>First pass</strong> — Analyzes the video and creates a statistics file[reference:32]</li>
+      <li><strong>Second pass</strong> — Uses the statistics to allocate bits efficiently[reference:33]</li>
+    </ol>
+
+    <p>As the FFmpeg wiki explains: <em>"In order to create more efficient encodes when a particular target bitrate should be reached, you should choose two-pass encoding"</em>[reference:34].</p>
+
+    <p><strong>Two‑pass encoding example for H.264:</strong></p>
+
+    <div class="env-box">
+      <span style="color:#6b7280;"># First pass (no output file, just statistics)</span>
+      ffmpeg -i input.mp4 -c:v libx264 -b:v 2M -pass 1 -f mp4 /dev/null
+      <br/><br/>
+      <span style="color:#6b7280;"># Second pass (actual output)</span>
+      ffmpeg -i input.mp4 -c:v libx264 -b:v 2M -pass 2 -c:a aac -b:a 128k output.mp4
+    </div>
+
+    <p>As noted in the FFmpeg docs: <em>"In pass 1 and 2, use the `-pass 1` and `-pass 2` options, respectively"</em>[reference:35].</p>
+
+    <p><strong>Calculating target bitrate:</strong></p>
+
+    <pre><code>bitrate = (target_file_size_in_bits) / (video_duration_in_seconds)</code></pre>
+
+    <p>For example, a 10‑minute video (600 seconds) targeting 200 MB:</p>
+
+    <pre><code>(200 MiB × 8192) / 600 seconds = ~2730 kBit/s total bitrate</code></pre>
+
+    <h2 id="hardware-acceleration">Hardware Acceleration – NVENC, QSV, and VAAPI</h2>
+
+    <p>Software encoding (libx264, libx265) is slow but offers the best quality. <strong>Hardware acceleration</strong> uses dedicated chips on your GPU to encode video much faster — often <strong>5‑10× faster</strong> than CPU encoding[reference:36].</p>
+
+    <p>However, hardware encoders typically produce <strong>slightly larger files</strong> at the same quality compared to software encoders.</p>
+
+    <h3>NVIDIA NVENC</h3>
+
+    <p>NVENC is NVIDIA's hardware encoder, available on most NVIDIA GPUs (Kepler architecture and newer)[reference:37]. It offers excellent speed and good quality.</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v h264_nvenc -preset p4 -cq 23 -c:a aac -b:a 128k output.mp4
+    </div>
+
+    <h3>Intel QSV (Quick Sync Video)</h3>
+
+    <p>QSV is Intel's hardware encoder, integrated into most Intel CPUs[reference:38]. It's low‑power and widely available[reference:39].</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v h264_qsv -global_quality 23 -c:a aac -b:a 128k output.mp4
+    </div>
+
+    <h3>AMD AMF / VAAPI</h3>
+
+    <p>AMD's hardware encoder is available via AMF (Windows) or VAAPI (Linux)[reference:40].</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v h264_amf -quality speed -c:a aac -b:a 128k output.mp4
+    </div>
+
+    <p>As one guide explains: <em>"Hardware acceleration, via NVENC, VAAPI, or Quick Sync, isn't optional if latency matters"</em>[reference:41].</p>
+
+    <p><strong>When to use hardware acceleration:</strong></p>
+    <ul>
+      <li><strong>Live streaming</strong> — you need real‑time encoding</li>
+      <li><strong>Batch processing</strong> — you need to encode many videos quickly</li>
+      <li><strong>Rapid prototyping</strong> — you want to test settings quickly</li>
+    </ul>
+
+    <p><strong>When to use software encoding:</strong></p>
+    <ul>
+      <li><strong>Archival</strong> — you want the best possible quality‑per‑bit</li>
+      <li><strong>Professional delivery</strong> — quality is paramount</li>
+      <li><strong>You have time</strong> — software encoding is slower but better</li>
+    </ul>
+
+    <h2 id="audio-compression">Audio Compression – Don't Forget the Sound</h2>
+
+    <p>Video compression is only half the story. Audio can also take up significant space. Compressing the audio track can reduce file size without affecting video quality.</p>
+
+    <p><strong>Common audio codecs and bitrates:</strong></p>
+
+    <ul>
+      <li><strong>AAC</strong> — The standard for MP4 files. Use <code>-c:a aac -b:a 128k</code> for good quality[reference:42].</li>
+      <li><strong>MP3</strong> — Widely compatible. Use <code>-c:a libmp3lame -b:a 128k</code>.</li>
+      <li><strong>Opus</strong> — Best quality‑per‑bit, ideal for web. Use <code>-c:a libopus -b:a 96k</code>.</li>
+    </ul>
+
+    <p>As the FFmpeg AAC guide notes: <em>"For audible transparency, use 64kb/s for each channel (so 128kb/s for stereo)"</em>[reference:43].</p>
+
+    <p><strong>Recommended audio bitrates:</strong></p>
+    <ul>
+      <li><strong>96 kbps</strong> — Acceptable for web, podcasts</li>
+      <li><strong>128 kbps</strong> — Good quality, standard for most uses</li>
+      <li><strong>192 kbps</strong> — High quality, near‑transparent</li>
+      <li><strong>256+ kbps</strong> — Audiophile quality</li>
+    </ul>
+
+    <p><strong>To remove audio entirely</strong> (e.g., for silent videos):</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v copy -an output.mp4
+    </div>
+
+    <h2 id="advanced-techniques">Advanced Techniques: Downscaling, Frame Rate, and More</h2>
+
+    <p>Beyond codec, CRF, and presets, you can further reduce file size with these techniques[reference:44]:</p>
+
+    <h3>Downscaling (Reducing Resolution)</h3>
+
+    <p>Lower resolution = fewer pixels = smaller file[reference:45].</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -vf "scale=1280:720" -c:v libx264 -crf 23 output.mp4
+    </div>
+
+    <h3>Reducing Frame Rate</h3>
+
+    <p>Fewer frames per second = smaller file[reference:46].</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -vf "fps=30" -c:v libx264 -crf 23 output.mp4
+    </div>
+
+    <h3>Using a 10‑bit Pixel Format</h3>
+
+    <p>Encoding with 10‑bit depth can improve compression efficiency, even for 8‑bit sources[reference:47].</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx265 -crf 26 -pix_fmt yuv420p10le output.mp4
+    </div>
+
+    <h3>Web Optimisation: <code>-movflags +faststart</code></h3>
+
+    <p>This moves the moov atom (metadata) to the front of the file, allowing videos to start playing before they're fully downloaded. Essential for web video[reference:48].</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx264 -crf 23 -movflags +faststart output.mp4
+    </div>
+
+    <h2 id="platform-guide">Platform‑Specific Recommendations</h2>
+
+    <h3>YouTube</h3>
+
+    <p>YouTube recommends H.264 with AAC audio[reference:49]:</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx264 -crf 18 -preset slow -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4
+    </div>
+
+    <p><strong>Recommended bitrates for YouTube:</strong></p>
+    <ul>
+      <li><strong>1080p:</strong> 8‑12 Mbps</li>
+      <li><strong>4K (2160p):</strong> 35‑45 Mbps</li>
+    </ul>
+
+    <h3>Social Media (TikTok, Instagram, Reels)</h3>
+
+    <p>Social media platforms have strict file size and resolution limits. Use a higher CRF (lower quality) to meet size limits.</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx264 -crf 26 -preset fast -vf "scale=1080:1920" -c:a aac -b:a 96k output.mp4
+    </div>
+
+    <h3>Web Streaming</h3>
+
+    <p>For websites, prioritise compatibility and fast start:</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx264 -crf 23 -preset medium -movflags +faststart -c:a aac -b:a 128k output.mp4
+    </div>
+
+    <h3>Archival / Masters</h3>
+
+    <p>For long‑term storage, use the highest quality settings:</p>
+
+    <div class="env-box">
+      ffmpeg -i input.mp4 -c:v libx265 -crf 18 -preset veryslow -pix_fmt yuv420p10le -c:a aac -b:a 192k output.mp4
+    </div>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the best CRF value for video compression?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The best CRF value depends on your quality needs. For near‑lossless archival, use <strong>CRF 17‑18</strong>. For general use, <strong>CRF 23</strong> is the default and offers a good balance. For streaming or smaller files, <strong>CRF 26‑28</strong> works well. CRF 0 is mathematically lossless but produces enormous files.[reference:50]</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Should I use H.264 or H.265 for compression?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>H.265 (HEVC)</strong> offers <strong>25‑50% better compression</strong> than H.264, meaning smaller files for the same quality[reference:51]. However, H.265 encoding is much slower and has less device compatibility. Use H.264 for maximum compatibility; use H.265 for archival or when file size is critical.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the difference between CRF and bitrate encoding?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>CRF</strong> (Constant Rate Factor) maintains consistent quality across the video by allocating more bits to complex scenes and fewer to simple ones[reference:52]. <strong>Bitrate encoding</strong> targets a specific data rate, resulting in consistent file size but variable quality. CRF is generally preferred for most use cases.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does hardware acceleration reduce compression quality?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Hardware encoders (NVENC, QSV, AMF) are faster but typically produce <strong>slightly larger files</strong> at the same quality compared to software encoders (libx264, libx265). For professional archival, use software encoding. For rapid transcoding or streaming, hardware acceleration is a great choice.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I compress a video for YouTube or social media?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use <strong>H.264</strong> with <strong>CRF 18‑23</strong>, preset slow, yuv420p pixel format, AAC audio at 128‑192kbps, and add <code>-movflags +faststart</code> for web streaming[reference:53]. For YouTube specifically, 1080p at 8‑12 Mbps or 4K at 35‑45 Mbps is recommended.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is two‑pass encoding and when should I use it?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>Two‑pass encoding</strong> runs the encoder twice to analyse the video and allocate bits more efficiently[reference:54]. Use it when you need to <strong>hit a specific file size or bitrate target</strong> — for example, if you need a video under 100 MB for email or a platform with upload limits.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Video compression is a balancing act between <strong>quality, file size, and encoding time</strong>. FFmpeg gives you the tools to control all three.</p>
+
+    <p>Start with the basics: <strong>H.264, CRF 23, preset medium</strong>. Then experiment: lower the CRF for better quality, use a slower preset for smaller files, or try H.265 for even better compression.</p>
+
+    <p><strong>Key takeaways:</strong></p>
+    <ul>
+      <li><strong>CRF</strong> is your quality knob — lower = better quality, higher = smaller file</li>
+      <li><strong>Presets</strong> trade speed for compression — use the slowest you can tolerate</li>
+      <li><strong>Codecs</strong> balance compatibility and efficiency — H.264 for universal playback, H.265 for smaller files</li>
+      <li><strong>Two‑pass encoding</strong> targets specific file sizes</li>
+      <li><strong>Hardware acceleration</strong> speeds up encoding at a slight quality cost</li>
+      <li><strong>Don't forget audio</strong> — it can take up significant space</li>
+    </ul>
+
+    <p>Next time you need to compress a video, you'll know exactly which settings to use.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-advanced-audio-processing.html">Advanced Audio Processing</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-dynamic-runtime-commands.html">Dynamic Runtime Commands &amp; Timeline Editing</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+    <section id="newsletter" data-ffmpeglab-newsletter data-endpoint="/_ploy/form-submit"
+      data-form-name="ffmpeglab-newsletter" data-source="embedded-newsletter"
+      style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;">
+      <div data-liquid-light="orange" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="purple" aria-hidden="true"
+        style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="amber" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+        <div data-newsletter-glass
+          style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);">
+          <div
+            style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+            <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+              <div
+                style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">
+                ✦&nbsp; Fresh from the render queue</div>
+              <h2
+                style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">
+                Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+              <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical
+                commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+              <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp;
+                Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise
+              </div>
+            </div>
+
+            <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+              <div data-newsletter-success hidden
+                style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+                <span
+                  style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+                <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You’re on the list.</h3>
+                <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is
+                  headed your way.</p>
+              </div>
+
+              <form data-newsletter-form
+                style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+                <div style="display:table;width:100%;table-layout:fixed;">
+                  <div style="display:table-cell;vertical-align:middle;">
+                    <label for="newsletter-embed-email"
+                      style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email
+                      address</label>
+                    <input id="newsletter-embed-email" data-newsletter-email name="email" type="email"
+                      autocomplete="email" required placeholder="you@example.com"
+                      style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;" />
+                  </div>
+                  <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                    <button data-newsletter-submit type="submit"
+                      style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp;
+                      →</button>
+                  </div>
+                </div>
+                <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+                  <span>One useful email at a time.</span>
+                  <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went
+                    wrong. Try again.</span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
