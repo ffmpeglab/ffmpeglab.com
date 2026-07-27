@@ -13,7 +13,7 @@
 
 (function () {
   "use strict";
-  const supabaseClient = window.supabase.createClient('https://office.starpy.me', "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE")
+  const supabaseClient = window.supabase.createClient('https://office.starpy.me', "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg1MTU0MzA0LCJleHAiOjE5NDI4MzQzMDR9.ugTwq8TI7APnWFHg7URmB1tW5YaTc_ZnWuuwiJaeRo8")
 
   var SELECTOR = "[data-ffmpeglab-newsletter]";
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
