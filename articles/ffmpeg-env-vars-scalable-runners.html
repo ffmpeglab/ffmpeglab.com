@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Environment Variables & Scalable Runners – FFmpegLab Server Architecture</title>
+  <meta name="description" content="Master environment variables and scalable runners for FFmpegLab Server. Learn to configure PostgreSQL, pgmq, S3 storage, and distribute rendering across multiple runners." />
+  <meta name="keywords" content="ffmpeg environment variables, scalable runners, ffmpeg cluster, distributed encoding, ffmpeg self-hosting, docker ffmpeg, ffmpeglab, postgresql, pgmq, s3 storage" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-env-vars-scalable-runners.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-env-vars-scalable-runners.html" />
+  <meta property="og:title" content="Environment Variables & Scalable Runners – FFmpegLab Server Architecture" />
+  <meta property="og:description" content="Master environment variables and scalable runners for FFmpegLab Server. Learn to configure PostgreSQL, pgmq, S3 storage, and distribute rendering across multiple runners." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .env-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #fbbf24;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .env-box .key {
+      color: #34d399;
+    }
+    .env-box .val {
+      color: #fbbf24;
+    }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .arch-card {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid #2d2d3d;
+      text-align: center;
+    }
+    .arch-card h4 {
+      margin-top: 0;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .arch-card .icon {
+      font-size: 2rem;
+      margin: 0.3rem 0;
+    }
+    .arch-card .desc {
+      font-size: 0.8rem;
+      color: #a1a1aa;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+      .arch-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Env Vars &amp; Scalable Runners</div>
+      <span class="eyebrow">DevOps &amp; Automation</span>
+      <h1>Environment Variables &amp; Scalable Runners – FFmpegLab Server Architecture</h1>
+      <p class="dek">Configure PostgreSQL, pgmq, S3 storage, and distribute rendering across multiple runners. The complete guide to scaling FFmpegLab Server.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: One‑off Commands Don't Scale</a></li>
+        <li><a href="#architecture">The FFmpegLab Server Architecture</a></li>
+        <li><a href="#powered-by-supabase">Powered by Supabase – Full‑Cycle Provider</a></li>
+        <li><a href="#env-vars">FFmpegLab Server Environment Variables</a></li>
+        <li><a href="#docker-compose">Docker Compose Configuration</a></li>
+        <li><a href="#runners">Scalable Runners – The Engine</a></li>
+        <li><a href="#scaling">Scaling the Rendering Pipeline</a></li>
+        <li><a href="#security">Security Considerations</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>FFmpeg is famously powerful, but its default mode of operation — a single command, on a single machine, with hard‑coded paths — doesn't scale. When you move from a one‑off conversion to a production pipeline, you quickly hit walls: inconsistent behaviour across environments, hours‑long rendering times, and manual intervention for every change.</p>
+
+    <p><strong>FFmpegLab Server</strong> solves this with a complete, production‑grade architecture built on <strong>PostgreSQL</strong>, <strong>pgmq</strong> queues, <strong>S3‑compatible storage</strong>, and <strong>scalable runners</strong>. This guide walks you through the entire stack — from configuring environment variables to deploying a self‑hosted rendering cluster.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>PostgreSQL + pgmq</strong> provides durable job queuing with transactional guarantees.</li>
+        <li><strong>S3‑compatible storage</strong> handles media assets and rendered output.</li>
+        <li><strong>Three runner types</strong> — render, file, and logs — each with specific responsibilities.</li>
+        <li><strong>Environment variables</strong> configure every aspect of the server and runners.</li>
+        <li><strong>Supabase</strong> serves as the full‑cycle provider for database, queues, storage, and API.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: One‑off Commands Don't Scale</h2>
+
+    <p>Most FFmpeg tutorials teach you how to write a single command for a single file. That's fine for a quick conversion, but in production you face:</p>
+
+    <ul>
+      <li><strong>Hundreds or thousands of files</strong> — each needing the same processing</li>
+      <li><strong>Different environments</strong> — development, staging, production</li>
+      <li><strong>Long processing times</strong> — a single 4K transcode can take hours</li>
+      <li><strong>Fragile commands</strong> — one wrong path and the whole job fails</li>
+      <li><strong>Team collaboration</strong> — multiple users need to submit and track renders</li>
+    </ul>
+
+    <p>FFmpegLab Server's architecture solves these problems systematically.</p>
+
+    <h2 id="architecture">The FFmpegLab Server Architecture</h2>
+
+    <p>FFmpegLab Server is built on a modern, scalable architecture:</p>
+
+    <div class="arch-grid">
+      <div class="arch-card">
+        <div class="icon">🗄️</div>
+        <h4>PostgreSQL</h4>
+        <div class="desc">Primary database with Row Level Security (RLS). Stores projects, renders, users, and API keys.</div>
+      </div>
+      <div class="arch-card">
+        <div class="icon">📨</div>
+        <h4>pgmq</h4>
+        <div class="desc">PostgreSQL‑powered job queue for asynchronous rendering tasks. Provides durability and transactional guarantees.</div>
+      </div>
+      <div class="arch-card">
+        <div class="icon">📦</div>
+        <h4>S3 Storage</h4>
+        <div class="desc">S3‑compatible storage (via Supabase Storage) for media assets and rendered output.</div>
+      </div>
+      <div class="arch-card">
+        <div class="icon">⚙️</div>
+        <h4>API Server</h4>
+        <div class="desc">REST API server that receives rendering requests, manages projects, and enqueues jobs.</div>
+      </div>
+      <div class="arch-card">
+        <div class="icon">🏃</div>
+        <h4>Render Runner</h4>
+        <div class="desc">Worker that executes FFmpeg rendering jobs from the queue.</div>
+      </div>
+      <div class="arch-card">
+        <div class="icon">📁</div>
+        <h4>File Runner</h4>
+        <div class="desc">Worker that handles file operations with S3 storage.</div>
+      </div>
+      <div class="arch-card">
+        <div class="icon">📊</div>
+        <h4>Logs Runner</h4>
+        <div class="desc">Worker that processes and stores render logs (stdout).</div>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">Client</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">API Server</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">pgmq</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Runners</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">S3 Storage</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(Jobs are queued, processed asynchronously, and results stored in S3)</span>
+      <br/>
+      <span style="color:#fbbf24;">PostgreSQL</span>
+      <span style="color:#6b7280; font-size:0.8rem;"> (Projects, Renders, Users, Logs)</span>
+    </div>
+
+    <h2 id="powered-by-supabase">Powered by Supabase – Full‑Cycle Provider</h2>
+
+    <p>FFmpegLab Server is built on <strong>Supabase</strong> — the open‑source Firebase alternative — as a <strong>full‑cycle provider</strong> for all backend services:</p>
+
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Provider</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>PostgreSQL</strong></td><td>Supabase</td><td>Primary database with Row Level Security (RLS)</td></tr>
+        <tr><td><strong>pgmq</strong></td><td>Supabase</td><td>Job queue for asynchronous render processing</td></tr>
+        <tr><td><strong>S3‑compatible Storage</strong></td><td>Supabase</td><td>File storage for media assets and rendered output</td></tr>
+        <tr><td><strong>REST API</strong></td><td>Supabase</td><td>Auto‑generated REST API with JWT authentication</td></tr>
+        <tr><td><strong>API Keys</strong></td><td>Supabase</td><td>User‑managed API keys with role‑based access</td></tr>
+        <tr><td><strong>Logs</strong></td><td>Supabase</td><td>Centralized storage of ffmpeg logs per render</td></tr>
+      </tbody>
+    </table>
+
+    <p>As one guide explains: <em>"Supabase provides a full PostgreSQL database with authentication, storage, and real‑time subscriptions. It's the perfect backend for scalable applications"</em>.</p>
+
+    <h2 id="env-vars">FFmpegLab Server Environment Variables</h2>
+
+    <p>FFmpegLab Server uses environment variables for complete configuration. Here's the full reference:</p>
+
+    <h3>Database (PostgreSQL)</h3>
+
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Description</th><th>Required</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>DB_HOST</code></td><td>PostgreSQL host</td><td>✅ Yes</td></tr>
+        <tr><td><code>DB_USER</code></td><td>PostgreSQL user</td><td>✅ Yes</td></tr>
+        <tr><td><code>DB_PORT</code></td><td>PostgreSQL port</td><td>✅ Yes</td></tr>
+        <tr><td><code>DB_PASSWORD</code></td><td>PostgreSQL password</td><td>✅ Yes</td></tr>
+        <tr><td><code>DB_NAME</code></td><td>PostgreSQL database name</td><td>✅ Yes</td></tr>
+        <tr><td><code>DB_MIGRATION_ENABLED</code></td><td>Auto‑run database migrations</td><td>⚠️ Optional (default: <code>false</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Queue Database (pgmq)</h3>
+
+    <p>The queue database can be the same as the main database or a separate instance.</p>
+
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Description</th><th>Required</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>QUEUE_DB_HOST</code></td><td>Queue PostgreSQL host</td><td>✅ Yes</td></tr>
+        <tr><td><code>QUEUE_DB_USER</code></td><td>Queue PostgreSQL user</td><td>✅ Yes</td></tr>
+        <tr><td><code>QUEUE_DB_PORT</code></td><td>Queue PostgreSQL port</td><td>✅ Yes</td></tr>
+        <tr><td><code>QUEUE_DB_PASSWORD</code></td><td>Queue PostgreSQL password</td><td>✅ Yes</td></tr>
+        <tr><td><code>QUEUE_DB_NAME</code></td><td>Queue PostgreSQL database name</td><td>✅ Yes</td></tr>
+      </tbody>
+    </table>
+
+    <h3>S3 Storage</h3>
+
+    <p>Required for the <code>file-runner</code> service.</p>
+
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Description</th><th>Required</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>S3_ACCESS_KEY</code></td><td>S3 access key</td><td>⚠️ For file-runner</td></tr>
+        <tr><td><code>S3_SECRET_KEY</code></td><td>S3 secret key</td><td>⚠️ For file-runner</td></tr>
+        <tr><td><code>S3_REGION</code></td><td>S3 region (e.g., <code>us-east-1</code>)</td><td>⚠️ For file-runner</td></tr>
+        <tr><td><code>S3_ENDPOINT</code></td><td>S3 endpoint URL</td><td>⚠️ For file-runner</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Runner Mode Flags</h3>
+
+    <p>These flags determine which runner mode the service runs in.</p>
+
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Description</th><th>Required</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>IS_RENDER_RUNNER</code></td><td>Enable render runner mode</td><td>⚠️ For render-runner</td></tr>
+        <tr><td><code>IS_FILE_RUNNER</code></td><td>Enable file runner mode</td><td>⚠️ For file-runner</td></tr>
+        <tr><td><code>IS_LOGS_RUNNER</code></td><td>Enable logs runner mode</td><td>⚠️ For logs-runner</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Data Models</h3>
+
+    <p>The server uses TypeORM with models defined in <code>src/models/</code>:</p>
+
+    <ul>
+      <li><strong><code>Project</code></strong> — Editor project storage and configuration</li>
+      <li><strong><code>Render</code></strong> — Render job tracking and status</li>
+      <li><strong><code>ApiKey</code></strong> — API key management with permissions</li>
+      <li><strong><code>LogPiece</code></strong> — Render Logs</li>
+    </ul>
+
+    <h2 id="docker-compose">Docker Compose Configuration</h2>
+
+    <p>The repository includes a <code>docker-compose.yml</code> that defines all services:</p>
+
+    <div class="env-box">
+      <span style="color:#6b7280;"># docker-compose.yml</span><br/>
+      <span class="key">services:</span><br/>
+      &nbsp;&nbsp;<span class="key">api:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">image:</span> <span class="val">ffmpeglab/server:latest</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">ports:</span> <span class="val">- "3000:3000"</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">environment:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_HOST=${DB_HOST}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_USER=${DB_USER}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_PORT=${DB_PORT}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_PASSWORD=${DB_PASSWORD}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_NAME=${DB_NAME}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">QUEUE_DB_HOST=${QUEUE_DB_HOST}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">QUEUE_DB_NAME=${QUEUE_DB_NAME}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_MIGRATION_ENABLED=${DB_MIGRATION_ENABLED}</span><br/>
+      &nbsp;&nbsp;<span class="key">render-runner:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">image:</span> <span class="val">ffmpeglab/server:latest</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">environment:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_HOST=${DB_HOST}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_USER=${DB_USER}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_PASSWORD=${DB_PASSWORD}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_NAME=${DB_NAME}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">QUEUE_DB_HOST=${QUEUE_DB_HOST}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">QUEUE_DB_NAME=${QUEUE_DB_NAME}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">IS_RENDER_RUNNER=true</span><br/>
+      &nbsp;&nbsp;<span class="key">file-runner:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">image:</span> <span class="val">ffmpeglab/server:latest</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">environment:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_HOST=${DB_HOST}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">S3_ACCESS_KEY=${S3_ACCESS_KEY}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">S3_SECRET_KEY=${S3_SECRET_KEY}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">S3_REGION=${S3_REGION}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">S3_ENDPOINT=${S3_ENDPOINT}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">IS_FILE_RUNNER=true</span><br/>
+      &nbsp;&nbsp;<span class="key">logs-runner:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">image:</span> <span class="val">ffmpeglab/server:latest</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">environment:</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_HOST=${DB_HOST}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_USER=${DB_USER}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_PASSWORD=${DB_PASSWORD}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">DB_NAME=${DB_NAME}</span><br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="val">IS_LOGS_RUNNER=true</span>
+    </div>
+
+    <p><strong>Start the complete stack:</strong></p>
+
+    <div class="env-box">
+      docker compose up -d
+    </div>
+
+    <p><strong>View the logs:</strong></p>
+
+    <div class="env-box">
+      docker compose logs -f
+    </div>
+
+    <h2 id="runners">Scalable Runners – The Engine</h2>
+
+    <p>Runners are workers that execute jobs from the <code>pgmq</code> queue. The magic happens when you have <strong>multiple runners</strong> working in parallel.</p>
+
+    <h3>How Runners Work</h3>
+
+    <ol>
+      <li>The <strong>API server</strong> receives a rendering request and pushes a job to the <strong>pgmq queue</strong>.</li>
+      <li>One or more <strong>render-runners</strong> poll the queue for new jobs.</li>
+      <li>Each runner picks up a job, executes FFmpeg with the provided parameters, and uploads the result to <strong>S3 storage</strong>.</li>
+      <li>The runner updates the job status in the database, and the client polls for completion.</li>
+    </ol>
+
+    <h3>Runner Types</h3>
+
+    <table>
+      <thead>
+        <tr><th>Runner</th><th>Flag</th><th>Responsibility</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Render Runner</strong></td><td><code>IS_RENDER_RUNNER</code></td><td>Executes FFmpeg rendering jobs from the queue</td></tr>
+        <tr><td><strong>File Runner</strong></td><td><code>IS_FILE_RUNNER</code></td><td>Handles file operations with S3 storage</td></tr>
+        <tr><td><strong>Logs Runner</strong></td><td><code>IS_LOGS_RUNNER</code></td><td>Processes and stores system and user activity logs</td></tr>
+      </tbody>
+    </table>
+
+    <p>As noted in the broader FFmpeg ecosystem: <em>"You can create multiple runners and distribute the workload, significantly reducing processing time for large workloads"</em>.</p>
+
+    <h2 id="scaling">Scaling the Rendering Pipeline</h2>
+
+    <p>The queue‑based architecture makes scaling straightforward:</p>
+
+    <ul>
+      <li><strong>Add more render-runners</strong> — spin up additional <code>render-runner</code> instances to process jobs in parallel</li>
+      <li><strong>Autoscaling</strong> — runners can be configured to autoscale based on queue depth</li>
+      <li><strong>GPU acceleration</strong> — runners can be deployed on GPU‑enabled instances for faster rendering</li>
+      <li><strong>Separate queues</strong> — use different queues for different job types or priorities</li>
+    </ul>
+
+    <p><strong>Scaling command:</strong></p>
+
+    <div class="env-box">
+      docker compose up -d --scale render-runner=8
+    </div>
+
+    <p>This spins up 8 render-runner instances, all pulling from the same <code>pgmq</code> queue.</p>
+
+    <h2 id="security">Security Considerations</h2>
+
+    <ul>
+      <li><strong>Database credentials</strong> — keep <code>DB_PASSWORD</code> and <code>QUEUE_DB_PASSWORD</code> secure. Never commit them to version control.</li>
+      <li><strong>S3 credentials</strong> — <code>S3_ACCESS_KEY</code> and <code>S3_SECRET_KEY</code> should be treated as secrets.</li>
+      <li><strong>API Keys</strong> — the server manages API keys with role‑based access via the <code>ApiKey</code> model.</li>
+      <li><strong>Row Level Security</strong> — Supabase RLS policies ensure users can only access their own data.</li>
+      <li><strong>Logs</strong> — the <code>LogsModel</code> provides structured logging with retention policies.</li>
+    </ul>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the difference between render-runner, file-runner, and logs-runner?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>render-runner</strong> executes FFmpeg rendering jobs from the queue. <strong>file-runner</strong> handles S3 file operations (upload, download, delete). <strong>logs-runner</strong> processes and stores system and user activity logs. They can all run on the same machine or be distributed across multiple machines.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use the same PostgreSQL instance for both the database and the queue?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. You can set <code>QUEUE_DB_HOST</code> and <code>QUEUE_DB_NAME</code> to the same values as <code>DB_HOST</code> and <code>DB_NAME</code>. They can be the same database or separate databases on the same server.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What S3-compatible storage services work with FFmpegLab Server?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Any S3-compatible storage works: Supabase Storage, AWS S3, MinIO, Cloudflare R2, Backblaze B2, or any other S3‑compatible endpoint. The <code>S3_ENDPOINT</code> variable lets you specify your provider's endpoint.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I scale the rendering pipeline?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Scale by adding more <code>render-runner</code> instances. Each runner pulls from the same <code>pgmq</code> queue, enabling parallel processing. You can use <code>docker compose up -d --scale render-runner=8</code> or orchestrate with Kubernetes.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What database models does FFmpegLab Server use?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The server uses TypeORM with models defined in <code>src/models/</code>: <code>Project</code> (editor projects), <code>Render</code> (render jobs), <code>User</code> (user profiles), <code>ApiKey</code> (API key management), and <code>Log</code> (render logs).</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Environment variables and scalable runners turn FFmpegLab Server into a <strong>production‑grade media processing platform</strong>. With PostgreSQL for storage, pgmq for job queuing, S3‑compatible storage for assets, and three types of scalable runners, you can handle workloads that would be impossible with one‑off commands.</p>
+
+    <p>The key components work together seamlessly:</p>
+
+    <ul>
+      <li><strong>PostgreSQL</strong> — persistent storage for projects, renders, and users</li>
+      <li><strong>pgmq</strong> — durable job queue with transactional guarantees</li>
+      <li><strong>S3 Storage</strong> — media assets and rendered output</li>
+      <li><strong>API Server</strong> — REST API with JWT authentication</li>
+      <li><strong>Render Runner</strong> — scalable workers that execute FFmpeg</li>
+      <li><strong>File Runner</strong> — S3 file operations</li>
+      <li><strong>Logs Runner</strong> — structured log processing</li>
+      <li><strong>Environment variables</strong> — parameterize everything for portability and reproducibility</li>
+    </ul>
+
+    <p>Next time you're facing a mountain of media files, remember: you don't have to process them one by one. Scale up with FFmpegLab Server.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="setting-up-supabase-storage-ffmpeglab.html">Setting Up Supabase Storage with FFmpegLab</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="offline-private-video-editor.html">Offline Private Video Editor</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+    <section id="newsletter" data-ffmpeglab-newsletter
+      data-form-name="ffmpeglab-newsletter" data-source="embedded-newsletter"
+      style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;">
+      <div data-liquid-light="orange" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="purple" aria-hidden="true"
+        style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="amber" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+        <div data-newsletter-glass
+          style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);">
+          <div
+            style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+            <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+              <div
+                style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">
+                ✦&nbsp; Fresh from the render queue</div>
+              <h2
+                style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">
+                Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+              <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical
+                commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+              <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp;
+                Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise
+              </div>
+            </div>
+
+            <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+              <div data-newsletter-success hidden
+                style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+                <span
+                  style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+                <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You’re on the list.</h3>
+                <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is
+                  headed your way.</p>
+              </div>
+
+              <form data-newsletter-form
+                style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+                <div style="display:table;width:100%;table-layout:fixed;">
+                  <div style="display:table-cell;vertical-align:middle;">
+                    <label for="newsletter-embed-email"
+                      style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email
+                      address</label>
+                    <input id="newsletter-embed-email" data-newsletter-email name="email" type="email"
+                      autocomplete="email" required placeholder="you@example.com"
+                      style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;" />
+                  </div>
+                  <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                    <button data-newsletter-submit type="submit"
+                      style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp;
+                      →</button>
+                  </div>
+                </div>
+                <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+                  <span>One useful email at a time.</span>
+                  <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went
+                    wrong. Try again.</span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
