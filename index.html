@@ -266,6 +266,7 @@
       border: 1px solid #2C2741;
       background: #15121F;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+      min-width: none;
     }
 
     .code-window .titlebar {
@@ -1401,7 +1402,11 @@
 
     @media (min-width: 1024px) {
       .inner-sdk-container {
-        flex-direction: row-reverse;
+        flex-direction: row;
+        align-items: center;
+      }
+      .inner-sdk-container .code-window {
+        min-width: 600px;
       }
       .hero .grid {
         grid-template-columns: 1fr 1fr;
@@ -1755,14 +1760,14 @@
     <!-- ===== SDK ===== -->
     <section class="collab" id="sdk">
       <div class="container inner">
-        <div class="head" style="padding-bottom: 20px;">
-          <div>
-            <h2 class="balance">Embed FFmpegLab into your applications using the SDK or SQL</h2>
-          </div>
-        </div>
         <div class="inner-sdk-container">
 
           <div style="gap:20px;display: flex;flex-direction: column; padding-bottom: 20px;">
+        <!-- <div class="head" style="padding-bottom: 20px;"> -->
+          <div>
+            <h2 class="balance">Embed FFmpegLab into your applications using the SDK or SQL</h2>
+          </div>
+        <!-- </div> -->
             <p class="sub">
               FFmpegLab is open source and developer-first. Choose from a wide selection of available Software
               Development Kits or use a direct SQL approach to build around your data and AI built into Supabase.</p>
