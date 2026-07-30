@@ -1402,7 +1402,7 @@
 
     @media (min-width: 1024px) {
       .inner-sdk-container {
-        flex-direction: row;
+        flex-direction: row-reverse;
         align-items: center;
       }
       .inner-sdk-container .code-window {
@@ -1462,7 +1462,7 @@
         <a href="https://api.ffmpeglab.com/api">API</a>
       </nav>
       <div class="header-actions">
-        <a class="signin" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Sign in</a>
+        <a class="signin" href="https://webapp.ffmpeglab.com/webapp/settings">Sign in</a>
         <a class="btn btn-primary sm" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start free</a>
       </div>
     </div>
@@ -1474,16 +1474,16 @@
       <div class="glow"></div>
       <div class="container grid">
         <div>
-          <h1 class="balance">Building multimedia rich apps, in a new way.</h1>
+          <h1 class="balance">Build multimedia rich apps, in a new way.</h1>
           <p class="lede">FFmpegLab is a runtime for FFmpeg. Edit the raw render script, build custom
             filter-graph effects, and run the whole pipeline offline or on the server, with automatic scaling and asset
-            replacement.</p>
+            management.</p>
           <div class="cta-row">
             <a class="btn btn-primary" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start editing free</a>
             <a class="btn btn-ghost" href="#docs">Read the docs</a>
           </div>
           <p class="mono meta">open-source · xfade · amix · OPFS · WebAssembly · self-hostable · postgresql · supabase ·
-            s3</p>
+            s3 · ffmpeg · whisper ai</p>
         </div>
         <div class="editor-mock hero-mock">
           <div class="em-toolbar">
@@ -1501,8 +1501,8 @@
             <span class="em-tab">Customize</span>
           </div>
           <div class="em-body">
-            <pre class="em-code"><span class="ef">-i</span> a4e260ec-e185-4165-b5b8-e6356a66ad4b.output.0.mp4
-<span class="ef">-i</span> cf99446f-6827-4048-9278-fbfb2f84eab4.output.0.mp4
+            <pre class="em-code"><span class="ef">-i</span> $MEDIA_1
+<span class="ef">-i</span> $MEDIA_2
 <span class="ef">-filter_complex</span>
 [<span class="en">0</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
 [<span class="en">1</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
@@ -1519,7 +1519,7 @@
 <span class="ef">-r</span> <span class="en">30</span>
 <span class="ef">-ss</span> <span class="en">00:00:00</span>
 <span class="ef">-to</span> <span class="en">00:00:10</span>
-<span class="ef">-y</span> aec78afd-12e2-4d9c_render_.output.mp4</pre>
+<span class="ef">-y</span> $OUTPUT_PATH</pre>
             <div class="em-preview">
               <div class="em-screen"><span class="em-play">&#9654;</span></div>
               <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span>
@@ -1542,8 +1542,8 @@
     <!-- ===== Features ===== -->
     <section class="features">
       <div class="container inner">
-        <h2 class="balance">Built for people who actually write FFmpeg</h2>
-        <p class="sub">A real timeline on top, the real command underneath. Switch between them whenever you want.</p>
+        <h2 class="balance">Built for developers and ai development</h2>
+        <p class="sub">A real timeline on top, the real command underneath, api to manage it. Switch between them whenever you want.</p>
         <div class="feature-rows">
 
           <!-- Feature 1 -->
@@ -1735,7 +1735,7 @@
     <!-- ===== Stats band ===== -->
     <section class="stats-band">
       <div class="container inner">
-        <h2 class="balance">One tool, from rough cut to render script</h2>
+        <h2 class="balance">One tool, from render script to finished product</h2>
         <div class="row">
           <div class="item">
             <div class="v">10+</div>
@@ -1751,7 +1751,7 @@
           </div>
           <div class="item">
             <div class="v">Unlimited</div>
-            <div class="k">Public Runners</div>
+            <div class="k">Free Public Runners</div>
           </div>
         </div>
       </div>
@@ -1765,7 +1765,7 @@
           <div style="gap:20px;display: flex;flex-direction: column; padding-bottom: 20px;">
         <!-- <div class="head" style="padding-bottom: 20px;"> -->
           <div>
-            <h2 class="balance">Embed FFmpeg into your applications using the FFmpegLab SDK</h2>
+            <h2 class="balance">Embed FFmpeg into your applications using the FFmpegLab SDK or SQL</h2>
           </div>
         <!-- </div> -->
             <p class="sub">
@@ -1773,6 +1773,7 @@
               Development Kits or use a direct SQL approach to build around your data and AI built into Supabase.</p>
             <div class="cta-row">
               <a class="btn btn-ghost" href="https://www.npmjs.com/package/ffmpeglab-sdk">Typescript</a>
+              <a class="btn btn-ghost" href="/articles/render-videos-using-sql-ffmpeglab.html">SQL</a>
             </div>
           </div>
 
@@ -1841,6 +1842,7 @@
           </div>
           <div class="cta-row">
             <a class="btn btn-ghost" href="https://api.ffmpeglab.com/api">Explore the API</a>
+            <a class="btn btn-ghost" href="/articles/agent-first-setup-ffmpeglab-server.html">Agentic AI Setup Guide</a>
           </div>
         </div>
         <div class="code-window">
@@ -1886,7 +1888,55 @@
         </div>
       </div>
     </section>
-
+    <!-- ===== SQL ===== -->
+    <section class="guides" id="sql">
+      <div class="container inner">
+        <h2 class="balance">SQL &amp; Supabase Templates</h2>
+        <p class="sub">Transform your Supabase into a multimedia powerhouse with a single sql query.</p>
+        <div class="guides-grid">
+          <a class="guide-card ribbon" href="articles/ultimate-video-onboarding-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">Compression</div>
+              <div class="t">Ultimate Video Onboarding Pipeline – SQL Triggers &amp; Supabase Storage</div>
+              <div class="d">The complete end‑to‑end automated video and image onboarding pipeline. Upload once — get thumbnails, resized videos, and real‑time notifications — all driven by PostgreSQL triggers and pgmq.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="articles/audio-processing-podcast-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">Audio</div>
+              <div class="t">Audio Processing Pipeline for Podcasts – SQL Triggers &amp; Supabase Storage</div>
+              <div class="d">Build an automated audio processing pipeline that normalizes loudness, reduces noise, converts formats, adds metadata, and generates waveforms for podcasts.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="articles/automated-subtitle-generation-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">Whisper AI</div>
+              <div class="t">Automated Subtitle Generation &amp; Burn-in Pipeline – SQL + DNN</div>
+              <div class="d">Build an automated pipeline that uses Whisper AI to transcribe audio and burn subtitles into videos using SQL triggers, pgmq, and Supabase Storage.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="articles/ai-upscaling-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">AI Upscaling Pipeline – SQL Triggers, DNN &amp; Supabase Storage</div>
+              <div class="d">Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or 4x using SQL triggers, pgmq, and Supabase Storage.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="articles/video-labeling-dnn-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">Video Labeling with DNN Filters – Object Detection &amp; Classification Pipeline</div>
+              <div class="d">Build an automated video labeling pipeline that detects objects, faces, and scenes using FFmpeg's DNN filters. SQL triggers + pgmq + Supabase Storage.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
     <!-- ===== FFMpeg ===== -->
     <section class="guides" id="guides">
       <div class="container inner">
@@ -1948,6 +1998,21 @@
               <div class="t">Mixing audio with amix</div>
               <div class="d">Layer music, voiceover, and effects; balance levels; duck with sidechaincompress; crossfade
                 tracks.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-filter-complex-effects.html">
+            <div aria-hidden="true" class="media">
+              <video autoplay muted loop class="media-video">
+                <source src="media/filtercomplex.mp4" type="video/mp4">
+              </video>
+            </div>
+            <span aria-label="Template included" class="template-ribbon">Template</span>
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">filter_complex effects, by example</div>
+              <div class="d">Overlay, scale, pad, crop, color correction, and chroma key — chained into one custom
+                filter
+                graph.</div>
             </div>
           </a>
           <a class="guide-card ribbon" href="articles/ffmpeg-xstack-filter-guide.html">
@@ -2106,16 +2171,6 @@
                 fades, and real‑time adjustments.</div>
             </div>
           </a>
-          <a class="guide-card" href="articles/ffmpeg-filter-complex-effects.html">
-
-            <div class="content">
-              <div class="k">Effects</div>
-              <div class="t">filter_complex effects, by example</div>
-              <div class="d">Overlay, scale, pad, crop, color correction, and chroma key — chained into one custom
-                filter
-                graph.</div>
-            </div>
-          </a>
           <a class="guide-card" href="articles/ffmpeg-compress-video-reduce-file-size.html">
 
             <div class="content">
@@ -2251,15 +2306,40 @@
               </div>
             </div>
           </a>
+          <a class="guide-card" href="articles/ffmpeg-dnn-filters.html">
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">DNN Filters – AI-Powered Video Processing</div>
+              <div class="d">Super‑resolution, denoising, object detection, and image classification—all inside FFmpeg. Master the <code>dnn_processing</code>, <code>dnn_detect</code>, and <code>dnn_classify</code> filters.
+              </div>
+            </div>
+          </a>
         </div>
       </div>
     </section>
+   
     <!-- ===== Developer ===== -->
     <section class="guides" id="guides">
       <div class="container inner">
         <h2 class="balance">Developer &amp; Product guides</h2>
         <p class="sub">Practical, walkthroughs for the FFmpegLab platform.</p>
         <div class="guides-grid">
+          <a class="guide-card ribbon" href="articles/agent-first-setup-ffmpeglab-server.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">Agent-First Setup – FFmpegLab Server with Supabase</div>
+              <div class="d">Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts for automated setup of PostgreSQL, pgmq, S3 storage, and API keys.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="articles/render-videos-using-sql-ffmpeglab.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">SQL</div>
+              <div class="t">Render Videos Using SQL – A Deep Dive into FFmpegLab Server</div>
+              <div class="d">Translate the SDK example into raw SQL. Learn how the database models work and how to render videos by directly manipulating PostgreSQL.</div>
+            </div>
+          </a>
           <a class="guide-card ribbon" href="articles/ffmpeg-env-vars-scalable-runners.html">
             <span aria-label="New" class="template-ribbon">New</span>
             <div class="content">
@@ -2315,11 +2395,18 @@
             </div>
           </a>
           <a class="guide-card" href="articles/self-hosted-video-editor-docker.html">
-
             <div class="content">
               <div class="k">Self-hosting GUI</div>
               <div class="t">Self-host with Docker</div>
               <div class="d">Bring your own backend for storage, rendering, and sync with a single Docker Compose file.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="articles/ffmpeg-applications-startups.html">
+            <div class="content">
+              <div class="k">Business &amp; Technology</div>
+              <div class="t">Applications &amp; Startups Powered by FFmpeg</div>
+              <div class="d">From AI video editors to privacy-first converters, discover the startups and applications built on FFmpeg. Learn how FFmpegLab enables the next generation of media companies.
               </div>
             </div>
           </a>
@@ -2400,8 +2487,8 @@
     <!-- ===== Closing CTA ===== -->
     <section class="closing">
       <div class="container inner">
-        <h2 class="balance">Open the editor. Read the render script. Ship the cut.</h2>
-        <p>Free in your browser — nothing to install, nothing uploaded.</p>
+        <h2 class="balance">Ship faster than ever.</h2>
+        <p>Open Source & Developer First</p>
         <div class="cta-row">
           <a class="btn btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start editing free</a>
         </div>

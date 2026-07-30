@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ultimate Video Onboarding Pipeline – SQL Triggers & Supabase Storage</title>
+  <meta name="description" content="The ultimate automated media onboarding pipeline using SQL triggers, pgmq, and Supabase Storage. Generates thumbnails, resized videos, and delivers a complete end-to-end solution." />
+  <meta name="keywords" content="video onboarding pipeline, sql triggers, supabase storage, pgmq, automated media processing, thumbnails, video transcoding, ffmpeglab" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ultimate-video-onboarding-pipeline-sql-triggers-supabase.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ultimate-video-onboarding-pipeline-sql-triggers-supabase.html" />
+  <meta property="og:title" content="Ultimate Video Onboarding Pipeline – SQL Triggers & Supabase Storage" />
+  <meta property="og:description" content="The ultimate automated media onboarding pipeline using SQL triggers, pgmq, and Supabase Storage. Generates thumbnails, resized videos, and delivers a complete end-to-end solution." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Ultimate Video Onboarding Pipeline – SQL Triggers & Supabase Storage",
+      "description": "The ultimate automated media onboarding pipeline using SQL triggers, pgmq, and Supabase Storage. Generates thumbnails, resized videos, and delivers a complete end-to-end solution.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-30",
+      "dateModified": "2026-07-30",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ultimate-video-onboarding-pipeline-sql-triggers-supabase.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What does the Ultimate Video Onboarding Pipeline do?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It automatically processes uploaded videos and images. For videos, it generates thumbnails (160x90, 320x180, 640x360) and transcodes to multiple resolutions (480p, 720p, 1080p). For images, it creates thumbnails (320x320). All processed files are stored in a public bucket under the user's ID with real-time notifications."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What FFmpeg commands are used for processing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The pipeline uses ffmpeg with specific commands: for video thumbnails: ffmpeg -i input.mp4 -vf 'thumbnail,scale=W:H' -frames:v 1 output.jpg. For video transcoding: ffmpeg -i input.mp4 -c:v libx264 -crf 23 -preset medium -vf 'scale=-2:H' -c:a aac -b:a 128k output.mp4. For images: ffmpeg -i input.jpg -vf 'scale=320:320:force_original_aspect_ratio=decrease,pad=320:320:(ow-iw)/2:(oh-ih)/2' -q:v 85 output.jpg."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where are processed files stored?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "All processed files are stored in the public-processed bucket under the user's ID, organized in subfolders: thumbnails/ for image and video thumbnails, and videos/ for resized video versions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I customize the thumbnail sizes and video resolutions?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The pipeline is designed to be configurable. You can modify the THUMBNAIL_SIZES and VIDEO_RESOLUTIONS arrays in the trigger function to match your needs."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .code-block {
+      background: #0d0d1a;
+      border-radius: 6px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .code-block .sql-kw { color: #fbbf24; }
+    .code-block .sql-str { color: #34d399; }
+    .code-block .sql-comment { color: #6b7280; }
+    .code-block .sql-fn { color: #f472b6; }
+    .code-block .sql-type { color: #60a5fa; }
+    .code-block .ffmpeg-flag { color: #fbbf24; }
+    .code-block .ffmpeg-filter { color: #f472b6; }
+    .code-block .ffmpeg-codec { color: #34d399; }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .step-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #fbbf24;
+    }
+    .step-box .step-num {
+      color: #fbbf24;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .step-box .step-title {
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    .step-box .step-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
+    .step-box .note {
+      color: #fbbf24;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #0d0d1a;
+      border-radius: 4px;
+      border-left: 2px solid #fbbf24;
+    }
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .schema-table th {
+      background: #2d2d3d;
+      color: #fbbf24;
+      text-align: left;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .schema-table td {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border-bottom: 1px solid #2d2d3d;
+      font-family: monospace;
+    }
+    .schema-table .col-name { color: #34d399; }
+    .schema-table .col-type { color: #60a5fa; }
+    @media (max-width: 640px) {
+      .schema-table td, .schema-table th {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Ultimate Video Onboarding</div>
+      <span class="eyebrow">FFmpegLab Guide</span>
+      <h1>Ultimate Video Onboarding Pipeline – SQL Triggers &amp; Supabase Storage</h1>
+      <p class="dek">The complete end‑to‑end automated video and image onboarding pipeline. Upload once — get thumbnails, resized videos, and real‑time notifications — all driven by PostgreSQL triggers and pgmq.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Manual Media Processing Is Broken</a></li>
+        <li><a href="#architecture">Architecture Overview</a></li>
+        <li><a href="#what-it-delivers">What the Pipeline Delivers</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#quick-start">Quick Start – The Setup Script</a></li>
+        <li><a href="#setup-script">The Complete SQL Setup Script</a></li>
+        <li><a href="#what-it-does">What the Script Does</a></li>
+        <li><a href="#processing-logic">Processing Logic Explained</a></li>
+        <li><a href="#ffmpeg-commands">Exact FFmpeg Commands</a></li>
+        <li><a href="#configure-runner">Configure ffmpeglab-runner</a></li>
+        <li><a href="#monitor">Monitor the Pipeline</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Every video platform faces the same problem: users upload raw media, and you need to deliver it in multiple formats, resolutions, and with thumbnails. Doing this manually is a nightmare. Doing it with a serverless, event‑driven architecture is the solution — especially when you combine <strong>PostgreSQL triggers</strong>, <strong>pgmq</strong>, <strong>Supabase Storage</strong>, and <strong>ffmpeglab</strong>.</p>
+
+    <p>This guide shows you how to build the <strong>ultimate video onboarding pipeline</strong> — a fully automated system that turns a single upload into a complete media package:</p>
+
+    <ul>
+      <li><strong>Video thumbnails</strong> at multiple sizes (160×90, 320×180, 640×360)</li>
+      <li><strong>Video transcoding</strong> to multiple resolutions (480p, 720p, 1080p)</li>
+      <li><strong>Image thumbnails</strong> (320×320)</li>
+      <li><strong>Real‑time notifications</strong> via <code>pg_notify</code></li>
+      <li><strong>Per‑user isolation</strong> with RLS policies</li>
+      <li><strong>Durable job queuing</strong> with pgmq</li>
+    </ul>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>One SQL script</strong> — everything is set up with a single execution against your Supabase database.</li>
+        <li><strong>Zero manual intervention</strong> — upload a file, and the pipeline handles everything.</li>
+        <li><strong>Scalable and reliable</strong> — pgmq provides durable, transaction‑safe job queuing.</li>
+        <li><strong>Configurable</strong> — easily adjust thumbnail sizes and video resolutions.</li>
+        <li><strong>Production‑ready</strong> — includes monitoring views, logging, and notifications.</li>
+        <li><strong>No table conflicts</strong> — uses existing <code>render</code> and <code>logpiece</code> tables from FFmpegLab server.</li>
+        <li><strong>Exact FFmpeg commands</strong> — ready to use in your runner.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Manual Media Processing Is Broken</h2>
+
+    <p>Most media processing pipelines require manual steps: upload a file, trigger a script, wait for processing, then manually move the file. This is slow, error‑prone, and doesn't scale.</p>
+
+    <p>What if the pipeline could be <strong>fully automated</strong> — triggered by the upload itself, processing in the background, and notifying the user when complete?</p>
+
+    <p>This guide shows you exactly how to build that pipeline.</p>
+
+    <h2 id="architecture">Architecture Overview</h2>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">User Uploads File</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Supabase Storage</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">PostgreSQL Trigger</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">pgmq Queue</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">ffmpeglab-runner</span>
+      <br/>
+      <span style="color:#34d399;">Processed Media</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Public Folder</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">pg_notify</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">User Notified</span>
+    </div>
+
+    <p>The pipeline consists of:</p>
+    <ul>
+      <li><strong>Supabase Storage</strong> — two buckets: <code>private-uploads</code> (per‑user) and <code>public-processed</code> (per‑user, with subfolders for thumbnails and resized media).</li>
+      <li><strong>RLS policies</strong> — restrict access to each user's own folders.</li>
+      <li><strong>PostgreSQL trigger</strong> — fires on <code>INSERT</code> into <code>storage.objects</code>.</li>
+      <li><strong>pgmq</strong> — message queue for job processing.</li>
+      <li><strong>ffmpeglab-runner</strong> — executes FFmpeg commands to generate thumbnails and resized media.</li>
+      <li><strong>pg_notify</strong> — real‑time status updates.</li>
+    </ul>
+
+    <p><strong>Important:</strong> This pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It does <strong>not</strong> create new tables — it only adds the pipeline components.</p>
+
+    <h2 id="what-it-delivers">What the Pipeline Delivers</h2>
+
+    <table class="schema-table">
+      <thead>
+        <tr><th>Media Type</th><th>Output</th><th>Location</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Video</strong></td><td>Thumbnails: 160×90, 320×180, 640×360</td><td><code>public-processed/{userId}/thumbnails/</code></td></tr>
+        <tr><td><strong>Video</strong></td><td>Resolutions: 480p, 720p, 1080p (MP4)</td><td><code>public-processed/{userId}/videos/</code></td></tr>
+        <tr><td><strong>Image</strong></td><td>Thumbnail: 320×320</td><td><code>public-processed/{userId}/thumbnails/</code></td></tr>
+        <tr><td><strong>All</strong></td><td>Real‑time notifications</td><td><code>pg_notify</code> channels</td></tr>
+        <tr><td><strong>All</strong></td><td>Job tracking</td><td><code>render</code> table (existing)</td></tr>
+        <tr><td><strong>All</strong></td><td>Logs</td><td><code>logpiece</code> table (existing)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="prerequisites">Prerequisites</h2>
+
+    <ul>
+      <li>A <a href="https://supabase.com">Supabase project</a> (cloud or self‑hosted).</li>
+      <li><strong>ffmpeglab-server</strong> and <strong>ffmpeglab-runner</strong> deployed (<a href="agent-first-setup-ffmpeglab-server.html">see setup guide</a>).</li>
+      <li>The <code>render</code> and <code>logpiece</code> tables must already exist (created by the FFmpegLab server migrations).</li>
+      <li>Access to your Supabase database (psql or the Supabase SQL Editor).</li>
+    </ul>
+
+    <h2 id="quick-start">Quick Start – The Setup Script</h2>
+
+    <p>The fastest way to set up the pipeline is to run the SQL script.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Save the SQL script</div>
+      <div class="step-desc">Copy the complete SQL script from the <a href="#setup-script">section below</a> and save it as <code>setup_media_pipeline.sql</code>.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Run the script</div>
+      <div class="step-desc">Execute the script against your Supabase database.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Via psql</span>
+        psql -U postgres -d your_database -f setup_media_pipeline.sql
+        <br/><br/>
+        <span style="color: #6b7280;"># Or via the Supabase SQL Editor</span>
+        <span style="color: #6b7280;"># Copy and paste the entire script into the SQL Editor and run it.</span>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Configure the runner</div>
+      <div class="step-desc">Add the media processing queue to your runner's environment.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Add to your .env or docker-compose.yml</span>
+        MEDIA_QUEUE_NAME=media_processing_queue
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Restart the runner</div>
+      <div class="step-desc">Restart the runner to pick up the new queue.</div>
+      <div class="code-block">
+        docker compose restart ffmpeglab-runner
+      </div>
+    </div>
+
+    <p>That's it! The pipeline is now live. Users can upload videos and images to <code>private-uploads/{userId}/</code>, and they will be automatically processed.</p>
+
+    <h2 id="setup-script">The Complete SQL Setup Script</h2>
+
+    <p><strong>Note:</strong> This script assumes that the <code>render</code> and <code>logpiece</code> tables already exist (from the FFmpegLab server migrations). It only adds the pipeline components.</p>
+
+    <div class="code-block">
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- ULTIMATE VIDEO ONBOARDING PIPELINE</span><br/>
+      <span class="sql-comment">-- Complete SQL Setup Script</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- This script adds the media processing pipeline components.</span><br/>
+      <span class="sql-comment">-- It assumes the render and logpiece tables already exist.</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 1. Create storage buckets</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">INSERT INTO</span> storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)<br/>
+      <span class="sql-kw">VALUES</span> <br/>
+          (<span class="sql-str">'private-uploads'</span>, <span class="sql-str">'private-uploads'</span>, <span class="sql-kw">false</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>, <span class="sql-str">'image/jpeg'</span>, <span class="sql-str">'image/png'</span>, <span class="sql-str">'image/webp'</span>, <span class="sql-str">'image/gif'</span>]),<br/>
+          (<span class="sql-str">'public-processed'</span>, <span class="sql-str">'public-processed'</span>, <span class="sql-kw">true</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'image/jpeg'</span>, <span class="sql-str">'image/png'</span>, <span class="sql-str">'image/webp'</span>])<br/>
+      <span class="sql-kw">ON CONFLICT</span> (id) <span class="sql-kw">DO NOTHING</span>;<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 2. RLS policies for private-uploads bucket</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can upload to their own folder"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can upload to their own folder"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR INSERT</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">WITH CHECK</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can download from their own folder"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can download from their own folder"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR SELECT</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can update their own files"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can update their own files"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR UPDATE</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can delete their own files"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can delete their own files"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR DELETE</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 3. RLS policies for public-processed bucket</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Public read access to processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Public read access to processed media"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR SELECT</span><br/>
+      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Service role can manage processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Service role can manage processed media"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR ALL</span><br/>
+      <span class="sql-kw">TO service_role</span><br/>
+      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can read their own processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can read their own processed media"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR SELECT</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'public-processed'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 4. Enable pgmq extension and create the queue</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> pgmq;<br/>
+      <br/>
+      <span class="sql-kw">SELECT</span> pgmq.create(<span class="sql-str">'media_processing_queue'</span>);<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 5. Create the trigger function for media uploads</span><br/>
+      <span class="sql-comment">-- This function builds the exact FFmpeg commands to be executed by the runner.</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">DROP FUNCTION IF EXISTS</span> handle_media_upload() <span class="sql-kw">CASCADE</span>;<br/>
+      <br/>
+      <span class="sql-kw">CREATE OR REPLACE FUNCTION</span> handle_media_upload()<br/>
+      <span class="sql-kw">RETURNS TRIGGER AS $$</span><br/>
+      <span class="sql-kw">DECLARE</span><br/>
+          user_id <span class="sql-type">text</span>;<br/>
+          file_path <span class="sql-type">text</span>;<br/>
+          file_name <span class="sql-type">text</span>;<br/>
+          file_extension <span class="sql-type">text</span>;<br/>
+          mime_type <span class="sql-type">text</span>;<br/>
+          msg <span class="sql-type">jsonb</span>;<br/>
+          video_mime_types <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>];<br/>
+          image_mime_types <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'image/jpeg'</span>, <span class="sql-str">'image/png'</span>, <span class="sql-str">'image/webp'</span>, <span class="sql-str">'image/gif'</span>];<br/>
+          thumbnail_sizes <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'160x90'</span>, <span class="sql-str">'320x180'</span>, <span class="sql-str">'640x360'</span>];<br/>
+          video_resolutions <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'480p'</span>, <span class="sql-str">'720p'</span>, <span class="sql-str">'1080p'</span>];<br/>
+          size <span class="sql-type">text</span>;<br/>
+          w <span class="sql-type">text</span>;<br/>
+          h <span class="sql-type">text</span>;<br/>
+          res <span class="sql-type">text</span>;<br/>
+          commands <span class="sql-type">jsonb</span> := <span class="sql-str">'[]'</span>;<br/>
+      <span class="sql-kw">BEGIN</span><br/>
+          -- Only process files in the private-uploads bucket<br/>
+          <span class="sql-kw">IF</span> NEW.bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">THEN</span><br/>
+              user_id := (storage.foldername(NEW.name))[1];<br/>
+              file_path := NEW.name;<br/>
+              file_name := (storage.filename(NEW.name));<br/>
+              file_extension := split_part(file_name, <span class="sql-str">'.'</span>, array_length(string_to_array(file_name, <span class="sql-str">'.'</span>), 1));<br/>
+              mime_type := NEW.metadata->><span class="sql-str">'mimetype'</span>;<br/>
+      <br/>
+              -- Build the list of FFmpeg commands based on media type<br/>
+              <span class="sql-kw">IF</span> mime_type = <span class="sql-kw">ANY</span>(video_mime_types) <span class="sql-kw">THEN</span><br/>
+                  -- Thumbnail commands<br/>
+                  <span class="sql-kw">FOREACH</span> size <span class="sql-kw">IN ARRAY</span> thumbnail_sizes <span class="sql-kw">LOOP</span><br/>
+                      w := split_part(size, <span class="sql-str">'x'</span>, 1);<br/>
+                      h := split_part(size, <span class="sql-str">'x'</span>, 2);<br/>
+                      commands := commands || jsonb_build_object(<br/>
+                          <span class="sql-str">'type'</span>, <span class="sql-str">'thumbnail'</span>,<br/>
+                          <span class="sql-str">'size'</span>, size,<br/>
+                          <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/thumbnails/'</span> || size || <span class="sql-str">'.jpg'</span>,<br/>
+                          <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "thumbnail,scale='</span> || w || <span class="sql-str">':'</span> || h || <span class="sql-str">'" -frames:v 1 "OUTPUT_FILE"'</span><br/>
+                      );<br/>
+                  <span class="sql-kw">END LOOP</span>;<br/>
+                  -- Video transcoding commands<br/>
+                  <span class="sql-kw">FOREACH</span> res <span class="sql-kw">IN ARRAY</span> video_resolutions <span class="sql-kw">LOOP</span><br/>
+                      h := regexp_replace(res, <span class="sql-str">'p$'</span>, <span class="sql-str">''</span>);<br/>
+                      commands := commands || jsonb_build_object(<br/>
+                          <span class="sql-str">'type'</span>, <span class="sql-str">'video'</span>,<br/>
+                          <span class="sql-str">'resolution'</span>, res,<br/>
+                          <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/videos/'</span> || res || <span class="sql-str">'.mp4'</span>,<br/>
+                          <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -c:v libx264 -crf 23 -preset medium -vf "scale=-2:'</span> || h || <span class="sql-str">'" -c:a aac -b:a 128k "OUTPUT_FILE"'</span><br/>
+                      );<br/>
+                  <span class="sql-kw">END LOOP</span>;<br/>
+              <span class="sql-kw">ELSIF</span> mime_type = <span class="sql-kw">ANY</span>(image_mime_types) <span class="sql-kw">THEN</span><br/>
+                  commands := commands || jsonb_build_object(<br/>
+                      <span class="sql-str">'type'</span>, <span class="sql-str">'thumbnail'</span>,<br/>
+                      <span class="sql-str">'size'</span>, <span class="sql-str">'320x320'</span>,<br/>
+                      <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/thumbnails/320x320.jpg'</span>,<br/>
+                      <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "scale=320:320:force_original_aspect_ratio=decrease,pad=320:320:(ow-iw)/2:(oh-ih)/2" -q:v 85 "OUTPUT_FILE"'</span><br/>
+                  );<br/>
+              <span class="sql-kw">END IF</span>;<br/>
+      <br/>
+              -- Build the job message<br/>
+              msg := jsonb_build_object(<br/>
+                  <span class="sql-str">'userId'</span>, user_id,<br/>
+                  <span class="sql-str">'inputPath'</span>, file_path,<br/>
+                  <span class="sql-str">'inputBucket'</span>, NEW.bucket_id,<br/>
+                  <span class="sql-str">'outputBucket'</span>, <span class="sql-str">'public-processed'</span>,<br/>
+                  <span class="sql-str">'fileName'</span>, file_name,<br/>
+                  <span class="sql-str">'fileExtension'</span>, file_extension,<br/>
+                  <span class="sql-str">'mimeType'</span>, mime_type,<br/>
+                  <span class="sql-str">'originalSize'</span>, NEW.metadata->><span class="sql-str">'size'</span>,<br/>
+                  <span class="sql-str">'isVideo'</span>, mime_type = <span class="sql-kw">ANY</span>(video_mime_types),<br/>
+                  <span class="sql-str">'isImage'</span>, mime_type = <span class="sql-kw">ANY</span>(image_mime_types),<br/>
+                  <span class="sql-str">'commands'</span>, commands,<br/>
+                  <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()<br/>
+              );<br/>
+      <br/>
+              -- Push to pgmq queue<br/>
+              <span class="sql-kw">PERFORM</span> pgmq.send(<span class="sql-str">'media_processing_queue'</span>, msg::<span class="sql-type">jsonb</span>);<br/>
+      <br/>
+              -- Insert into render table for job tracking<br/>
+              <span class="sql-kw">INSERT INTO</span> <span class="sql-str">"render"</span> (id, title, project, status, public, user_id, data)<br/>
+              <span class="sql-kw">VALUES</span> (<br/>
+                  <span class="sql-fn">gen_random_uuid</span>(),<br/>
+                  file_name,<br/>
+                  <span class="sql-str">'media-processing'</span>,<br/>
+                  <span class="sql-str">'queued'</span>,<br/>
+                  <span class="sql-kw">false</span>,<br/>
+                  user_id::<span class="sql-type">uuid</span>,<br/>
+                  msg<br/>
+              );<br/>
+      <br/>
+              -- Notify via pg_notify<br/>
+              <span class="sql-kw">PERFORM</span> pg_notify(<br/>
+                  <span class="sql-str">'media_upload_channel'</span>,<br/>
+                  jsonb_build_object(<br/>
+                      <span class="sql-str">'userId'</span>, user_id,<br/>
+                      <span class="sql-str">'filePath'</span>, file_path,<br/>
+                      <span class="sql-str">'fileName'</span>, file_name,<br/>
+                      <span class="sql-str">'mimeType'</span>, mime_type,<br/>
+                      <span class="sql-str">'status'</span>, <span class="sql-str">'queued'</span>,<br/>
+                      <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()<br/>
+                  )::<span class="sql-type">text</span><br/>
+              );<br/>
+          <span class="sql-kw">END IF</span>;<br/>
+      <br/>
+          <span class="sql-kw">RETURN</span> NEW;<br/>
+      <span class="sql-kw">END;</span><br/>
+      <span class="sql-kw">$$ LANGUAGE plpgsql SECURITY DEFINER;</span><br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 6. Attach the trigger to storage.objects</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">DROP TRIGGER IF EXISTS</span> media_upload_trigger <span class="sql-kw">ON</span> storage.objects;<br/>
+      <br/>
+      <span class="sql-kw">CREATE TRIGGER</span> media_upload_trigger<br/>
+      <span class="sql-kw">AFTER INSERT ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR EACH ROW</span><br/>
+      <span class="sql-kw">EXECUTE FUNCTION</span> handle_media_upload();<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 7. Helper views for monitoring</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-kw">DROP VIEW IF EXISTS</span> media_processing_queue_view;<br/>
+      <br/>
+      <span class="sql-kw">CREATE OR REPLACE VIEW</span> media_processing_queue_view <span class="sql-kw">AS</span><br/>
+      <span class="sql-kw">SELECT</span> <br/>
+          msg_id,<br/>
+          read_ct,<br/>
+          enqueued_at,<br/>
+          vt,<br/>
+          message::<span class="sql-type">jsonb</span> <span class="sql-kw">as</span> payload,<br/>
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'userId'</span>) <span class="sql-kw">as</span> user_id,<br/>
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'fileName'</span>) <span class="sql-kw">as</span> file_name,<br/>
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'isVideo'</span>)::<span class="sql-type">boolean</span> <span class="sql-kw">as</span> is_video,<br/>
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'isImage'</span>)::<span class="sql-type">boolean</span> <span class="sql-kw">as</span> is_image<br/>
+      <span class="sql-kw">FROM</span> pgmq.q_media_processing_queue<br/>
+      <span class="sql-kw">ORDER BY</span> msg_id <span class="sql-kw">DESC</span>;<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 8. Initialize notification channels</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">DO $$</span><br/>
+      <span class="sql-kw">BEGIN</span><br/>
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'media_upload_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'render_status_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'log_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
+      <span class="sql-kw">END $$</span>;<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- All done!</span><br/>
+      <span class="sql-comment">-- ============================================================</span>
+    </div>
+
+    <h2 id="what-it-does">What the Script Does</h2>
+
+    <table class="schema-table">
+      <thead>
+        <tr><th>Component</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Storage Buckets</strong></td><td>Creates <code>private-uploads</code> (private) and <code>public-processed</code> (public) buckets with file size limits and allowed MIME types</td></tr>
+        <tr><td><strong>RLS Policies</strong></td><td>Sets per‑user isolation for private uploads and public read access for processed media</td></tr>
+        <tr><td><strong>pgmq Queue</strong></td><td>Creates the <code>media_processing_queue</code> for job processing</td></tr>
+        <tr><td><strong>Trigger Function</strong></td><td><code>handle_media_upload()</code> — fires on new uploads, builds FFmpeg commands, pushes to pgmq, inserts into <code>render</code>, sends notifications</td></tr>
+        <tr><td><strong>Views</strong></td><td>Helper views for monitoring queue status</td></tr>
+        <tr><td><strong>Uses Existing Tables</strong></td><td>Uses <code>render</code> for job tracking and <code>logpiece</code> for logs (from FFmpegLab server)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="processing-logic">Processing Logic Explained</h2>
+
+    <p>When a file is uploaded to <code>private-uploads/{userId}/</code>, the pipeline:</p>
+
+    <ol>
+      <li><strong>Identifies the media type</strong> — video or image.</li>
+      <li><strong>Builds the exact FFmpeg commands</strong> for thumbnails and transcoding.</li>
+      <li><strong>Creates a render job</strong> in the existing <code>render</code> table with the commands in the <code>data</code> column.</li>
+      <li><strong>Pushes a job</strong> to the <code>media_processing_queue</code> with the commands payload.</li>
+      <li><strong>Sends a notification</strong> via <code>pg_notify</code>.</li>
+      <li>The <strong>ffmpeglab-runner</strong> picks up the job, resolves the <code>INPUT_FILE</code> and <code>OUTPUT_FILE</code> placeholders, and executes the commands.</li>
+    </ol>
+
+    <h2 id="ffmpeg-commands">Exact FFmpeg Commands</h2>
+
+    <p>The trigger function generates the following FFmpeg commands using placeholders:</p>
+
+    <ul>
+      <li><strong><code>INPUT_FILE</code></strong> — The path to the downloaded input file (resolved by the runner).</li>
+      <li><strong><code>OUTPUT_FILE</code></strong> — The temporary path for the output file (resolved by the runner).</li>
+    </ul>
+
+    <h3>1. Video Thumbnails</h3>
+
+    <div class="code-block">
+      <span class="sql-comment"># 160x90 thumbnail</span><br/>
+      ffmpeg -i "INPUT_FILE" -vf "thumbnail,scale=160:90" -frames:v 1 "OUTPUT_FILE"
+      <br/><br/>
+      <span class="sql-comment"># 320x180 thumbnail</span><br/>
+      ffmpeg -i "INPUT_FILE" -vf "thumbnail,scale=320:180" -frames:v 1 "OUTPUT_FILE"
+      <br/><br/>
+      <span class="sql-comment"># 640x360 thumbnail</span><br/>
+      ffmpeg -i "INPUT_FILE" -vf "thumbnail,scale=640:360" -frames:v 1 "OUTPUT_FILE"
+    </div>
+
+    <h3>2. Video Transcoding</h3>
+
+    <div class="code-block">
+      <span class="sql-comment"># 480p</span><br/>
+      ffmpeg -i "INPUT_FILE" -c:v libx264 -crf 23 -preset medium -vf "scale=-2:480" -c:a aac -b:a 128k "OUTPUT_FILE"
+      <br/><br/>
+      <span class="sql-comment"># 720p</span><br/>
+      ffmpeg -i "INPUT_FILE" -c:v libx264 -crf 23 -preset medium -vf "scale=-2:720" -c:a aac -b:a 128k "OUTPUT_FILE"
+      <br/><br/>
+      <span class="sql-comment"># 1080p</span><br/>
+      ffmpeg -i "INPUT_FILE" -c:v libx264 -crf 23 -preset medium -vf "scale=-2:1080" -c:a aac -b:a 128k "OUTPUT_FILE"
+    </div>
+
+    <h3>3. Image Thumbnail</h3>
+
+    <div class="code-block">
+      <span class="sql-comment"># 320x320 centered thumbnail with padding</span><br/>
+      ffmpeg -i "INPUT_FILE" -vf "scale=320:320:force_original_aspect_ratio=decrease,pad=320:320:(ow-iw)/2:(oh-ih)/2" -q:v 85 "OUTPUT_FILE"
+    </div>
+
+    <h2 id="configure-runner">Configure ffmpeglab-runner</h2>
+
+    <p>The runner needs to be configured to poll the <code>media_processing_queue</code> and execute the provided FFmpeg commands.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Add the queue to your environment</div>
+      <div class="step-desc">Add the following to your <code>.env</code> file or Docker Compose configuration.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Media processing queue</span>
+        MEDIA_QUEUE_NAME=media_processing_queue
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Implement the processing loop</div>
+      <div class="step-desc">The runner should execute the following steps for each job:</div>
+      <div class="code-block" style="max-height: 300px;">
+        <span style="color: #6b7280;"># 1. Connect to Supabase and listen to the queue</span>
+        <br/><br/>
+        <span style="color: #6b7280;"># 2. For each job:</span>
+        <br/>
+        <span style="color: #6b7280;">#    a. Download the input file from private-uploads</span>
+        <br/>
+        <span style="color: #6b7280;">#    b. Parse the 'commands' array from the job payload</span>
+        <br/>
+        <span style="color: #6b7280;">#    c. For each command:</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Replace 'INPUT_FILE' with the local input path</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Replace 'OUTPUT_FILE' with a temporary local path</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Execute the FFmpeg command</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Upload the output file to public-processed/{output_path}</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Update the render table with progress and logs</span>
+        <br/>
+        <span style="color: #6b7280;">#    d. Mark the job as complete in the render table</span>
+        <br/>
+        <span style="color: #6b7280;">#    e. Delete the job from the queue</span>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Install FFmpeg on the runner</div>
+      <div class="step-desc">Ensure FFmpeg is installed and available in the PATH.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Debian/Ubuntu</span>
+        apt-get install -y ffmpeg
+        <br/><br/>
+        <span style="color: #6b7280;"># Alpine</span>
+        apk add ffmpeg
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Restart the runner</div>
+      <div class="step-desc">After updating the environment, restart the runner service.</div>
+      <div class="code-block">
+        docker compose restart ffmpeglab-runner
+      </div>
+    </div>
+
+    <h2 id="monitor">Monitor the Pipeline</h2>
+
+    <p>You can monitor the pipeline using SQL queries and notifications.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Check queued jobs</div>
+      <div class="step-desc">Use the helper view to see all queued jobs.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> media_processing_queue_view;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Check render status</div>
+      <div class="step-desc">Query the existing <code>render</code> table for job status.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> id, title, status, progress, data<br/>
+        <span class="sql-kw">FROM</span> <span class="sql-str">"render"</span><br/>
+        <span class="sql-kw">WHERE</span> project = <span class="sql-str">'media-processing'</span><br/>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Listen to notifications</div>
+      <div class="step-desc">In your application, listen for real‑time updates.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;">-- In your PostgreSQL client:</span><br/>
+        <span class="sql-kw">LISTEN</span> media_upload_channel;<br/>
+        <span class="sql-kw">LISTEN</span> render_status_channel;<br/>
+        <span class="sql-kw">LISTEN</span> log_channel;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Check processed files</div>
+      <div class="step-desc">List all processed files in the public bucket.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> name, metadata, created_at <span class="sql-kw">FROM</span> storage.objects<br/>
+        <span class="sql-kw">WHERE</span> bucket_id = <span class="sql-str">'public-processed'</span><br/>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
+      </div>
+    </div>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What does the Ultimate Video Onboarding Pipeline do?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">It automatically processes uploaded videos and images. For videos, it generates thumbnails (160x90, 320x180, 640x360) and transcodes to multiple resolutions (480p, 720p, 1080p). For images, it creates thumbnails (320x320). All processed files are stored in a public bucket under the user's ID with real-time notifications.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What FFmpeg commands are used for processing?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The pipeline uses ffmpeg with specific commands: for video thumbnails: ffmpeg -i input.mp4 -vf 'thumbnail,scale=W:H' -frames:v 1 output.jpg. For video transcoding: ffmpeg -i input.mp4 -c:v libx264 -crf 23 -preset medium -vf 'scale=-2:H' -c:a aac -b:a 128k output.mp4. For images: ffmpeg -i input.jpg -vf 'scale=320:320:force_original_aspect_ratio=decrease,pad=320:320:(ow-iw)/2:(oh-ih)/2' -q:v 85 output.jpg.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Where are processed files stored?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">All processed files are stored in the <code>public-processed</code> bucket under the user's ID, organized in subfolders: <code>thumbnails/</code> for image and video thumbnails, and <code>videos/</code> for resized video versions.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I customize the thumbnail sizes and video resolutions?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. The pipeline is designed to be configurable. You can modify the <code>thumbnail_sizes</code> and <code>video_resolutions</code> arrays in the trigger function to match your needs.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How is the pipeline triggered?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">A PostgreSQL trigger fires on <code>INSERT</code> into <code>storage.objects</code> when a file is uploaded to the <code>private-uploads</code> bucket. It pushes a job to the <code>pgmq</code> queue, which is processed by the <code>ffmpeglab-runner</code>.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does this pipeline create new tables?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No. The pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It only adds storage buckets, RLS policies, the pgmq queue, and the trigger function — no table conflicts.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>You now have the <strong>Ultimate Video Onboarding Pipeline</strong> — a fully automated, event‑driven media processing system that turns a single upload into a complete media package. With PostgreSQL triggers, pgmq, and Supabase Storage, you get:</p>
+
+    <ul>
+      <li><strong>Automatic thumbnails</strong> for videos and images</li>
+      <li><strong>Multiple video resolutions</strong> for different devices</li>
+      <li><strong>Real‑time notifications</strong> for your users</li>
+      <li><strong>Per‑user isolation</strong> with RLS policies</li>
+      <li><strong>Durable job queuing</strong> with pgmq</li>
+      <li><strong>Full observability</strong> with monitoring views and logs</li>
+      <li><strong>Exact FFmpeg commands</strong> ready to use</li>
+    </ul>
+
+    <p>The pipeline is <strong>production‑ready</strong>, <strong>scalable</strong>, and <strong>configurable</strong>. It uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server, so there are no table conflicts — just pure, automated media processing.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="agent-first-setup-ffmpeglab-server.html">Agent-First Setup Guide – FFmpegLab Server</a></li>
+        <li><a href="ffmpeg-env-vars-scalable-runners.html">Environment Variables &amp; Scalable Runners</a></li>
+        <li><a href="setting-up-supabase-storage-ffmpeglab.html">Setting Up Supabase Storage with FFmpegLab</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

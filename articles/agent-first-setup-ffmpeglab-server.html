@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent-First Setup Guide – FFmpegLab Server with Supabase</title>
+  <meta name="description" content="Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts for automated setup of PostgreSQL, pgmq, S3 storage, and API keys." />
+  <meta name="keywords" content="ffmpeglab server setup, Supabase, PostgreSQL, pgmq, S3 storage, API keys, bash scripts, agent-first" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/agent-first-setup-ffmpeglab-server.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/agent-first-setup-ffmpeglab-server.html" />
+  <meta property="og:title" content="Agent-First Setup Guide – FFmpegLab Server with Supabase" />
+  <meta property="og:description" content="Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts for automated setup." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Agent-First Setup Guide – FFmpegLab Server with Supabase",
+      "description": "Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts for automated setup of PostgreSQL, pgmq, S3 storage, and API keys.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-30",
+      "dateModified": "2026-07-30",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/agent-first-setup-ffmpeglab-server.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .env-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #fbbf24;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .env-box .key {
+      color: #34d399;
+    }
+    .env-box .val {
+      color: #fbbf24;
+    }
+    .step-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #fbbf24;
+    }
+    .step-box .step-num {
+      color: #fbbf24;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .step-box .step-title {
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    .step-box .step-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
+    .step-box .code {
+      margin-top: 0.5rem;
+      background: #0d0d1a;
+      border-radius: 4px;
+      padding: 0.8rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      overflow-x: auto;
+    }
+    .step-box .code .sql-kw { color: #fbbf24; }
+    .step-box .code .sql-str { color: #34d399; }
+    .step-box .code .sql-comment { color: #6b7280; }
+    .step-box .code .sql-type { color: #60a5fa; }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .schema-table th {
+      background: #2d2d3d;
+      color: #fbbf24;
+      text-align: left;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .schema-table td {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border-bottom: 1px solid #2d2d3d;
+      font-family: monospace;
+    }
+    .schema-table .col-name { color: #34d399; }
+    .schema-table .col-type { color: #60a5fa; }
+    .schema-table .col-null { color: #f87171; }
+    .script-card {
+      background: #1e1e2e;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border: 1px solid #2d2d3d;
+      overflow: hidden;
+    }
+    .script-card .script-header {
+      background: #2d2d3d;
+      padding: 0.8rem 1.25rem;
+      border-bottom: 1px solid #2d2d3d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .script-card .script-header .name {
+      color: #fbbf24;
+      font-weight: 600;
+      font-size: 1rem;
+      font-family: monospace;
+    }
+    .script-card .script-header .url {
+      color: #6b7280;
+      font-size: 0.75rem;
+      font-family: monospace;
+    }
+    .script-card .script-body {
+      padding: 1rem;
+      background: #0d0d1a;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .script-card .script-body pre {
+      margin: 0;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #a1a1aa;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .script-card .script-body .bash-kw { color: #fbbf24; }
+    .script-card .script-body .bash-str { color: #34d399; }
+    .script-card .script-body .bash-comment { color: #6b7280; }
+    .script-card .script-body .bash-var { color: #f472b6; }
+    .script-card .script-body .bash-fn { color: #60a5fa; }
+    .script-card .script-desc {
+      padding: 0.8rem 1.25rem;
+      color: #a1a1aa;
+      font-size: 0.85rem;
+      background: #1a1a2e;
+    }
+    @media (max-width: 640px) {
+      .script-card .script-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.3rem;
+      }
+      .schema-table td, .schema-table th {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Agent-First Setup</div>
+      <span class="eyebrow">Self-Hosting &amp; Deployment</span>
+      <h1>Agent-First Setup – FFmpegLab Server with Supabase</h1>
+      <p class="dek">Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts for automated setup of PostgreSQL, pgmq, S3 storage, and API keys.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: From Zero to Running Server</a></li>
+        <li><a href="#quick-start">Quick Start – One‑Line Install</a></li>
+        <li><a href="#scripts">Modular Setup Scripts</a></li>
+        <li><a href="#why-supabase">Why Supabase as the Unified Backend</a></li>
+        <li><a href="#manual-steps">Manual Setup Steps</a></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Setting up FFmpegLab Server from scratch requires a database, a job queue, and storage. <strong>Supabase</strong> provides all three in one unified platform — PostgreSQL with pgmq for queuing, S3‑compatible storage for media assets, and authentication.</p>
+
+    <p>This guide provides <strong>modular bash scripts</strong> that automate the entire setup process, from configuring Supabase to deploying the server. Each script can be run independently or all together with a single command.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>One‑line install</strong> — <code>curl -sSL https://ffmpeglab.com/sh/install.sh | bash</code></li>
+        <li><strong>Modular scripts</strong> — each phase is a separate script for flexibility</li>
+        <li><strong>Supabase</strong> provides PostgreSQL, pgmq, and S3 storage</li>
+        <li><strong>No separate queue database</strong> — pgmq runs in the same PostgreSQL instance</li>
+        <li><strong>API keys</strong> are inserted directly via SQL using the correct schema</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: From Zero to Running Server</h2>
+
+    <p>The FFmpegLab Server documentation covers the architecture, but setting it up from scratch requires knowing the exact steps. This guide fills that gap with a <strong>complete, automated approach</strong> using modular bash scripts.</p>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">install.sh</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">supabase-setup.sh</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">server-setup.sh</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">finalize.sh</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(One command runs all phases)</span>
+    </div>
+
+    <h2 id="quick-start">Quick Start – One‑Line Install</h2>
+
+    <p>Run the main installer to set up everything automatically:</p>
+
+    <div class="env-box">
+      curl -sSL https://ffmpeglab.com/sh/install.sh | bash
+    </div>
+
+    <p>The installer will:</p>
+    <ol>
+      <li>Check all prerequisites (git, docker, npm, psql, openssl)</li>
+      <li>Ask whether you're using Supabase Cloud or self‑hosted Supabase</li>
+      <li>Prompt for your Supabase credentials</li>
+      <li>Enable pgmq and create the <code>rendering_queue</code></li>
+      <li>Create the storage bucket and set RLS policies</li>
+      <li>Clone the FFmpegLab Server repository</li>
+      <li>Install dependencies and run TypeORM migrations</li>
+      <li>Generate an API key and insert it into the database</li>
+      <li>Deploy the server with Docker Compose</li>
+    </ol>
+
+    <p>All logs are written to <code>$HOME/ffmpeglab-setup.log</code> for debugging.</p>
+
+    <h2 id="scripts">Modular Setup Scripts</h2>
+
+    <p>The scripts are designed to be run individually or as part of the main installer. They are hosted at <code>ffmpeglab.com/sh/</code>.</p>
+
+    <h3>1. Main Installer</h3>
+
+    <div class="script-card">
+      <div class="script-header">
+        <span class="name">install.sh</span>
+        <span class="url">ffmpeglab.com/sh/install.sh</span>
+      </div>
+      <div class="script-body">
+        <pre>
+#!/bin/bash
+set -e
+
+<span class="bash-comment"># FFmpegLab Server - Agent-First Setup</span>
+<span class="bash-comment"># Main installer that orchestrates all phases</span>
+
+BASE_URL="https://ffmpeglab.com/sh"
+LOG_FILE="$HOME/ffmpeglab-setup.log"
+
+<span class="bash-comment"># Colors</span>
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo -e "<span class="bash-str">${BLUE}🚀 FFmpegLab Server - Agent-First Setup${NC}</span>"
+echo <span class="bash-str">"================================================"</span>
+echo <span class="bash-str">"Logs written to: $LOG_FILE"</span>
+
+<span class="bash-comment"># Function to run a phase script</span>
+<span class="bash-fn">run_phase</span>() {
+    <span class="bash-kw">local</span> script=$1
+    echo -e <span class="bash-str">"${BLUE}▶ Running phase: $script${NC}"</span>
+    curl -sSL <span class="bash-str">"$BASE_URL/$script"</span> | bash -s 2>&1 | tee -a <span class="bash-str">"$LOG_FILE"</span>
+    <span class="bash-kw">if</span> [ ${PIPESTATUS[0]} -ne 0 ]; <span class="bash-kw">then</span>
+        echo -e <span class="bash-str">"${RED}❌ Phase $script failed. Check $LOG_FILE${NC}"</span>
+        <span class="bash-kw">exit</span> 1
+    <span class="bash-kw">fi</span>
+    echo -e <span class="bash-str">"${GREEN}✅ Phase $script completed${NC}"</span>
+}
+
+<span class="bash-comment"># Check prerequisites</span>
+echo -e <span class="bash-str">"${YELLOW}🔍 Checking prerequisites...${NC}"</span>
+command -v curl >/dev/null 2>&1 || { echo -e <span class="bash-str">"${RED}❌ curl is required.${NC}"</span>; <span class="bash-kw">exit</span> 1; }
+command -v git >/dev/null 2>&1 || { echo -e <span class="bash-str">"${RED}❌ git is required.${NC}"</span>; <span class="bash-kw">exit</span> 1; }
+command -v docker >/dev/null 2>&1 || { echo -e <span class="bash-str">"${RED}❌ docker is required.${NC}"</span>; <span class="bash-kw">exit</span> 1; }
+command -v docker compose >/dev/null 2>&1 || command -v docker-compose >/dev/null 2>&1 || { echo -e <span class="bash-str">"${RED}❌ docker compose is required.${NC}"</span>; <span class="bash-kw">exit</span> 1; }
+command -v npm >/dev/null 2>&1 || { echo -e <span class="bash-str">"${RED}❌ npm is required.${NC}"</span>; <span class="bash-kw">exit</span> 1; }
+command -v psql >/dev/null 2>&1 || { echo -e <span class="bash-str">"${RED}❌ psql is required.${NC}"</span>; <span class="bash-kw">exit</span> 1; }
+command -v openssl >/dev/null 2>&1 || { echo -e <span class="bash-str">"${RED}❌ openssl is required.${NC}"</span>; <span class="bash-kw">exit</span> 1; }
+
+echo -e <span class="bash-str">"${GREEN}✅ All prerequisites satisfied.${NC}"</span>
+
+<span class="bash-comment"># Ask which Supabase deployment type</span>
+echo -e <span class="bash-str">"${YELLOW}📌 Choose Supabase deployment:${NC}"</span>
+echo <span class="bash-str">"  1) Supabase Cloud (already created)"</span>
+echo <span class="bash-str">"  2) Self-hosted Supabase (run locally)"</span>
+read -p <span class="bash-str">"Enter choice [1-2]: "</span> SUPABASE_CHOICE
+<span class="bash-kw">export</span> SUPABASE_CHOICE
+
+<span class="bash-comment"># Run phases</span>
+run_phase <span class="bash-str">"supabase-setup.sh"</span>
+run_phase <span class="bash-str">"server-setup.sh"</span>
+run_phase <span class="bash-str">"finalize.sh"</span>
+
+echo -e <span class="bash-str">"${GREEN}🎉 Setup complete!${NC}"</span>
+echo <span class="bash-str">"================================================"</span>
+echo -e <span class="bash-str">"${GREEN}🔑 Your API Key: ${API_KEY}${NC}"</span>
+echo -e <span class="bash-str">"${BLUE}🌐 API Server: http://localhost:3000${NC}"</span>
+echo -e <span class="bash-str">"${YELLOW}💡 To view logs: docker compose logs -f${NC}"</span>
+echo -e <span class="bash-str">"${YELLOW}💡 To stop: docker compose down${NC}"</span>
+        </pre>
+      </div>
+    </div>
+
+    <h3>2. Supabase Setup</h3>
+
+    <div class="script-card">
+      <div class="script-header">
+        <span class="name">supabase-setup.sh</span>
+        <span class="url">ffmpeglab.com/sh/supabase-setup.sh</span>
+      </div>
+      <div class="script-body">
+        <pre>
+#!/bin/bash
+set -e
+
+<span class="bash-comment"># Supabase Setup Phase</span>
+<span class="bash-comment"># Configures PostgreSQL, pgmq, storage buckets, and RLS policies</span>
+
+<span class="bash-kw">if</span> [ -z <span class="bash-str">"$SUPABASE_CHOICE"</span> ]; <span class="bash-kw">then</span>
+    echo -e <span class="bash-str">"${RED}❌ SUPABASE_CHOICE not set. Run install.sh first.${NC}"</span>
+    <span class="bash-kw">exit</span> 1
+<span class="bash-kw">fi</span>
+
+<span class="bash-comment"># Colors</span>
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo -e <span class="bash-str">"${BLUE}🔧 Configuring Supabase...${NC}"</span>
+
+<span class="bash-comment"># Get credentials</span>
+<span class="bash-kw">if</span> [ <span class="bash-str">"$SUPABASE_CHOICE"</span> = <span class="bash-str">"2"</span> ]; <span class="bash-kw">then</span>
+    <span class="bash-comment"># Self-hosted</span>
+    echo -e <span class="bash-str">"${BLUE}📦 Setting up self-hosted Supabase...${NC}"</span>
+    <span class="bash-kw">if</span> [ ! -d <span class="bash-str">"supabase"</span> ]; <span class="bash-kw">then</span>
+        git clone --depth 1 https://github.com/supabase/supabase.git
+        <span class="bash-kw">cd</span> supabase/docker
+        cp .env.example .env
+        echo -e <span class="bash-str">"${YELLOW}⚠️  Please edit supabase/docker/.env to set your secrets.${NC}"</span>
+        echo -e <span class="bash-str">"${YELLOW}   Then run: docker compose up -d${NC}"</span>
+        read -p <span class="bash-str">"Press Enter after Supabase is running..."</span>
+        <span class="bash-kw">cd</span> ../..
+    <span class="bash-kw">else</span>
+        <span class="bash-kw">cd</span> supabase/docker
+        docker compose up -d
+        <span class="bash-kw">cd</span> ../..
+    <span class="bash-kw">fi</span>
+
+    <span class="bash-kw">if</span> [ -f <span class="bash-str">"supabase/docker/.env"</span> ]; <span class="bash-kw">then</span>
+        source supabase/docker/.env
+        SUPABASE_URL=<span class="bash-str">"http://localhost:8000"</span>
+        SUPABASE_ANON_KEY=<span class="bash-str">"$ANON_KEY"</span>
+        SUPABASE_SERVICE_ROLE_KEY=<span class="bash-str">"$SERVICE_ROLE_KEY"</span>
+        DB_PASSWORD=<span class="bash-str">"$POSTGRES_PASSWORD"</span>
+        <span class="bash-kw">export</span> SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD
+    <span class="bash-kw">else</span>
+        echo -e <span class="bash-str">"${YELLOW}⚠️  Could not find .env. Enter credentials manually.${NC}"</span>
+        read -p <span class="bash-str">"Supabase URL [http://localhost:8000]: "</span> SUPABASE_URL
+        SUPABASE_URL=${SUPABASE_URL:-http://localhost:8000}
+        read -p <span class="bash-str">"Supabase Anon Key: "</span> SUPABASE_ANON_KEY
+        read -p <span class="bash-str">"Supabase Service Role Key: "</span> SUPABASE_SERVICE_ROLE_KEY
+        read -p <span class="bash-str">"PostgreSQL Password: "</span> DB_PASSWORD
+        <span class="bash-kw">export</span> SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD
+    <span class="bash-kw">fi</span>
+<span class="bash-kw">else</span>
+    <span class="bash-comment"># Supabase Cloud</span>
+    read -p <span class="bash-str">"Supabase Project URL (e.g., https://your-project.supabase.co): "</span> SUPABASE_URL
+    read -p <span class="bash-str">"Supabase Database Password: "</span> DB_PASSWORD
+    read -p <span class="bash-str">"Supabase Anon Key: "</span> SUPABASE_ANON_KEY
+    read -p <span class="bash-str">"Supabase Service Role Key: "</span> SUPABASE_SERVICE_ROLE_KEY
+    <span class="bash-kw">export</span> SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD
+<span class="bash-kw">fi</span>
+
+<span class="bash-comment"># Build DATABASE_URL</span>
+DATABASE_URL=<span class="bash-str">"postgresql://postgres:${DB_PASSWORD}@${SUPABASE_URL#https://}/postgres"</span>
+<span class="bash-kw">export</span> DATABASE_URL
+
+<span class="bash-comment"># Storage bucket name</span>
+read -p <span class="bash-str">"Storage Bucket Name [ffmpeglab-assets]: "</span> S3_BUCKET
+S3_BUCKET=${S3_BUCKET:-ffmpeglab-assets}
+<span class="bash-kw">export</span> S3_BUCKET
+
+echo -e <span class="bash-str">"${BLUE}🗄️  Enabling pgmq extension...${NC}"</span>
+PGPASSWORD=<span class="bash-str">"$DB_PASSWORD"</span> psql <span class="bash-str">"$DATABASE_URL"</span> &lt;&lt;EOF
+CREATE EXTENSION IF NOT EXISTS pgmq;
+SELECT pgmq.create('rendering_queue');
+EOF
+echo -e <span class="bash-str">"${GREEN}✅ pgmq enabled, queue 'rendering_queue' created.${NC}"</span>
+
+echo -e <span class="bash-str">"${BLUE}📦 Creating storage bucket...${NC}"</span>
+curl -s -X POST <span class="bash-str">"${SUPABASE_URL}/storage/v1/bucket"</span> \
+  -H <span class="bash-str">"Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}"</span> \
+  -H <span class="bash-str">"Content-Type: application/json"</span> \
+  -d <span class="bash-str">"{\"name\":\"${S3_BUCKET}\",\"public\":false}"</span> > /dev/null || {
+    echo -e <span class="bash-str">"${YELLOW}⚠️  Bucket may already exist. Continuing...${NC}"</span>
+}
+echo -e <span class="bash-str">"${GREEN}✅ Bucket '${S3_BUCKET}' ready.${NC}"</span>
+
+echo -e <span class="bash-str">"${BLUE}🔒 Setting RLS policies...${NC}"</span>
+PGPASSWORD=<span class="bash-str">"$DB_PASSWORD"</span> psql <span class="bash-str">"$DATABASE_URL"</span> &lt;&lt;EOF
+CREATE POLICY "Allow authenticated uploads" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = '${S3_BUCKET}');
+CREATE POLICY "Allow authenticated downloads" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = '${S3_BUCKET}');
+CREATE POLICY "Allow authenticated updates" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = '${S3_BUCKET}');
+CREATE POLICY "Allow authenticated deletes" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = '${S3_BUCKET}');
+EOF
+echo -e <span class="bash-str">"${GREEN}✅ RLS policies set.${NC}"</span>
+        </pre>
+      </div>
+    </div>
+
+    <h3>3. Server Setup</h3>
+
+    <div class="script-card">
+      <div class="script-header">
+        <span class="name">server-setup.sh</span>
+        <span class="url">ffmpeglab.com/sh/server-setup.sh</span>
+      </div>
+      <div class="script-body">
+        <pre>
+#!/bin/bash
+set -e
+
+<span class="bash-comment"># FFmpegLab Server Setup Phase</span>
+<span class="bash-comment"># Clones repo, installs, runs migrations, generates API keys</span>
+
+<span class="bash-kw">if</span> [ -z <span class="bash-str">"$DATABASE_URL"</span> ] || [ -z <span class="bash-str">"$S3_BUCKET"</span> ]; <span class="bash-kw">then</span>
+    echo -e <span class="bash-str">"${RED}❌ DATABASE_URL or S3_BUCKET not set. Run supabase-setup.sh first.${NC}"</span>
+    <span class="bash-kw">exit</span> 1
+<span class="bash-kw">fi</span>
+
+<span class="bash-comment"># Colors</span>
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo -e <span class="bash-str">"${BLUE}📦 Setting up FFmpegLab Server...${NC}"</span>
+
+<span class="bash-comment"># Clone repo</span>
+REPO_DIR=<span class="bash-str">"server"</span>
+<span class="bash-kw">if</span> [ ! -d <span class="bash-str">"$REPO_DIR"</span> ]; <span class="bash-kw">then</span>
+    git clone https://github.com/ffmpeglab/server.git <span class="bash-str">"$REPO_DIR"</span>
+<span class="bash-kw">fi</span>
+<span class="bash-kw">cd</span> <span class="bash-str">"$REPO_DIR"</span>
+
+<span class="bash-comment"># Generate JWT secret</span>
+JWT_SECRET=$(openssl rand -base64 32 2>/dev/null || echo <span class="bash-str">"CHANGE_ME_TO_A_LONG_SECRET_STRING"</span>)
+
+<span class="bash-comment"># Write .env</span>
+cat > .env &lt;&lt;EOF
+DATABASE_URL=${DATABASE_URL}
+DB_MIGRATION_ENABLED=true
+SUPABASE_URL=${SUPABASE_URL}
+SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+S3_ACCESS_KEY=${SUPABASE_ANON_KEY}
+S3_SECRET_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+S3_REGION=us-east-1
+S3_ENDPOINT=${SUPABASE_URL}/storage/v1/s3
+S3_BUCKET=${S3_BUCKET}
+JWT_SECRET=${JWT_SECRET}
+PORT=3000
+EOF
+
+echo -e <span class="bash-str">"${GREEN}✅ .env created.${NC}"</span>
+
+echo -e <span class="bash-str">"${BLUE}📦 Installing dependencies...${NC}"</span>
+npm install
+
+echo -e <span class="bash-str">"${BLUE}🗄️  Running migrations...${NC}"</span>
+npm run migration:run || {
+    echo -e <span class="bash-str">"${RED}❌ Migrations failed. Check DATABASE_URL and pgmq.${NC}"</span>
+    echo -e <span class="bash-str">"${YELLOW}💡 Manual: npx typeorm migration:run -d src/data-source.ts${NC}"</span>
+    <span class="bash-kw">exit</span> 1
+}
+echo -e <span class="bash-str">"${GREEN}✅ Migrations complete.${NC}"</span>
+
+<span class="bash-comment"># Generate API key</span>
+read -p <span class="bash-str">"API Key Prefix [ffmpeglab_sk_]: "</span> API_KEY_PREFIX
+API_KEY_PREFIX=${API_KEY_PREFIX:-ffmpeglab_sk_}
+API_KEY_SECRET=$(openssl rand -hex 32 2>/dev/null || echo <span class="bash-str">"a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"</span>)
+API_KEY=<span class="bash-str">"${API_KEY_PREFIX}${API_KEY_SECRET}"</span>
+<span class="bash-kw">export</span> API_KEY
+
+echo -e <span class="bash-str">"${BLUE}💾 Inserting user and API key...${NC}"</span>
+PGPASSWORD=<span class="bash-str">"$DB_PASSWORD"</span> psql <span class="bash-str">"$DATABASE_URL"</span> &lt;&lt;EOF
+INSERT INTO <span class="bash-str">"user"</span> (id, email, password_hash, data)
+VALUES (
+  '550e8400-e29b-41d4-a716-446655440000',
+  'agent@ffmpeglab.com',
+  '',
+  '{"roles": ["admin"]}'
+) ON CONFLICT DO NOTHING;
+
+INSERT INTO apikey (id, title, apikey, user_id, data)
+VALUES (
+  '550e8400-e29b-41d4-a716-446655440001',
+  'Admin API Key',
+  '${API_KEY}',
+  '550e8400-e29b-41d4-a716-446655440000',
+  '{"permissions": ["render:*", "project:*", "user:read"]}'
+) ON CONFLICT DO NOTHING;
+EOF
+echo -e <span class="bash-str">"${GREEN}✅ User and API key inserted.${NC}"</span>
+        </pre>
+      </div>
+    </div>
+
+    <h3>4. Finalize</h3>
+
+    <div class="script-card">
+      <div class="script-header">
+        <span class="name">finalize.sh</span>
+        <span class="url">ffmpeglab.com/sh/finalize.sh</span>
+      </div>
+      <div class="script-body">
+        <pre>
+#!/bin/bash
+set -e
+
+<span class="bash-comment"># Finalize Phase</span>
+<span class="bash-comment"># Starts Docker Compose and displays summary</span>
+
+<span class="bash-kw">if</span> [ -z <span class="bash-str">"$API_KEY"</span> ]; <span class="bash-kw">then</span>
+    echo -e <span class="bash-str">"${RED}❌ API_KEY not set. Run server-setup.sh first.${NC}"</span>
+    <span class="bash-kw">exit</span> 1
+<span class="bash-kw">fi</span>
+
+<span class="bash-comment"># Colors</span>
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo -e <span class="bash-str">"${BLUE}🐳 Starting FFmpegLab Server with Docker Compose...${NC}"</span>
+docker compose up -d
+
+echo -e <span class="bash-str">"${BLUE}📊 Service status:${NC}"</span>
+docker compose ps
+
+echo -e <span class="bash-str">"${GREEN}✅ Setup complete!${NC}"</span>
+echo <span class="bash-str">"================================================"</span>
+echo -e <span class="bash-str">"${GREEN}🔑 Your API Key: ${API_KEY}${NC}"</span>
+echo -e <span class="bash-str">"${BLUE}🌐 API Server: http://localhost:3000${NC}"</span>
+echo -e <span class="bash-str">"${BLUE}📝 Test with:${NC}"</span>
+echo <span class="bash-str">"  curl http://localhost:3000/"</span>
+echo <span class="bash-str">"  curl -H 'Authorization: Bearer ${API_KEY}' http://localhost:3000/renders"</span>
+echo <span class="bash-str">"================================================"</span>
+echo -e <span class="bash-str">"${YELLOW}💡 To view logs: docker compose logs -f${NC}"</span>
+echo -e <span class="bash-str">"${YELLOW}💡 To stop: docker compose down${NC}"</span>
+        </pre>
+      </div>
+    </div>
+
+    <h2 id="why-supabase">Why Supabase as the Unified Backend</h2>
+
+    <p>Supabase serves as the <strong>full-cycle provider</strong> for FFmpegLab Server:</p>
+
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Provider</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>PostgreSQL</strong></td><td>Supabase</td><td>Primary database with Row Level Security (RLS)</td></tr>
+        <tr><td><strong>pgmq</strong></td><td>Supabase</td><td>Job queue for asynchronous render processing</td></tr>
+        <tr><td><strong>S3‑compatible Storage</strong></td><td>Supabase</td><td>File storage for media assets and rendered output</td></tr>
+        <tr><td><strong>REST API</strong></td><td>Supabase</td><td>Auto‑generated REST API with JWT authentication</td></tr>
+      </tbody>
+    </table>
+
+    <p>Using Supabase means:</p>
+    <ul>
+      <li><strong>No separate PostgreSQL setup</strong> — it's ready to use</li>
+      <li><strong>No separate pgmq installation</strong> — enable it with one click</li>
+      <li><strong>No separate S3 setup</strong> — storage is included</li>
+      <li><strong>One DATABASE_URL</strong> — connects to everything</li>
+    </ul>
+
+    <p>As the Supabase Queues documentation explains: <em>"Supabase Queues is a Postgres-native durable message queue system built on the pgmq database extension. It offers guaranteed delivery, exactly-once message delivery, and message archival"</em>.</p>
+
+    <h2 id="manual-steps">Manual Setup Steps</h2>
+
+    <p>If you prefer to set up manually, here are the steps the scripts automate.</p>
+
+    <h3>Prerequisites</h3>
+
+    <ul>
+      <li>A <a href="https://supabase.com">Supabase account</a> (free tier available)</li>
+      <li>Docker and Docker Compose installed</li>
+      <li>Git, Node.js 18+, psql, openssl, curl</li>
+    </ul>
+
+    <h3>Step 1: Create a Supabase Project</h3>
+
+    <ol>
+      <li>Go to <a href="https://supabase.com">supabase.com</a> and sign up</li>
+      <li>Click <strong>New Project</strong></li>
+      <li>Fill in: <strong>Name</strong> (<code>ffmpeglab</code>), <strong>Database Password</strong> (use a strong password), <strong>Region</strong> (choose closest to your users), <strong>Pricing Plan</strong> (Free)</li>
+      <li>Click <strong>Create new project</strong> and wait (1-2 minutes)</li>
+    </ol>
+
+    <h3>Step 2: Enable pgmq</h3>
+
+    <ol>
+      <li>In the Supabase dashboard, go to <strong>Integrations</strong> → <strong>Supabase Queues</strong></li>
+      <li>Click <strong>Enable</strong> to enable the pgmq extension</li>
+      <li>Click <strong>Create queue</strong> and name it <code>rendering_queue</code></li>
+      <li>Select <strong>Basic Queue</strong> for durability</li>
+    </ol>
+
+    <div class="code">
+      <span class="sql-comment">-- Alternatively, create the queue via SQL</span><br/>
+      <span class="sql-kw">CREATE EXTENSION</span> <span class="sql-str">pgmq</span>;<br/>
+      <span class="sql-kw">SELECT</span> pgmq.create(<span class="sql-str">'rendering_queue'</span>);
+    </div>
+
+    <h3>Step 3: Create a Storage Bucket</h3>
+
+    <ol>
+      <li>In the Supabase dashboard, click <strong>Storage</strong></li>
+      <li>Click <strong>New Bucket</strong></li>
+      <li>Name it <code>ffmpeglab-assets</code></li>
+      <li>Select <strong>Private</strong> for the bucket type</li>
+    </ol>
+
+    <div class="code">
+      <span class="sql-comment">-- Create bucket via SQL</span><br/>
+      <span class="sql-kw">INSERT INTO</span> storage.buckets (id, name, public)<br/>
+      <span class="sql-kw">VALUES</span> (<span class="sql-str">'ffmpeglab-assets'</span>, <span class="sql-str">'ffmpeglab-assets'</span>, <span class="sql-kw">false</span>);
+      <br/><br/>
+      <span class="sql-comment">-- RLS policies</span><br/>
+      <span class="sql-kw">CREATE POLICY</span> "Allow authenticated uploads" <span class="sql-kw">ON</span> storage.objects <span class="sql-kw">FOR INSERT</span> <span class="sql-kw">TO authenticated</span> <span class="sql-kw">WITH CHECK</span> (bucket_id = <span class="sql-str">'ffmpeglab-assets'</span>);<br/>
+      <span class="sql-kw">CREATE POLICY</span> "Allow authenticated downloads" <span class="sql-kw">ON</span> storage.objects <span class="sql-kw">FOR SELECT</span> <span class="sql-kw">TO authenticated</span> <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'ffmpeglab-assets'</span>);
+    </div>
+
+    <h3>Step 4: Get Supabase Credentials</h3>
+
+    <ol>
+      <li>In the Supabase dashboard, go to <strong>Settings</strong> → <strong>API</strong></li>
+      <li>Copy: <strong>Project URL</strong>, <strong>Anon / Public Key</strong>, <strong>Service Role Key</strong></li>
+    </ol>
+
+    <h3>Step 5: Clone and Configure the Server</h3>
+
+    <div class="code">
+      git clone https://github.com/ffmpeglab/server.git<br/>
+      cd server<br/>
+      cp .env.example .env
+    </div>
+
+    <div class="env-box">
+      <span style="color:#6b7280;"># Database Configuration</span><br/>
+      <span class="key">DATABASE_URL</span>=<span class="val">postgresql://postgres:your_password@your-project.supabase.co:5432/postgres</span><br/>
+      <span class="key">DB_MIGRATION_ENABLED</span>=<span class="val">true</span>
+      <br/><br/>
+      <span style="color:#6b7280;"># Supabase Credentials</span><br/>
+      <span class="key">SUPABASE_URL</span>=<span class="val">https://your-project.supabase.co</span><br/>
+      <span class="key">SUPABASE_ANON_KEY</span>=<span class="val">your-anon-key</span><br/>
+      <span class="key">SUPABASE_SERVICE_ROLE_KEY</span>=<span class="val">your-service-role-key</span>
+      <br/><br/>
+      <span style="color:#6b7280;"># S3 Storage</span><br/>
+      <span class="key">S3_ACCESS_KEY</span>=<span class="val">your-anon-key</span><br/>
+      <span class="key">S3_SECRET_KEY</span>=<span class="val">your-service-role-key</span><br/>
+      <span class="key">S3_REGION</span>=<span class="val">us-east-1</span><br/>
+      <span class="key">S3_ENDPOINT</span>=<span class="val">https://your-project.supabase.co/storage/v1/s3</span><br/>
+      <span class="key">S3_BUCKET</span>=<span class="val">ffmpeglab-assets</span>
+      <br/><br/>
+      <span style="color:#6b7280;"># JWT Secret</span><br/>
+      <span class="key">JWT_SECRET</span>=<span class="val">your_jwt_secret_min_32_chars</span>
+    </div>
+
+    <h3>Step 6: Run Migrations and Insert API Key</h3>
+
+    <div class="code">
+      npm install<br/>
+      npm run migration:run
+    </div>
+
+    <div class="code">
+      <span class="sql-comment">-- Create user</span><br/>
+      <span class="sql-kw">INSERT INTO</span> "user" (id, email, password_hash, data)<br/>
+      <span class="sql-kw">VALUES</span> (<br/>
+      &nbsp;&nbsp;<span class="sql-str">'550e8400-e29b-41d4-a716-446655440000'</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-str">'agent@ffmpeglab.com'</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-str">''</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-str">'{"roles": ["admin"]}'</span><br/>
+      );
+      <br/><br/>
+      <span class="sql-comment">-- Create API key (generate with: openssl rand -hex 32 | sed 's/^/ffmpeglab_sk_/')</span><br/>
+      <span class="sql-kw">INSERT INTO</span> apikey (id, title, apikey, user_id, data)<br/>
+      <span class="sql-kw">VALUES</span> (<br/>
+      &nbsp;&nbsp;<span class="sql-str">'550e8400-e29b-41d4-a716-446655440001'</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-str">'Admin API Key'</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-str">'ffmpeglab_sk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-str">'550e8400-e29b-41d4-a716-446655440000'</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-str">'{"permissions": ["render:*", "project:*", "user:read"]}'</span><br/>
+      );
+    </div>
+
+    <h3>Step 7: Deploy</h3>
+
+    <div class="code">
+      docker compose up -d
+    </div>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+
+    <table>
+      <thead>
+        <tr><th>Issue</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Migrations fail</strong></td>
+          <td>Database not accessible or pgmq not enabled</td>
+          <td>Check DATABASE_URL; ensure pgmq extension is enabled</td>
+        </tr>
+        <tr>
+          <td><strong>API key not working</strong></td>
+          <td>Key format incorrect or user doesn't exist</td>
+          <td>Verify the key format matches <code>ffmpeglab_sk_</code> prefix</td>
+        </tr>
+        <tr>
+          <td><strong>Runners not picking up jobs</strong></td>
+          <td>pgmq queue not created</td>
+          <td>Create the <code>rendering_queue</code> in Supabase Queues</td>
+        </tr>
+        <tr>
+          <td><strong>S3 upload fails</strong></td>
+          <td>Storage bucket not created or RLS policies missing</td>
+          <td>Create the bucket and configure RLS policies</td>
+        </tr>
+        <tr>
+          <td><strong>JWT_SECRET error</strong></td>
+          <td>Secret too short</td>
+          <td>Set JWT_SECRET to at least 32 characters</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What does Supabase provide for FFmpegLab Server?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Supabase provides <strong>PostgreSQL</strong> with <strong>pgmq</strong> for job queuing, <strong>S3-compatible storage</strong> for media assets, <strong>authentication</strong> via Supabase Auth, and a <strong>REST API</strong>. It serves as the full-cycle backend provider for FFmpegLab Server.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I enable pgmq in Supabase?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Navigate to <strong>Integrations → Supabase Queues</strong> in your project dashboard and enable the pgmq extension. The extension is available in Postgres 15.6.1.143 or later.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use Supabase Cloud instead of self-hosting?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. <strong>Supabase Cloud</strong> is the fastest way to get started. Create a free project, enable pgmq, create a storage bucket, and configure your environment variables. The free tier includes 1 GB of storage.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Do I need separate databases for the queue and application data?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No. FFmpegLab Server uses a <strong>single PostgreSQL database</strong> for both application data and pgmq queues. The <code>DATABASE_URL</code> connection string points to your Supabase PostgreSQL instance.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What are the actual table names in PostgreSQL?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The table names match the entity class names: <strong><code>render</code></strong>, <strong><code>apikey</code></strong>, and <strong><code>logpiece</code></strong>. These are derived from the TypeORM <code>@Entity()</code> decorators.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>Setting up FFmpegLab Server with Supabase as the unified backend is the <strong>fastest and most reliable</strong> way to get started. With a single Supabase project, you get:</p>
+
+    <ul>
+      <li><strong>PostgreSQL</strong> — for application data</li>
+      <li><strong>pgmq</strong> — for durable job queuing</li>
+      <li><strong>S3 Storage</strong> — for media assets</li>
+      <li><strong>Authentication</strong> — for API key management</li>
+    </ul>
+
+    <p>The scripts automate everything:</p>
+
+    <div class="env-box">
+      curl -sSL https://ffmpeglab.com/sh/install.sh | bash
+    </div>
+
+    <p>With your instance up and running, you can begin submitting render jobs, managing projects, and scaling your video processing pipeline — all backed by Supabase.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-env-vars-scalable-runners.html">Environment Variables &amp; Scalable Runners</a></li>
+        <li><a href="setting-up-supabase-storage-ffmpeglab.html">Setting Up Supabase Storage with FFmpegLab</a></li>
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

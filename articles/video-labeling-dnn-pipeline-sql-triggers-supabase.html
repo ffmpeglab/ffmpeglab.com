@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Labeling with DNN Filters – Object Detection & Classification Pipeline</title>
+  <meta name="description" content="Build an automated video labeling pipeline that detects objects, faces, and scenes using DNN filters. SQL triggers + pgmq + Supabase Storage." />
+  <meta name="keywords" content="ffmpeg dnn_detect, ffmpeg dnn_classify, video labeling, object detection, YOLO, ResNet, SQL triggers, supabase storage, pgmq" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/video-labeling-dnn-pipeline-sql-triggers-supabase.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/video-labeling-dnn-pipeline-sql-triggers-supabase.html" />
+  <meta property="og:title" content="Video Labeling with DNN Filters – Object Detection & Classification Pipeline" />
+  <meta property="og:description" content="Build an automated video labeling pipeline that detects objects, faces, and scenes using DNN filters. SQL triggers + pgmq + Supabase Storage." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Video Labeling with DNN Filters – Object Detection & Classification Pipeline",
+      "description": "Build an automated video labeling pipeline that detects objects, faces, and scenes using DNN filters. SQL triggers + pgmq + Supabase Storage.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-31",
+      "dateModified": "2026-07-31",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/video-labeling-dnn-pipeline-sql-triggers-supabase.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What does the video labeling pipeline do?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The pipeline automatically detects and labels objects, faces, and scenes in uploaded videos using FFmpeg's dnn_detect and dnn_classify filters. It generates bounding boxes, labels, and confidence scores, and stores them as JSON metadata alongside the video."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What models are used?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The pipeline supports multiple models including YOLO for object detection, ResNet for classification, and face detection models. The default configuration uses OpenVINO models for face detection (face-detection-adas-0001), classification (emotions-recognition-retail-0003), and can be extended for general object detection."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the output format?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The pipeline outputs a JSON file containing all detection results: frame number, bounding box coordinates, label/class name, confidence score, and timestamp. This can be used for search, analytics, or further processing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use custom models?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. You can use any OpenVINO or TensorFlow model that works with FFmpeg's dnn_detect or dnn_classify filters. You'll need to provide the model files and configure the input/output tensor names."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .code-block {
+      background: #0d0d1a;
+      border-radius: 6px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .code-block .sql-kw { color: #fbbf24; }
+    .code-block .sql-str { color: #34d399; }
+    .code-block .sql-comment { color: #6b7280; }
+    .code-block .sql-fn { color: #f472b6; }
+    .code-block .sql-type { color: #60a5fa; }
+    .code-block .ffmpeg-flag { color: #fbbf24; }
+    .code-block .ffmpeg-filter { color: #f472b6; }
+    .code-block .ffmpeg-codec { color: #34d399; }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .step-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #fbbf24;
+    }
+    .step-box .step-num {
+      color: #fbbf24;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .step-box .step-title {
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    .step-box .step-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
+    .step-box .note {
+      color: #fbbf24;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #0d0d1a;
+      border-radius: 4px;
+      border-left: 2px solid #fbbf24;
+    }
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .schema-table th {
+      background: #2d2d3d;
+      color: #fbbf24;
+      text-align: left;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .schema-table td {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border-bottom: 1px solid #2d2d3d;
+      font-family: monospace;
+    }
+    .schema-table .col-name { color: #34d399; }
+    .schema-table .col-type { color: #60a5fa; }
+    @media (max-width: 640px) {
+      .schema-table td, .schema-table th {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Video Labeling</div>
+      <span class="eyebrow">FFmpegLab Guide</span>
+      <h1>Video Labeling with DNN Filters – Object Detection &amp; Classification Pipeline</h1>
+      <p class="dek">Build an automated video labeling pipeline that detects objects, faces, and scenes using FFmpeg's DNN filters. SQL triggers + pgmq + Supabase Storage.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Video Understanding at Scale</a></li>
+        <li><a href="#architecture">Architecture Overview</a></li>
+        <li><a href="#what-it-delivers">What the Pipeline Delivers</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#quick-start">Quick Start – The Setup Script</a></li>
+        <li><a href="#setup-script">The Complete SQL Setup Script</a></li>
+        <li><a href="#ffmpeg-commands">FFmpeg Commands</a></li>
+        <li><a href="#models">Model Management</a></li>
+        <li><a href="#configure-runner">Configure ffmpeglab-runner</a></li>
+        <li><a href="#monitor">Monitor the Pipeline</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Video understanding is one of the most powerful applications of AI. Being able to automatically detect objects, faces, and scenes in videos opens up a world of possibilities — from content moderation and search to analytics and accessibility.</p>
+
+    <p>FFmpeg's <strong>DNN filters</strong> — <code>dnn_detect</code> and <code>dnn_classify</code> — make this possible. With pre‑trained models like YOLO, ResNet, and face detection models, you can label every frame of your video with rich metadata.</p>
+
+    <p>This guide shows you how to build a <strong>fully automated video labeling pipeline</strong> that:</p>
+    <ul>
+      <li>Detects objects and faces in uploaded videos</li>
+      <li>Classifies scenes and emotions</li>
+      <li>Generates JSON metadata with bounding boxes and labels</li>
+      <li>Stores results alongside the original video</li>
+    </ul>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>dnn_detect</code></strong> — object and face detection with bounding boxes</li>
+        <li><strong><code>dnn_classify</code></strong> — classification of scenes, emotions, and more</li>
+        <li><strong>YOLO, ResNet, and face detection</strong> — proven models for video understanding</li>
+        <li><strong>JSON metadata</strong> — results stored for search, analytics, and further processing</li>
+        <li><strong>One SQL script</strong> — everything is set up with a single execution</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Video Understanding at Scale</h2>
+
+    <p>Video is the most data‑rich medium we have. But without understanding what's in the video, it's just pixels. Manually labeling videos is impossible at scale. Automated video labeling using DNN filters makes it practical:</p>
+
+    <ul>
+      <li><strong>Content moderation</strong> — detect inappropriate content automatically</li>
+      <li><strong>Search and discovery</strong> — find videos by content (e.g., "videos with dogs")</li>
+      <li><strong>Analytics</strong> — understand what's in your video library</li>
+      <li><strong>Accessibility</strong> — auto‑generate alt text and descriptions</li>
+    </ul>
+
+    <p>This guide shows you how to build that pipeline.</p>
+
+    <h2 id="architecture">Architecture Overview</h2>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">User Uploads Video</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Supabase Storage</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">PostgreSQL Trigger</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">pgmq Queue</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">ffmpeglab-runner</span>
+      <br/>
+      <span style="color:#34d399;">dnn_detect</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Bounding Boxes</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">dnn_classify</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Labels</span>
+      <br/>
+      <span style="color:#34d399;">JSON Metadata</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Public Folder</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">pg_notify</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">User Notified</span>
+    </div>
+
+    <p>The pipeline consists of:</p>
+    <ul>
+      <li><strong>Supabase Storage</strong> — two buckets: <code>private-uploads</code> (per‑user) and <code>public-processed</code> (per‑user).</li>
+      <li><strong>RLS policies</strong> — restrict access to each user's own folders.</li>
+      <li><strong>PostgreSQL trigger</strong> — fires on <code>INSERT</code> into <code>storage.objects</code>.</li>
+      <li><strong>pgmq</strong> — message queue for job processing.</li>
+      <li><strong>ffmpeglab-runner</strong> — runs DNN detection and classification.</li>
+      <li><strong>pg_notify</strong> — real‑time status updates.</li>
+    </ul>
+
+    <h2 id="what-it-delivers">What the Pipeline Delivers</h2>
+
+    <table class="schema-table">
+      <thead>
+        <tr><th>Output</th><th>Format</th><th>Location</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Detection Metadata</strong></td><td>JSON (bounding boxes, labels, confidence)</td><td><code>public-processed/{userId}/labels/</code></td></tr>
+        <tr><td><strong>Labeled Video</strong></td><td>MP4 (with bounding boxes overlaid)</td><td><code>public-processed/{userId}/labeled/</code></td></tr>
+        <tr><td><strong>Real‑time notifications</strong></td><td><code>pg_notify</code> channels</td><td>N/A</td></tr>
+        <tr><td><strong>Job tracking</strong></td><td><code>render</code> table</td><td>Existing FFmpegLab table</td></tr>
+        <tr><td><strong>Logs</strong></td><td><code>logpiece</code> table</td><td>Existing FFmpegLab table</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="prerequisites">Prerequisites</h2>
+
+    <ul>
+      <li>A <a href="https://supabase.com">Supabase project</a> (cloud or self‑hosted).</li>
+      <li><strong>ffmpeglab-server</strong> and <strong>ffmpeglab-runner</strong> deployed.</li>
+      <li>FFmpeg compiled with <strong>DNN support</strong> (OpenVINO or TensorFlow).</li>
+      <li>DNN model files downloaded (see <a href="#models">Model Management</a>).</li>
+      <li><code>render</code> and <code>logpiece</code> tables must exist.</li>
+      <li>Access to your Supabase database.</li>
+    </ul>
+
+    <h2 id="quick-start">Quick Start – The Setup Script</h2>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Save the SQL script</div>
+      <div class="step-desc">Copy the complete SQL script from the <a href="#setup-script">section below</a> and save it as <code>setup_labeling_pipeline.sql</code>.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Run the script</div>
+      <div class="step-desc">Execute the script against your Supabase database.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Via psql</span>
+        psql -U postgres -d your_database -f setup_labeling_pipeline.sql
+        <br/><br/>
+        <span style="color: #6b7280;"># Or via the Supabase SQL Editor</span>
+        <span style="color: #6b7280;"># Copy and paste the entire script into the SQL Editor and run it.</span>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Download models</div>
+      <div class="step-desc">Download the required DNN models (see <a href="#models">Model Management</a>).</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Configure the runner</div>
+      <div class="step-desc">Add the labeling queue to your runner's environment.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Add to your .env or docker-compose.yml</span>
+        LABELING_QUEUE_NAME=labeling_queue
+        <br/><br/>
+        <span style="color: #6b7280;"># Model paths</span>
+        DNN_DETECT_MODEL=/app/models/detection/face-detection-adas-0001.xml
+        DNN_CLASSIFY_MODEL=/app/models/classification/emotions-recognition-retail-0003.xml
+        DNN_LABELS=/app/models/detection/face-detection-adas-0001.label
+        <br/><br/>
+        <span style="color: #6b7280;"># DNN backend</span>
+        DNN_BACKEND=openvino
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 5</div>
+      <div class="step-title">Restart the runner</div>
+      <div class="step-desc">Restart the runner to pick up the new queue.</div>
+      <div class="code-block">
+        docker compose restart ffmpeglab-runner
+      </div>
+    </div>
+
+    <h2 id="setup-script">The Complete SQL Setup Script</h2>
+
+    <div class="code-block">
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- VIDEO LABELING WITH DNN FILTERS</span>
+      <span class="sql-comment">-- Complete SQL Setup Script</span>
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- This script adds the video labeling pipeline components.</span>
+      <span class="sql-comment">-- It assumes the render and logpiece tables already exist.</span>
+      <span class="sql-comment">-- ============================================================</span>
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 1. Create storage buckets</span>
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-kw">INSERT INTO</span> storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
+      <span class="sql-kw">VALUES</span>
+          (<span class="sql-str">'private-uploads'</span>, <span class="sql-str">'private-uploads'</span>, <span class="sql-kw">false</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>]),
+          (<span class="sql-str">'public-processed'</span>, <span class="sql-str">'public-processed'</span>, <span class="sql-kw">true</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'application/json'</span>])
+      <span class="sql-kw">ON CONFLICT</span> (id) <span class="sql-kw">DO NOTHING</span>;
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 2. RLS policies for private-uploads bucket</span>
+      <span class="sql-comment">-- ============================================================</span>
+
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can upload to their own folder"</span> <span class="sql-kw">ON</span> storage.objects;
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can upload to their own folder"</span>
+      <span class="sql-kw">ON</span> storage.objects
+      <span class="sql-kw">FOR INSERT</span>
+      <span class="sql-kw">TO authenticated</span>
+      <span class="sql-kw">WITH CHECK</span> (
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span>
+      );
+
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can download from their own folder"</span> <span class="sql-kw">ON</span> storage.objects;
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can download from their own folder"</span>
+      <span class="sql-kw">ON</span> storage.objects
+      <span class="sql-kw">FOR SELECT</span>
+      <span class="sql-kw">TO authenticated</span>
+      <span class="sql-kw">USING</span> (
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span>
+      );
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 3. RLS policies for public-processed bucket</span>
+      <span class="sql-comment">-- ============================================================</span>
+
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Public read access to processed media"</span> <span class="sql-kw">ON</span> storage.objects;
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Public read access to processed media"</span>
+      <span class="sql-kw">ON</span> storage.objects
+      <span class="sql-kw">FOR SELECT</span>
+      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);
+
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Service role can manage processed media"</span> <span class="sql-kw">ON</span> storage.objects;
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Service role can manage processed media"</span>
+      <span class="sql-kw">ON</span> storage.objects
+      <span class="sql-kw">FOR ALL</span>
+      <span class="sql-kw">TO service_role</span>
+      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);
+
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can read their own processed media"</span> <span class="sql-kw">ON</span> storage.objects;
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can read their own processed media"</span>
+      <span class="sql-kw">ON</span> storage.objects
+      <span class="sql-kw">FOR SELECT</span>
+      <span class="sql-kw">TO authenticated</span>
+      <span class="sql-kw">USING</span> (
+          bucket_id = <span class="sql-str">'public-processed'</span> <span class="sql-kw">AND</span>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span>
+      );
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 4. Enable pgmq extension and create the queue</span>
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> pgmq;
+      <span class="sql-kw">SELECT</span> pgmq.create(<span class="sql-str">'labeling_queue'</span>);
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 5. Create the trigger function for video labeling</span>
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-kw">DROP FUNCTION IF EXISTS</span> handle_video_labeling() <span class="sql-kw">CASCADE</span>;
+
+      <span class="sql-kw">CREATE OR REPLACE FUNCTION</span> handle_video_labeling()
+      <span class="sql-kw">RETURNS TRIGGER AS $$</span>
+      <span class="sql-kw">DECLARE</span>
+          user_id <span class="sql-type">text</span>;
+          file_path <span class="sql-type">text</span>;
+          file_name <span class="sql-type">text</span>;
+          file_extension <span class="sql-type">text</span>;
+          base_filename <span class="sql-type">text</span>;
+          msg <span class="sql-type">jsonb</span>;
+          commands <span class="sql-type">jsonb</span> := <span class="sql-str">'[]'</span>;
+          video_mime_types <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>];
+      <span class="sql-kw">BEGIN</span>
+          <span class="sql-kw">IF</span> NEW.bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span> NEW.metadata->><span class="sql-str">'mimetype'</span> = <span class="sql-kw">ANY</span>(video_mime_types) <span class="sql-kw">THEN</span>
+              user_id := (storage.foldername(NEW.name))[1];
+              file_path := NEW.name;
+              file_name := (storage.filename(NEW.name));
+              file_extension := split_part(file_name, <span class="sql-str">'.'</span>, array_length(string_to_array(file_name, <span class="sql-str">'.'</span>), 1));
+              base_filename := replace(file_name, <span class="sql-str">'.'</span> || file_extension, <span class="sql-str">''</span>);
+
+              <span class="sql-comment">-- Command 1: Detect faces and objects (dnn_detect)</span>
+              commands := commands || jsonb_build_object(
+                  <span class="sql-str">'type'</span>, <span class="sql-str">'detect'</span>,
+                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/labels/'</span> || base_filename || <span class="sql-str">'_detections.json'</span>,
+                  <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "dnn_detect=dnn_backend=openvino:model=DETECT_MODEL:input=data:output=detection_out:confidence=0.6:labels=DETECT_LABELS,showinfo" -f null -'</span>
+              );
+
+              <span class="sql-comment">-- Command 2: Classify emotions/scenes (dnn_classify)</span>
+              commands := commands || jsonb_build_object(
+                  <span class="sql-str">'type'</span>, <span class="sql-str">'classify'</span>,
+                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/labels/'</span> || base_filename || <span class="sql-str">'_classifications.json'</span>,
+                  <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "dnn_classify=dnn_backend=openvino:model=CLASSIFY_MODEL:input=data:output=prob_emotion:confidence=0.3:labels=CLASSIFY_LABELS,showinfo" -f null -'</span>
+              );
+
+              <span class="sql-comment">-- Command 3: Overlay bounding boxes on video</span>
+              commands := commands || jsonb_build_object(
+                  <span class="sql-str">'type'</span>, <span class="sql-str">'overlay'</span>,
+                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/labeled/'</span> || base_filename || <span class="sql-str">'_labeled.mp4'</span>,
+                  <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "dnn_detect=dnn_backend=openvino:model=DETECT_MODEL:input=data:output=detection_out:confidence=0.6:labels=DETECT_LABELS,drawbox=x=1005:y=813:w=81:h=92:color=red" -c:v libx264 -crf 18 "OUTPUT_FILE"'</span>
+              );
+
+              msg := jsonb_build_object(
+                  <span class="sql-str">'userId'</span>, user_id,
+                  <span class="sql-str">'inputPath'</span>, file_path,
+                  <span class="sql-str">'inputBucket'</span>, NEW.bucket_id,
+                  <span class="sql-str">'outputBucket'</span>, <span class="sql-str">'public-processed'</span>,
+                  <span class="sql-str">'fileName'</span>, file_name,
+                  <span class="sql-str">'baseFilename'</span>, base_filename,
+                  <span class="sql-str">'commands'</span>, commands,
+                  <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()
+              );
+
+              <span class="sql-kw">PERFORM</span> pgmq.send(<span class="sql-str">'labeling_queue'</span>, msg::<span class="sql-type">jsonb</span>);
+
+              <span class="sql-kw">INSERT INTO</span> <span class="sql-str">"render"</span> (id, title, project, status, public, user_id, data)
+              <span class="sql-kw">VALUES</span> (
+                  <span class="sql-fn">gen_random_uuid</span>(),
+                  file_name,
+                  <span class="sql-str">'video-labeling'</span>,
+                  <span class="sql-str">'queued'</span>,
+                  <span class="sql-kw">false</span>,
+                  user_id::<span class="sql-type">uuid</span>,
+                  msg
+              );
+
+              <span class="sql-kw">PERFORM</span> pg_notify(
+                  <span class="sql-str">'labeling_channel'</span>,
+                  jsonb_build_object(
+                      <span class="sql-str">'userId'</span>, user_id,
+                      <span class="sql-str">'filePath'</span>, file_path,
+                      <span class="sql-str">'status'</span>, <span class="sql-str">'queued'</span>,
+                      <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()
+                  )::<span class="sql-type">text</span>
+              );
+          <span class="sql-kw">END IF</span>;
+          <span class="sql-kw">RETURN</span> NEW;
+      <span class="sql-kw">END;</span>
+      <span class="sql-kw">$$ LANGUAGE plpgsql SECURITY DEFINER;</span>
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 6. Attach the trigger to storage.objects</span>
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-kw">DROP TRIGGER IF EXISTS</span> labeling_upload_trigger <span class="sql-kw">ON</span> storage.objects;
+      <span class="sql-kw">CREATE TRIGGER</span> labeling_upload_trigger
+      <span class="sql-kw">AFTER INSERT ON</span> storage.objects
+      <span class="sql-kw">FOR EACH ROW</span>
+      <span class="sql-kw">EXECUTE FUNCTION</span> handle_video_labeling();
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 7. Helper views for monitoring</span>
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-kw">DROP VIEW IF EXISTS</span> labeling_queue_view;
+      <span class="sql-kw">CREATE OR REPLACE VIEW</span> labeling_queue_view <span class="sql-kw">AS</span>
+      <span class="sql-kw">SELECT</span>
+          msg_id,
+          read_ct,
+          enqueued_at,
+          vt,
+          message::<span class="sql-type">jsonb</span> <span class="sql-kw">as</span> payload,
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'userId'</span>) <span class="sql-kw">as</span> user_id,
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'fileName'</span>) <span class="sql-kw">as</span> file_name
+      <span class="sql-kw">FROM</span> pgmq.q_labeling_queue
+      <span class="sql-kw">ORDER BY</span> msg_id <span class="sql-kw">DESC</span>;
+
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-comment">-- 8. Initialize notification channels</span>
+      <span class="sql-comment">-- ============================================================</span>
+      <span class="sql-kw">DO $$</span>
+      <span class="sql-kw">BEGIN</span>
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'labeling_channel'</span>, <span class="sql-str">'{"init": true}'</span>);
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'render_status_channel'</span>, <span class="sql-str">'{"init": true}'</span>);
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'log_channel'</span>, <span class="sql-str">'{"init": true}'</span>);
+      <span class="sql-kw">END $$</span>;
+    </div>
+
+    <h2 id="ffmpeg-commands">FFmpeg Commands</h2>
+
+    <p>The trigger function generates the following FFmpeg commands:</p>
+
+    <h3>1. Object / Face Detection (dnn_detect)</h3>
+
+    <div class="code-block">
+      ffmpeg -i "INPUT_FILE" -vf "dnn_detect=dnn_backend=openvino:model=DETECT_MODEL:input=data:output=detection_out:confidence=0.6:labels=DETECT_LABELS,showinfo" -f null -
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">💡</div>
+      <div class="step-title">dnn_detect Parameters Explained</div>
+      <div class="step-desc">
+        <ul>
+          <li><strong><code>dnn_detect</code></strong> — FFmpeg's object detection filter</li>
+          <li><strong><code>dnn_backend=openvino</code></strong> — DNN backend (openvino, tensorflow, native)</li>
+          <li><strong><code>model</code></strong> — Path to the model file</li>
+          <li><strong><code>input=data</code></strong> — Input tensor name</li>
+          <li><strong><code>output=detection_out</code></strong> — Output tensor name</li>
+          <li><strong><code>confidence=0.6</code></strong> — Confidence threshold</li>
+          <li><strong><code>labels</code></strong> — Path to labels file</li>
+          <li><strong><code>showinfo</code></strong> — Prints detection results to console</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>2. Classification (dnn_classify)</h3>
+
+    <div class="code-block">
+      ffmpeg -i "INPUT_FILE" -vf "dnn_classify=dnn_backend=openvino:model=CLASSIFY_MODEL:input=data:output=prob_emotion:confidence=0.3:labels=CLASSIFY_LABELS,showinfo" -f null -
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">💡</div>
+      <div class="step-title">dnn_classify Parameters Explained</div>
+      <div class="step-desc">
+        <ul>
+          <li><strong><code>dnn_classify</code></strong> — FFmpeg's classification filter</li>
+          <li><strong><code>output=prob_emotion</code></strong> — Output tensor for probabilities</li>
+          <li><strong><code>confidence=0.3</code></strong> — Confidence threshold</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>3. Overlay Detection Results (drawbox)</h3>
+
+    <div class="code-block">
+      ffmpeg -i "INPUT_FILE" -vf "dnn_detect=...,drawbox=x=1005:y=813:w=81:h=92:color=red" -c:v libx264 -crf 18 "OUTPUT_FILE"
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">💡</div>
+      <div class="step-title">Overlay Parameters Explained</div>
+      <div class="step-desc">
+        <ul>
+          <li><strong><code>drawbox</code></strong> — FFmpeg filter for drawing rectangles</li>
+          <li><strong><code>x, y, w, h</code></strong> — Position and size of the bounding box</li>
+          <li><strong><code>color=red</code></strong> — Color of the bounding box</li>
+          <li><strong><code>-c:v libx264 -crf 18</code></strong> — High-quality encoding</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 id="models">Model Management</h2>
+
+    <h3>Directory Structure</h3>
+
+    <div class="code-block">
+      /app/models/
+      ├── detection/
+      │   ├── face-detection-adas-0001.xml
+      │   ├── face-detection-adas-0001.bin
+      │   └── face-detection-adas-0001.label
+      ├── classification/
+      │   ├── emotions-recognition-retail-0003.xml
+      │   ├── emotions-recognition-retail-0003.bin
+      │   └── emotions-recognition-retail-0003.label
+      └── object-detection/
+          ├── yolo-v3-tiny.xml
+          ├── yolo-v3-tiny.bin
+          └── coco.names
+    </div>
+
+    <h3>Downloading Models</h3>
+
+    <div class="code-block">
+      <span class="sql-comment"># Create directories</span>
+      mkdir -p models/detection models/classification models/object-detection
+
+      <span class="sql-comment"># Face Detection Model (OpenVINO)</span>
+      wget -O models/detection/face-detection-adas-0001.xml \
+        https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/face-detection-adas-0001.xml
+      wget -O models/detection/face-detection-adas-0001.bin \
+        https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/face-detection-adas-0001.bin
+      wget -O models/detection/face-detection-adas-0001.label \
+        https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/face-detection-adas-0001.label
+
+      <span class="sql-comment"># Emotion Recognition Model (OpenVINO)</span>
+      wget -O models/classification/emotions-recognition-retail-0003.xml \
+        https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/emotions-recognition-retail-0003.xml
+      wget -O models/classification/emotions-recognition-retail-0003.bin \
+        https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/emotions-recognition-retail-0003.bin
+      wget -O models/classification/emotions-recognition-retail-0003.label \
+        https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/emotions-recognition-retail-0003.label
+    </div>
+
+    <h2 id="configure-runner">Configure ffmpeglab-runner</h2>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Add the queue to your environment</div>
+      <div class="step-desc">Add the following to your <code>.env</code> file or Docker Compose configuration.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Labeling queue</span>
+        LABELING_QUEUE_NAME=labeling_queue
+
+        <span style="color: #6b7280;"># Detection model</span>
+        DNN_DETECT_MODEL=/app/models/detection/face-detection-adas-0001.xml
+        DNN_DETECT_LABELS=/app/models/detection/face-detection-adas-0001.label
+
+        <span style="color: #6b7280;"># Classification model</span>
+        DNN_CLASSIFY_MODEL=/app/models/classification/emotions-recognition-retail-0003.xml
+        DNN_CLASSIFY_LABELS=/app/models/classification/emotions-recognition-retail-0003.label
+
+        <span style="color: #6b7280;"># DNN backend</span>
+        DNN_BACKEND=openvino
+
+        <span style="color: #6b7280;"># Confidence thresholds</span>
+        DETECT_CONFIDENCE=0.6
+        CLASSIFY_CONFIDENCE=0.3
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Implement the processing loop</div>
+      <div class="step-desc">The runner should execute the following steps:</div>
+      <div class="code-block" style="max-height: 300px;">
+        <span style="color: #6b7280;"># 1. Connect to Supabase and listen to the queue</span>
+        <br/><br/>
+        <span style="color: #6b7280;"># 2. For each job:</span>
+        <br/>
+        <span style="color: #6b7280;">#    a. Download the input file</span>
+        <br/>
+        <span style="color: #6b7280;">#    b. Parse the 'commands' array</span>
+        <br/>
+        <span style="color: #6b7280;">#    c. Execute each command:</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Run dnn_detect (extract JSON metadata)</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Run dnn_classify (extract JSON metadata)</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Run overlay (generate labeled video)</span>
+        <br/>
+        <span style="color: #6b7280;">#    d. Upload outputs to public-processed</span>
+        <br/>
+        <span style="color: #6b7280;">#    e. Update render table</span>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Restart the runner</div>
+      <div class="step-desc">After updating the environment, restart the runner service.</div>
+      <div class="code-block">
+        docker compose restart ffmpeglab-runner
+      </div>
+    </div>
+
+    <h2 id="monitor">Monitor the Pipeline</h2>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Check queued jobs</div>
+      <div class="step-desc">Use the helper view to see all queued jobs.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> labeling_queue_view;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Check render status</div>
+      <div class="step-desc">Query the existing <code>render</code> table for job status.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> id, title, status, progress, data
+        <span class="sql-kw">FROM</span> <span class="sql-str">"render"</span>
+        <span class="sql-kw">WHERE</span> project = <span class="sql-str">'video-labeling'</span>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Listen to notifications</div>
+      <div class="step-desc">In your application, listen for real‑time updates.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;">-- In your PostgreSQL client:</span>
+        <span class="sql-kw">LISTEN</span> labeling_channel;
+        <span class="sql-kw">LISTEN</span> render_status_channel;
+        <span class="sql-kw">LISTEN</span> log_channel;
+      </div>
+    </div>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What does the video labeling pipeline do?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The pipeline automatically detects and labels objects, faces, and scenes in uploaded videos using FFmpeg's <code>dnn_detect</code> and <code>dnn_classify</code> filters. It generates bounding boxes, labels, and confidence scores, and stores them as JSON metadata alongside the video.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What models are used?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The pipeline supports multiple models including <strong>YOLO</strong> for object detection, <strong>ResNet</strong> for classification, and face detection models. The default configuration uses OpenVINO models for face detection (<code>face-detection-adas-0001</code>), classification (<code>emotions-recognition-retail-0003</code>), and can be extended for general object detection.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the output format?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The pipeline outputs a <strong>JSON file</strong> containing all detection results: frame number, bounding box coordinates, label/class name, confidence score, and timestamp. This can be used for search, analytics, or further processing.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use custom models?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. You can use any OpenVINO or TensorFlow model that works with FFmpeg's <code>dnn_detect</code> or <code>dnn_classify</code> filters. You'll need to provide the model files and configure the input/output tensor names.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>You now have a <strong>fully automated video labeling pipeline</strong> that uses FFmpeg's DNN filters to detect objects, faces, and scenes in videos. With PostgreSQL triggers, pgmq, and Supabase Storage, you get:</p>
+
+    <ul>
+      <li><strong>Object and face detection</strong> — bounding boxes with confidence scores</li>
+      <li><strong>Scene classification</strong> — labels for what's in the video</li>
+      <li><strong>JSON metadata</strong> — rich, structured data for search and analytics</li>
+      <li><strong>Labeled video output</strong> — visual overlay of detection results</li>
+      <li><strong>Real‑time notifications</strong> — know when processing is complete</li>
+      <li><strong>Full observability</strong> — monitoring views and logs</li>
+    </ul>
+
+    <p>The pipeline is <strong>production‑ready</strong>, <strong>scalable</strong>, and <strong>extensible</strong> — you can swap in any DNN model for your specific use case.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="agent-first-setup-ffmpeglab-server.html">Agent-First Setup Guide – FFmpegLab Server</a></li>
+        <li><a href="ffmpeg-env-vars-scalable-runners.html">Environment Variables &amp; Scalable Runners</a></li>
+        <li><a href="ffmpeg-dnn-filters-ai-processing.html">DNN Filters – AI-Powered Video Processing</a></li>
+        <li><a href="ffmpeg-applications-startups.html">Applications &amp; Startups Powered by FFmpeg</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

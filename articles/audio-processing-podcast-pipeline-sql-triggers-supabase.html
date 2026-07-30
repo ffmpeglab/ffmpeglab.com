@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Processing Pipeline for Podcasts – SQL Triggers & Supabase Storage</title>
+  <meta name="description" content="Build an automated audio processing pipeline that normalizes loudness, reduces noise, converts formats, and adds metadata for podcasts." />
+  <meta name="keywords" content="audio processing pipeline, podcast, loudnorm, afftdn, sql triggers, supabase storage, pgmq, ffmpeglab" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/audio-processing-podcast-pipeline-sql-triggers-supabase.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/audio-processing-podcast-pipeline-sql-triggers-supabase.html" />
+  <meta property="og:title" content="Audio Processing Pipeline for Podcasts – SQL Triggers & Supabase Storage" />
+  <meta property="og:description" content="Build an automated audio processing pipeline that normalizes loudness, reduces noise, converts formats, and adds metadata for podcasts." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Audio Processing Pipeline for Podcasts – SQL Triggers & Supabase Storage",
+      "description": "Build an automated audio processing pipeline that normalizes loudness, reduces noise, converts formats, and adds metadata for podcasts.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-30",
+      "dateModified": "2026-07-30",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/audio-processing-podcast-pipeline-sql-triggers-supabase.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What audio processing does the pipeline perform?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The pipeline automatically normalizes loudness (EBU R128), reduces background noise, converts formats, adds MP3 metadata, and generates waveform images for podcasts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What FFmpeg filters are used?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The pipeline uses loudnorm for loudness normalization, afftdn for noise reduction, aformat for format conversion, ametadata for MP3 tags, and showwaves for waveform visualization."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can this handle videos as input?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The pipeline detects video files and extracts the audio track before processing. This makes it perfect for podcasters who record video interviews or screen recordings."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What podcast metadata is supported?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The pipeline supports title, artist (podcast name), album, genre, comment, and cover art (podcast artwork) in ID3v2 tags for MP3 files."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .code-block {
+      background: #0d0d1a;
+      border-radius: 6px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .code-block .sql-kw { color: #fbbf24; }
+    .code-block .sql-str { color: #34d399; }
+    .code-block .sql-comment { color: #6b7280; }
+    .code-block .sql-fn { color: #f472b6; }
+    .code-block .sql-type { color: #60a5fa; }
+    .code-block .ffmpeg-flag { color: #fbbf24; }
+    .code-block .ffmpeg-filter { color: #f472b6; }
+    .code-block .ffmpeg-codec { color: #34d399; }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .step-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #fbbf24;
+    }
+    .step-box .step-num {
+      color: #fbbf24;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .step-box .step-title {
+      color: #fff;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    .step-box .step-desc {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
+    .step-box .note {
+      color: #fbbf24;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #0d0d1a;
+      border-radius: 4px;
+      border-left: 2px solid #fbbf24;
+    }
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .schema-table th {
+      background: #2d2d3d;
+      color: #fbbf24;
+      text-align: left;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .schema-table td {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border-bottom: 1px solid #2d2d3d;
+      font-family: monospace;
+    }
+    .schema-table .col-name { color: #34d399; }
+    .schema-table .col-type { color: #60a5fa; }
+    @media (max-width: 640px) {
+      .schema-table td, .schema-table th {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Audio Processing Pipeline</div>
+      <span class="eyebrow">FFmpegLab Guide</span>
+      <h1>Audio Processing Pipeline for Podcasts – SQL Triggers &amp; Supabase Storage</h1>
+      <p class="dek">Build an automated audio processing pipeline that normalizes loudness, reduces noise, converts formats, adds metadata, and generates waveforms for podcasts.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: From Raw Audio to Podcast-Ready</a></li>
+        <li><a href="#architecture">Architecture Overview</a></li>
+        <li><a href="#what-it-delivers">What the Pipeline Delivers</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#quick-start">Quick Start – The Setup Script</a></li>
+        <li><a href="#setup-script">The Complete SQL Setup Script</a></li>
+        <li><a href="#what-it-does">What the Script Does</a></li>
+        <li><a href="#processing-logic">Processing Logic Explained</a></li>
+        <li><a href="#ffmpeg-commands">Exact FFmpeg Commands</a></li>
+        <li><a href="#configure-runner">Configure ffmpeglab-runner</a></li>
+        <li><a href="#monitor">Monitor the Pipeline</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Podcasting is booming, but producing broadcast‑quality audio is a complex process. Recording raw audio often includes background noise, inconsistent loudness, and the wrong format. Professional podcasts need:</p>
+
+    <ul>
+      <li><strong>Consistent loudness</strong> — EBU R128 loudness normalization (target -16 LUFS for podcasts)</li>
+      <li><strong>Noise reduction</strong> — remove background hum, hiss, and room tone</li>
+      <li><strong>Format conversion</strong> — WAV/FLAC to MP3 for distribution</li>
+      <li><strong>Metadata</strong> — title, artist, album, artwork</li>
+      <li><strong>Waveform visualization</strong> — for podcast players and social media</li>
+    </ul>
+
+    <p>This guide shows you how to build a <strong>fully automated podcast audio processing pipeline</strong> that turns a raw recording into a broadcast‑ready podcast episode — all driven by PostgreSQL triggers and pgmq.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>One SQL script</strong> — everything is set up with a single execution.</li>
+        <li><strong>Zero manual intervention</strong> — upload a recording, get a polished podcast episode.</li>
+        <li><strong>Professional audio processing</strong> — loudness normalization, noise reduction, format conversion, metadata, and waveforms.</li>
+        <li><strong>Scalable and reliable</strong> — pgmq provides durable, transaction‑safe job queuing.</li>
+        <li><strong>Video support</strong> — extract audio from video files automatically.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: From Raw Audio to Podcast-Ready</h2>
+
+    <p>Most podcasters record audio in high‑quality formats (WAV, FLAC) and then manually process it: normalize loudness, remove noise, convert to MP3, add metadata, and create a waveform image. This is time‑consuming and inconsistent.</p>
+
+    <p>What if the pipeline could be <strong>fully automated</strong> — triggered by the upload itself, processing in the background, and delivering a complete podcast episode ready for distribution?</p>
+
+    <p>This guide shows you exactly how to build that pipeline.</p>
+
+    <h2 id="architecture">Architecture Overview</h2>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">User Uploads Audio/Video</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Supabase Storage</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">PostgreSQL Trigger</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">pgmq Queue</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">ffmpeglab-runner</span>
+      <br/>
+      <span style="color:#34d399;">Processed Audio</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Public Folder</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">pg_notify</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">User Notified</span>
+    </div>
+
+    <p>The pipeline consists of:</p>
+    <ul>
+      <li><strong>Supabase Storage</strong> — two buckets: <code>private-uploads</code> (per‑user) and <code>public-processed</code> (per‑user, with subfolders for audio and waveforms).</li>
+      <li><strong>RLS policies</strong> — restrict access to each user's own folders.</li>
+      <li><strong>PostgreSQL trigger</strong> — fires on <code>INSERT</code> into <code>storage.objects</code>.</li>
+      <li><strong>pgmq</strong> — message queue for job processing.</li>
+      <li><strong>ffmpeglab-runner</strong> — executes FFmpeg commands for audio processing.</li>
+      <li><strong>pg_notify</strong> — real‑time status updates.</li>
+    </ul>
+
+    <p><strong>Important:</strong> This pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It does <strong>not</strong> create new tables — it only adds the pipeline components.</p>
+
+    <h2 id="what-it-delivers">What the Pipeline Delivers</h2>
+
+    <table class="schema-table">
+      <thead>
+        <tr><th>Output</th><th>Format</th><th>Location</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Podcast Audio</strong></td><td>MP3 (192kbps) with ID3v2 metadata</td><td><code>public-processed/{userId}/podcast/</code></td></tr>
+        <tr><td><strong>Waveform Image</strong></td><td>PNG (1200×200)</td><td><code>public-processed/{userId}/waveforms/</code></td></tr>
+        <tr><td><strong>Metadata</strong></td><td>Title, Artist, Album, Genre, Cover Art</td><td>ID3v2 tags (embedded in MP3)</td></tr>
+        <tr><td><strong>Real‑time notifications</strong></td><td><code>pg_notify</code> channels</td><td>N/A</td></tr>
+        <tr><td><strong>Job tracking</strong></td><td><code>render</code> table</td><td>Existing FFmpegLab table</td></tr>
+        <tr><td><strong>Logs</strong></td><td><code>logpiece</code> table</td><td>Existing FFmpegLab table</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="prerequisites">Prerequisites</h2>
+
+    <ul>
+      <li>A <a href="https://supabase.com">Supabase project</a> (cloud or self‑hosted).</li>
+      <li><strong>ffmpeglab-server</strong> and <strong>ffmpeglab-runner</strong> deployed (<a href="agent-first-setup-ffmpeglab-server.html">see setup guide</a>).</li>
+      <li>The <code>render</code> and <code>logpiece</code> tables must already exist (created by the FFmpegLab server migrations).</li>
+      <li>Access to your Supabase database (psql or the Supabase SQL Editor).</li>
+    </ul>
+
+    <h2 id="quick-start">Quick Start – The Setup Script</h2>
+
+    <p>The fastest way to set up the pipeline is to run the SQL script.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Save the SQL script</div>
+      <div class="step-desc">Copy the complete SQL script from the <a href="#setup-script">section below</a> and save it as <code>setup_audio_pipeline.sql</code>.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Run the script</div>
+      <div class="step-desc">Execute the script against your Supabase database.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Via psql</span>
+        psql -U postgres -d your_database -f setup_audio_pipeline.sql
+        <br/><br/>
+        <span style="color: #6b7280;"># Or via the Supabase SQL Editor</span>
+        <span style="color: #6b7280;"># Copy and paste the entire script into the SQL Editor and run it.</span>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Configure the runner</div>
+      <div class="step-desc">Add the audio processing queue to your runner's environment.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Add to your .env or docker-compose.yml</span>
+        AUDIO_QUEUE_NAME=audio_processing_queue
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Restart the runner</div>
+      <div class="step-desc">Restart the runner to pick up the new queue.</div>
+      <div class="code-block">
+        docker compose restart ffmpeglab-runner
+      </div>
+    </div>
+
+    <p>That's it! The pipeline is now live. Users can upload audio files to <code>private-uploads/{userId}/</code>, and they will be automatically processed into podcast‑ready episodes.</p>
+
+    <h2 id="setup-script">The Complete SQL Setup Script</h2>
+
+    <p><strong>Note:</strong> This script assumes that the <code>render</code> and <code>logpiece</code> tables already exist (from the FFmpegLab server migrations). It only adds the pipeline components.</p>
+
+    <div class="code-block">
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- AUDIO PROCESSING PIPELINE FOR PODCASTS</span><br/>
+      <span class="sql-comment">-- Complete SQL Setup Script</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- This script adds the audio processing pipeline components.</span><br/>
+      <span class="sql-comment">-- It assumes the render and logpiece tables already exist.</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 1. Create storage buckets</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">INSERT INTO</span> storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)<br/>
+      <span class="sql-kw">VALUES</span> <br/>
+          (<span class="sql-str">'private-uploads'</span>, <span class="sql-str">'private-uploads'</span>, <span class="sql-kw">false</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'audio/mpeg'</span>, <span class="sql-str">'audio/wav'</span>, <span class="sql-str">'audio/x-wav'</span>, <span class="sql-str">'audio/flac'</span>, <span class="sql-str">'audio/aac'</span>, <span class="sql-str">'audio/mp4'</span>, <span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/webm'</span>]),<br/>
+          (<span class="sql-str">'public-processed'</span>, <span class="sql-str">'public-processed'</span>, <span class="sql-kw">true</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'audio/mpeg'</span>, <span class="sql-str">'image/png'</span>])<br/>
+      <span class="sql-kw">ON CONFLICT</span> (id) <span class="sql-kw">DO NOTHING</span>;<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 2. RLS policies for private-uploads bucket</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can upload to their own folder"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can upload to their own folder"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR INSERT</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">WITH CHECK</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can download from their own folder"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can download from their own folder"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR SELECT</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can update their own files"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can update their own files"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR UPDATE</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can delete their own files"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can delete their own files"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR DELETE</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 3. RLS policies for public-processed bucket</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Public read access to processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Public read access to processed media"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR SELECT</span><br/>
+      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Service role can manage processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Service role can manage processed media"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR ALL</span><br/>
+      <span class="sql-kw">TO service_role</span><br/>
+      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);<br/>
+      <br/>
+      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can read their own processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
+      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can read their own processed media"</span><br/>
+      <span class="sql-kw">ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR SELECT</span><br/>
+      <span class="sql-kw">TO authenticated</span><br/>
+      <span class="sql-kw">USING</span> (<br/>
+          bucket_id = <span class="sql-str">'public-processed'</span> <span class="sql-kw">AND</span><br/>
+          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
+      );<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 4. Enable pgmq extension and create the queue</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> pgmq;<br/>
+      <br/>
+      <span class="sql-kw">SELECT</span> pgmq.create(<span class="sql-str">'audio_processing_queue'</span>);<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 5. Create the trigger function for audio uploads</span><br/>
+      <span class="sql-comment">-- This function builds the exact FFmpeg commands to be executed by the runner.</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">DROP FUNCTION IF EXISTS</span> handle_audio_upload() <span class="sql-kw">CASCADE</span>;<br/>
+      <br/>
+      <span class="sql-kw">CREATE OR REPLACE FUNCTION</span> handle_audio_upload()<br/>
+      <span class="sql-kw">RETURNS TRIGGER AS $$</span><br/>
+      <span class="sql-kw">DECLARE</span><br/>
+          user_id <span class="sql-type">text</span>;<br/>
+          file_path <span class="sql-type">text</span>;<br/>
+          file_name <span class="sql-type">text</span>;<br/>
+          file_extension <span class="sql-type">text</span>;<br/>
+          mime_type <span class="sql-type">text</span>;<br/>
+          base_filename <span class="sql-type">text</span>;<br/>
+          msg <span class="sql-type">jsonb</span>;<br/>
+          commands <span class="sql-type">jsonb</span> := <span class="sql-str">'[]'</span>;<br/>
+          audio_mime_types <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'audio/mpeg'</span>, <span class="sql-str">'audio/wav'</span>, <span class="sql-str">'audio/x-wav'</span>, <span class="sql-str">'audio/flac'</span>, <span class="sql-str">'audio/aac'</span>, <span class="sql-str">'audio/mp4'</span>];<br/>
+          video_mime_types <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/webm'</span>];<br/>
+          is_audio <span class="sql-type">boolean</span>;<br/>
+      <span class="sql-kw">BEGIN</span><br/>
+          -- Only process files in the private-uploads bucket<br/>
+          <span class="sql-kw">IF</span> NEW.bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">THEN</span><br/>
+              user_id := (storage.foldername(NEW.name))[1];<br/>
+              file_path := NEW.name;<br/>
+              file_name := (storage.filename(NEW.name));<br/>
+              file_extension := split_part(file_name, <span class="sql-str">'.'</span>, array_length(string_to_array(file_name, <span class="sql-str">'.'</span>), 1));<br/>
+              mime_type := NEW.metadata->><span class="sql-str">'mimetype'</span>;<br/>
+              base_filename := replace(file_name, <span class="sql-str">'.'</span> || file_extension, <span class="sql-str">''</span>);<br/>
+              is_audio := mime_type = <span class="sql-kw">ANY</span>(audio_mime_types) <span class="sql-kw">OR</span> mime_type = <span class="sql-kw">ANY</span>(video_mime_types);<br/>
+      <br/>
+              <span class="sql-kw">IF</span> is_audio <span class="sql-kw">THEN</span><br/>
+                  -- Build the main podcast processing command<br/>
+                  commands := commands || jsonb_build_object(<br/>
+                      <span class="sql-str">'type'</span>, <span class="sql-str">'podcast'</span>,<br/>
+                      <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/podcast/'</span> || base_filename || <span class="sql-str">'.mp3'</span>,<br/>
+                      <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -af "loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nr=10:nf=-40" -c:a libmp3lame -b:a 192k -ac 2 -ar 44100 -metadata title="'</span> || base_filename || <span class="sql-str">'" -metadata artist="Podcast" -metadata album="Podcast Episodes" -metadata genre="Podcast" "OUTPUT_FILE"'</span><br/>
+                  );<br/>
+      <br/>
+                  -- Build the waveform generation command<br/>
+                  commands := commands || jsonb_build_object(<br/>
+                      <span class="sql-str">'type'</span>, <span class="sql-str">'waveform'</span>,<br/>
+                      <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/waveforms/'</span> || base_filename || <span class="sql-str">'.png'</span>,<br/>
+                      <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -filter_complex "showwavespic=s=1200x200:colors=#FC6D26" -frames:v 1 "OUTPUT_FILE"'</span><br/>
+                  );<br/>
+      <br/>
+                  -- Build the job message<br/>
+                  msg := jsonb_build_object(<br/>
+                      <span class="sql-str">'userId'</span>, user_id,<br/>
+                      <span class="sql-str">'inputPath'</span>, file_path,<br/>
+                      <span class="sql-str">'inputBucket'</span>, NEW.bucket_id,<br/>
+                      <span class="sql-str">'outputBucket'</span>, <span class="sql-str">'public-processed'</span>,<br/>
+                      <span class="sql-str">'fileName'</span>, file_name,<br/>
+                      <span class="sql-str">'baseFilename'</span>, base_filename,<br/>
+                      <span class="sql-str">'mimeType'</span>, mime_type,<br/>
+                      <span class="sql-str">'isVideo'</span>, mime_type = <span class="sql-kw">ANY</span>(video_mime_types),<br/>
+                      <span class="sql-str">'commands'</span>, commands,<br/>
+                      <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()<br/>
+                  );<br/>
+      <br/>
+                  -- Push to pgmq queue<br/>
+                  <span class="sql-kw">PERFORM</span> pgmq.send(<span class="sql-str">'audio_processing_queue'</span>, msg::<span class="sql-type">jsonb</span>);<br/>
+      <br/>
+                  -- Insert into render table for job tracking<br/>
+                  <span class="sql-kw">INSERT INTO</span> <span class="sql-str">"render"</span> (id, title, project, status, public, user_id, data)<br/>
+                  <span class="sql-kw">VALUES</span> (<br/>
+                      <span class="sql-fn">gen_random_uuid</span>(),<br/>
+                      file_name,<br/>
+                      <span class="sql-str">'audio-processing'</span>,<br/>
+                      <span class="sql-str">'queued'</span>,<br/>
+                      <span class="sql-kw">false</span>,<br/>
+                      user_id::<span class="sql-type">uuid</span>,<br/>
+                      msg<br/>
+                  );<br/>
+      <br/>
+                  -- Notify via pg_notify<br/>
+                  <span class="sql-kw">PERFORM</span> pg_notify(<br/>
+                      <span class="sql-str">'audio_upload_channel'</span>,<br/>
+                      jsonb_build_object(<br/>
+                          <span class="sql-str">'userId'</span>, user_id,<br/>
+                          <span class="sql-str">'filePath'</span>, file_path,<br/>
+                          <span class="sql-str">'fileName'</span>, file_name,<br/>
+                          <span class="sql-str">'status'</span>, <span class="sql-str">'queued'</span>,<br/>
+                          <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()<br/>
+                      )::<span class="sql-type">text</span><br/>
+                  );<br/>
+              <span class="sql-kw">END IF</span>;<br/>
+          <span class="sql-kw">END IF</span>;<br/>
+      <br/>
+          <span class="sql-kw">RETURN</span> NEW;<br/>
+      <span class="sql-kw">END;</span><br/>
+      <span class="sql-kw">$$ LANGUAGE plpgsql SECURITY DEFINER;</span><br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 6. Attach the trigger to storage.objects</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">DROP TRIGGER IF EXISTS</span> audio_upload_trigger <span class="sql-kw">ON</span> storage.objects;<br/>
+      <br/>
+      <span class="sql-kw">CREATE TRIGGER</span> audio_upload_trigger<br/>
+      <span class="sql-kw">AFTER INSERT ON</span> storage.objects<br/>
+      <span class="sql-kw">FOR EACH ROW</span><br/>
+      <span class="sql-kw">EXECUTE FUNCTION</span> handle_audio_upload();<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 7. Helper views for monitoring</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <br/>
+      <span class="sql-kw">DROP VIEW IF EXISTS</span> audio_processing_queue_view;<br/>
+      <br/>
+      <span class="sql-kw">CREATE OR REPLACE VIEW</span> audio_processing_queue_view <span class="sql-kw">AS</span><br/>
+      <span class="sql-kw">SELECT</span> <br/>
+          msg_id,<br/>
+          read_ct,<br/>
+          enqueued_at,<br/>
+          vt,<br/>
+          message::<span class="sql-type">jsonb</span> <span class="sql-kw">as</span> payload,<br/>
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'userId'</span>) <span class="sql-kw">as</span> user_id,<br/>
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'fileName'</span>) <span class="sql-kw">as</span> file_name,<br/>
+          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'isVideo'</span>)::<span class="sql-type">boolean</span> <span class="sql-kw">as</span> is_video<br/>
+      <span class="sql-kw">FROM</span> pgmq.q_audio_processing_queue<br/>
+      <span class="sql-kw">ORDER BY</span> msg_id <span class="sql-kw">DESC</span>;<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- 8. Initialize notification channels</span><br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-kw">DO $$</span><br/>
+      <span class="sql-kw">BEGIN</span><br/>
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'audio_upload_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'render_status_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
+          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'log_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
+      <span class="sql-kw">END $$</span>;<br/>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- All done!</span><br/>
+      <span class="sql-comment">-- ============================================================</span>
+    </div>
+
+    <h2 id="what-it-does">What the Script Does</h2>
+
+    <table class="schema-table">
+      <thead>
+        <tr><th>Component</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Storage Buckets</strong></td><td>Creates <code>private-uploads</code> (private) and <code>public-processed</code> (public) buckets with file size limits and allowed MIME types</td></tr>
+        <tr><td><strong>RLS Policies</strong></td><td>Sets per‑user isolation for private uploads and public read access for processed media</td></tr>
+        <tr><td><strong>pgmq Queue</strong></td><td>Creates the <code>audio_processing_queue</code> for job processing</td></tr>
+        <tr><td><strong>Trigger Function</strong></td><td><code>handle_audio_upload()</code> — fires on new uploads, builds FFmpeg commands for podcast processing, pushes to pgmq, inserts into <code>render</code>, sends notifications</td></tr>
+        <tr><td><strong>Views</strong></td><td>Helper views for monitoring queue status</td></tr>
+        <tr><td><strong>Uses Existing Tables</strong></td><td>Uses <code>render</code> for job tracking and <code>logpiece</code> for logs (from FFmpegLab server)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="processing-logic">Processing Logic Explained</h2>
+
+    <p>When a file is uploaded to <code>private-uploads/{userId}/</code>, the pipeline:</p>
+
+    <ol>
+      <li><strong>Detects if it's audio or video</strong> — video files have their audio track extracted.</li>
+      <li><strong>Builds the exact FFmpeg commands</strong> for audio processing and waveform generation.</li>
+      <li><strong>Creates a render job</strong> in the existing <code>render</code> table with the commands in the <code>data</code> column.</li>
+      <li><strong>Pushes a job</strong> to the <code>audio_processing_queue</code> with the commands payload.</li>
+      <li><strong>Sends a notification</strong> via <code>pg_notify</code>.</li>
+      <li>The <strong>ffmpeglab-runner</strong> picks up the job, resolves the <code>INPUT_FILE</code> and <code>OUTPUT_FILE</code> placeholders, and executes the commands.</li>
+    </ol>
+
+    <h2 id="ffmpeg-commands">Exact FFmpeg Commands</h2>
+
+    <p>The trigger function generates the following FFmpeg commands using placeholders:</p>
+
+    <ul>
+      <li><strong><code>INPUT_FILE</code></strong> — The path to the downloaded input file (resolved by the runner).</li>
+      <li><strong><code>OUTPUT_FILE</code></strong> — The temporary path for the output file (resolved by the runner).</li>
+    </ul>
+
+    <h3>1. Podcast Audio Processing</h3>
+
+    <div class="code-block">
+      ffmpeg -i "INPUT_FILE" -af "loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nr=10:nf=-40" -c:a libmp3lame -b:a 192k -ac 2 -ar 44100 -metadata title="Episode Title" -metadata artist="Podcast Name" -metadata album="Podcast Episodes" -metadata genre="Podcast" "OUTPUT_FILE"
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">💡</div>
+      <div class="step-title">Audio Processing Parameters Explained</div>
+      <div class="step-desc">
+        <ul>
+          <li><strong><code>loudnorm=I=-16:LRA=11:TP=-1.5</code></strong> — EBU R128 loudness normalization targeting -16 LUFS (podcast standard)</li>
+          <li><strong><code>afftdn=nr=10:nf=-40</code></strong> — FFT-based noise reduction (10dB reduction, -40dB noise floor)</li>
+          <li><strong><code>-c:a libmp3lame -b:a 192k</code></strong> — MP3 encoding at 192kbps</li>
+          <li><strong><code>-ac 2 -ar 44100</code></strong> — Stereo, 44.1kHz sample rate</li>
+          <li><strong><code>-metadata</code></strong> — ID3v2 metadata tags (title, artist, album, genre)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>2. Waveform Generation</h3>
+
+    <div class="code-block">
+      ffmpeg -i "INPUT_FILE" -filter_complex "showwavespic=s=1200x200:colors=#FC6D26" -frames:v 1 "OUTPUT_FILE"
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">💡</div>
+      <div class="step-title">Waveform Parameters Explained</div>
+      <div class="step-desc">
+        <ul>
+          <li><strong><code>showwavespic</code></strong> — FFmpeg filter that generates a waveform image</li>
+          <li><strong><code>s=1200x200</code></strong> — Output image size (1200×200 pixels)</li>
+          <li><strong><code>colors=#FC6D26</code></strong> — Waveform color (FFmpegLab orange)</li>
+          <li><strong><code>-frames:v 1</code></strong> — Output a single frame (image)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>FFmpeg Command Table (Quick Reference)</h3>
+
+    <table class="schema-table">
+      <thead>
+        <tr><th>Operation</th><th>FFmpeg Command</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Podcast Processing</strong></td><td><code>ffmpeg -i input.wav -af "loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nr=10:nf=-40" -c:a libmp3lame -b:a 192k -ac 2 -ar 44100 -metadata title="Episode" -metadata artist="Podcast" output.mp3</code></td></tr>
+        <tr><td><strong>Waveform Generation</strong></td><td><code>ffmpeg -i input.mp3 -filter_complex "showwavespic=s=1200x200:colors=#FC6D26" -frames:v 1 waveform.png</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="configure-runner">Configure ffmpeglab-runner</h2>
+
+    <p>The runner needs to be configured to poll the <code>audio_processing_queue</code> and execute the provided FFmpeg commands.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Add the queue to your environment</div>
+      <div class="step-desc">Add the following to your <code>.env</code> file or Docker Compose configuration.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Audio processing queue</span>
+        AUDIO_QUEUE_NAME=audio_processing_queue
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Implement the processing loop</div>
+      <div class="step-desc">The runner should execute the following steps for each job:</div>
+      <div class="code-block" style="max-height: 300px;">
+        <span style="color: #6b7280;"># 1. Connect to Supabase and listen to the queue</span>
+        <br/><br/>
+        <span style="color: #6b7280;"># 2. For each job:</span>
+        <br/>
+        <span style="color: #6b7280;">#    a. Download the input file from private-uploads</span>
+        <br/>
+        <span style="color: #6b7280;">#    b. Parse the 'commands' array from the job payload</span>
+        <br/>
+        <span style="color: #6b7280;">#    c. For each command:</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Replace 'INPUT_FILE' with the local input path</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Replace 'OUTPUT_FILE' with a temporary local path</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Execute the FFmpeg command</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Upload the output file to public-processed/{output_path}</span>
+        <br/>
+        <span style="color: #6b7280;">#        - Update the render table with progress and logs</span>
+        <br/>
+        <span style="color: #6b7280;">#    d. Mark the job as complete in the render table</span>
+        <br/>
+        <span style="color: #6b7280;">#    e. Delete the job from the queue</span>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Install FFmpeg on the runner</div>
+      <div class="step-desc">Ensure FFmpeg is installed and available in the PATH.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;"># Debian/Ubuntu</span>
+        apt-get install -y ffmpeg
+        <br/><br/>
+        <span style="color: #6b7280;"># Alpine</span>
+        apk add ffmpeg
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Restart the runner</div>
+      <div class="step-desc">After updating the environment, restart the runner service.</div>
+      <div class="code-block">
+        docker compose restart ffmpeglab-runner
+      </div>
+    </div>
+
+    <h2 id="monitor">Monitor the Pipeline</h2>
+
+    <p>You can monitor the pipeline using SQL queries and notifications.</p>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Check queued jobs</div>
+      <div class="step-desc">Use the helper view to see all queued jobs.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> audio_processing_queue_view;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Check render status</div>
+      <div class="step-desc">Query the existing <code>render</code> table for job status.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> id, title, status, progress, data<br/>
+        <span class="sql-kw">FROM</span> <span class="sql-str">"render"</span><br/>
+        <span class="sql-kw">WHERE</span> project = <span class="sql-str">'audio-processing'</span><br/>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Listen to notifications</div>
+      <div class="step-desc">In your application, listen for real‑time updates.</div>
+      <div class="code-block">
+        <span style="color: #6b7280;">-- In your PostgreSQL client:</span><br/>
+        <span class="sql-kw">LISTEN</span> audio_upload_channel;<br/>
+        <span class="sql-kw">LISTEN</span> render_status_channel;<br/>
+        <span class="sql-kw">LISTEN</span> log_channel;
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Check processed files</div>
+      <div class="step-desc">List all processed files in the public bucket.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> name, metadata, created_at <span class="sql-kw">FROM</span> storage.objects<br/>
+        <span class="sql-kw">WHERE</span> bucket_id = <span class="sql-str">'public-processed'</span><br/>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
+      </div>
+    </div>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What audio processing does the pipeline perform?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The pipeline automatically normalizes loudness (EBU R128 with -16 LUFS target), reduces background noise using FFT-based denoising, converts formats, adds MP3 metadata, and generates waveform images for podcasts.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What FFmpeg filters are used?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The pipeline uses <code>loudnorm</code> for loudness normalization, <code>afftdn</code> for noise reduction, <code>aformat</code> for format conversion, <code>ametadata</code> for MP3 tags, and <code>showwaves</code> for waveform visualization.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can this handle videos as input?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. The pipeline detects video files and extracts the audio track before processing. This makes it perfect for podcasters who record video interviews or screen recordings.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What podcast metadata is supported?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The pipeline supports title, artist (podcast name), album, genre, comment, and cover art (podcast artwork) in ID3v2 tags for MP3 files. You can customize these by modifying the metadata fields in the FFmpeg command.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does this pipeline create new tables?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No. The pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It only adds storage buckets, RLS policies, the pgmq queue, and the trigger function — no table conflicts.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>You now have a <strong>fully automated podcast audio processing pipeline</strong> that turns a raw recording into a broadcast‑ready podcast episode. With PostgreSQL triggers, pgmq, and Supabase Storage, you get:</p>
+
+    <ul>
+      <li><strong>Professional loudness normalization</strong> — EBU R128 compliant</li>
+      <li><strong>Noise reduction</strong> — clean, clear audio</li>
+      <li><strong>MP3 conversion</strong> — with ID3v2 metadata</li>
+      <li><strong>Waveform visualization</strong> — for podcast players</li>
+      <li><strong>Video support</strong> — extract audio from videos</li>
+      <li><strong>Real‑time notifications</strong> — know when processing is complete</li>
+      <li><strong>Full observability</strong> — monitoring views and logs</li>
+    </ul>
+
+    <p>The pipeline is <strong>production‑ready</strong>, <strong>scalable</strong>, and <strong>configurable</strong>. It uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server, so there are no table conflicts — just pure, automated audio processing.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="agent-first-setup-ffmpeglab-server.html">Agent-First Setup Guide – FFmpegLab Server</a></li>
+        <li><a href="ffmpeg-env-vars-scalable-runners.html">Environment Variables &amp; Scalable Runners</a></li>
+        <li><a href="setting-up-supabase-storage-ffmpeglab.html">Setting Up Supabase Storage with FFmpegLab</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

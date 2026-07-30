@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DNN Filters in FFmpeg – AI-Powered Video Processing Guide</title>
+  <meta name="description" content="Master DNN filters in FFmpeg. Learn to use dnn_processing for super-resolution and denoising, dnn_detect for object detection, and dnn_classify for classification with TensorFlow, OpenVINO, and Torch backends." />
+  <meta name="keywords" content="ffmpeg dnn, ffmpeg neural network, ffmpeg dnn_processing, ffmpeg dnn_detect, ffmpeg dnn_classify, ffmpeg AI video processing, ffmpeg tensorflow, ffmpeg openvino, ffmpeg torch" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-dnn-filters-ai-processing.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-dnn-filters-ai-processing.html" />
+  <meta property="og:title" content="DNN Filters in FFmpeg – AI-Powered Video Processing Guide" />
+  <meta property="og:description" content="Master DNN filters in FFmpeg. Learn to use dnn_processing for super-resolution and denoising, dnn_detect for object detection, and dnn_classify for classification with TensorFlow, OpenVINO, and Torch backends." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "DNN Filters in FFmpeg – AI-Powered Video Processing Guide",
+      "description": "Master DNN filters in FFmpeg. Learn to use dnn_processing for super-resolution and denoising, dnn_detect for object detection, and dnn_classify for classification with TensorFlow, OpenVINO, and Torch backends.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-08",
+      "dateModified": "2026-07-08",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-dnn-filters-ai-processing.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What DNN backends does FFmpeg support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "FFmpeg supports three DNN backends: Native (built-in), TensorFlow, OpenVINO, and Torch (LibTorch). The native backend requires converting models to .model format, TensorFlow uses .pb files, OpenVINO uses .xml/.bin pairs, and Torch uses .pt files."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I convert a TensorFlow model for FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use the convert.py script in FFmpeg's tools/python directory: python tools/python/convert.py halve_first_channel.pb halve_first_channel.model. The model file can then be used with dnn_backend=native."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What pixel formats does dnn_processing support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Currently, dnn_processing only supports RGB24 and BGR24 formats. The filter documentation states that 'more formats will be added later'."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use dnn_detect and dnn_classify together?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. dnn_detect performs object detection and adds bounding boxes as side data. dnn_classify can then classify each detected object based on those bounding boxes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does FFmpeg support GPU acceleration for DNN filters?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, through the OpenVINO backend which can use Intel GPUs, and the Torch backend which can leverage CUDA for NVIDIA GPUs. The TensorFlow backend also supports GPU acceleration if TensorFlow was built with GPU support."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .backend-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .backend-native { background: #6b7280; color: #f3f4f6; }
+    .backend-tf { background: #f97316; color: #fff; }
+    .backend-ov { background: #3b82f6; color: #fff; }
+    .backend-torch { background: #a855f7; color: #fff; }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .comparison-card {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid #2d2d3d;
+      text-align: center;
+    }
+    .comparison-card h4 {
+      margin-top: 0;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    .comparison-card .icon {
+      font-size: 2rem;
+      margin: 0.5rem 0;
+    }
+    .comparison-card .desc {
+      font-size: 0.8rem;
+      color: #a1a1aa;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+    }
+    .filter-diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .filter-diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .filter-diagram .filter-name {
+      color: #34d399;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / DNN Filters</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>DNN Filters – AI-Powered Video Processing</h1>
+      <p class="dek">Super‑resolution, denoising, object detection, and image classification—all inside FFmpeg. Master the <code>dnn_processing</code>, <code>dnn_detect</code>, and <code>dnn_classify</code> filters.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <!-- Table of Contents -->
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: AI Inside FFmpeg, But Almost No One Knows</a></li>
+        <li><a href="#the-symptom">The Symptom: "I Need AI Video Processing—But How?"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Are DNN Filters?</a></li>
+        <li><a href="#dnn_processing">The <code>dnn_processing</code> Filter</a></li>
+        <li><a href="#dnn_detect">The <code>dnn_detect</code> Filter</a></li>
+        <li><a href="#dnn_classify">The <code>dnn_classify</code> Filter</a></li>
+        <li><a href="#backends">DNN Backends: Native, TensorFlow, OpenVINO, and Torch</a></li>
+        <li><a href="#setup">Setting Up DNN Support in FFmpeg</a></li>
+        <li><a href="#model-conversion">Model Conversion: From TensorFlow to Native</a></li>
+        <li><a href="#practical-sr">Practical Example 1: Super‑Resolution</a></li>
+        <li><a href="#practical-detect">Practical Example 2: Object Detection</a></li>
+        <li><a href="#practical-classify">Practical Example 3: Image Classification</a></li>
+        <li><a href="#practical-combined">Practical Example 4: Combined Detection + Classification</a></li>
+        <li><a href="#performance">Performance &amp; Hardware Considerations</a></li>
+        <li><a href="#debugging">Debugging Common DNN Issues</a></li>
+        <li><a href="#ide">Visualize DNN Filters with the FFmpegLab IDE</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>FFmpeg has had built‑in support for <strong>deep neural networks</strong> since 2019.[reference:0] You can upscale video with AI super‑resolution, remove noise, detect faces, classify objects, and more—all from the command line. Yet almost no one knows about these features.</p>
+
+    <p>The DNN filters are scattered across the documentation: <code>dnn_processing</code> for image processing, <code>dnn_detect</code> for object detection, and <code>dnn_classify</code> for classification.[reference:1] But the examples are sparse, the setup instructions are buried in mailing lists, and the model conversion process is almost undocumented.</p>
+
+    <p>This guide changes that. You'll learn exactly how to use FFmpeg's DNN filters—from setting up the backends to running real AI models on your video.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>dnn_processing</code></strong> applies AI models for image processing—super‑resolution, denoising, deblurring, and more.[reference:2]</li>
+        <li><strong><code>dnn_detect</code></strong> performs object detection with models like YOLO and face detection.[reference:3]</li>
+        <li><strong><code>dnn_classify</code></strong> classifies images based on content—now with CLIP/CLAP support.[reference:4]</li>
+        <li><strong>Four backends</strong> are supported: Native, TensorFlow, OpenVINO, and Torch (LibTorch).[reference:5][reference:6]</li>
+        <li><strong>Only RGB24 and BGR24</strong> are currently supported for <code>dnn_processing</code>.[reference:7]</li>
+        <li><strong>All processing happens in‑browser</strong> with FFmpegLab—0 bytes uploaded, 100% private.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: AI Inside FFmpeg, But Almost No One Knows</h2>
+
+    <p>The first DNN filter—<code>dnn_processing</code>—was added to FFmpeg in October 2019.[reference:8] Since then, <code>dnn_detect</code> and <code>dnn_classify</code> have been added.[reference:9][reference:10] Yet the official documentation is sparse, and practical examples are almost non‑existent.</p>
+
+    <p>As one user asked on the FFmpeg mailing list: <em>"Does those filters support text/face recognition? Is there some command examples?"</em>[reference:11] The answer, buried in developer threads, is yes—but finding the information requires digging through patches and mailing list archives.[reference:12]</p>
+
+    <p>This guide brings everything together in one place.</p>
+
+    <h2 id="the-symptom">The Symptom: "I Need AI Video Processing—But How?"</h2>
+
+    <p>You've seen what AI can do: upscale old footage, remove noise, detect faces, classify objects. You know FFmpeg can do it—but every search leads to dead ends. The documentation mentions the filters but doesn't show you how to use them. The examples online are incomplete or use models you can't find.</p>
+
+    <p>You need a practical guide. This is it.</p>
+
+    <h2 id="core-concepts">Core Concepts: What Are DNN Filters?</h2>
+
+    <p>FFmpeg's DNN (Deep Neural Network) filters allow you to run AI models on video frames. There are three main filters:</p>
+
+    <div class="filter-diagram">
+      <span class="filter-name">Input Frame</span>
+      <span class="arrow">→</span>
+      <span class="filter-name">dnn_processing</span>
+      <span class="arrow">→</span>
+      <span class="filter-name">Processed Frame</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(Super‑resolution, denoising, deblurring, etc.)</span>
+    </div>
+
+    <div class="filter-diagram">
+      <span class="filter-name">Input Frame</span>
+      <span class="arrow">→</span>
+      <span class="filter-name">dnn_detect</span>
+      <span class="arrow">→</span>
+      <span class="filter-name">Frame + Bounding Boxes</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(Face detection, object detection, YOLO, etc.)</span>
+    </div>
+
+    <div class="filter-diagram">
+      <span class="filter-name">Input Frame</span>
+      <span class="arrow">→</span>
+      <span class="filter-name">dnn_classify</span>
+      <span class="arrow">→</span>
+      <span class="filter-name">Frame + Labels</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(Image classification, CLIP, CLAP, etc.)</span>
+    </div>
+
+    <p>Each filter loads a pre‑trained model, runs inference on each frame, and produces output—either a modified frame (for <code>dnn_processing</code>) or metadata (for <code>dnn_detect</code> and <code>dnn_classify</code>).</p>
+
+    <h2 id="dnn_processing">The <code>dnn_processing</code> Filter</h2>
+
+    <p>The <code>dnn_processing</code> filter is a <strong>generic image processing filter</strong> that accepts any DNN model that does image processing.[reference:13] It's the most versatile of the three DNN filters.</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>dnn_processing=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME[:fmt=FORMAT]</code></pre>
+
+    <p><strong>Options:</strong></p>
+    <ul>
+      <li><strong><code>dnn_backend</code></strong> — <code>native</code>, <code>tensorflow</code>, <code>openvino</code>, or <code>torch</code>. Default is <code>native</code>.[reference:14]</li>
+      <li><strong><code>model</code></strong> — Path to the model file.[reference:15]</li>
+      <li><strong><code>input</code></strong> — Name of the input tensor in the model.[reference:16]</li>
+      <li><strong><code>output</code></strong> — Name of the output tensor in the model.[reference:17]</li>
+      <li><strong><code>fmt</code></strong> — Pixel format: <code>rgb24</code> or <code>bgr24</code>. Default is <code>rgb24</code>.[reference:18]</li>
+    </ul>
+
+    <p><strong>Important limitations:</strong></p>
+    <ul>
+      <li>Currently, only <strong>RGB24 and BGR24</strong> formats are supported.[reference:19]</li>
+      <li>The DNN network can accept data in <strong>float32 or uint8</strong> format.[reference:20]</li>
+      <li>The network <strong>can change frame size</strong>—useful for super‑resolution.[reference:21]</li>
+    </ul>
+
+    <h2 id="dnn_detect">The <code>dnn_detect</code> Filter</h2>
+
+    <p>The <code>dnn_detect</code> filter performs <strong>object detection</strong> using deep learning networks.[reference:22] It detects objects in each frame and adds bounding boxes as <strong>side data</strong> that can be used by other filters.</p>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>dnn_detect=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME:confidence=THRESHOLD[:labels=LABELS_FILE]</code></pre>
+
+    <p><strong>Options:</strong></p>
+    <ul>
+      <li><strong><code>confidence</code></strong> — Confidence threshold (default: 0.5). Detections below this threshold are ignored.[reference:23]</li>
+      <li><strong><code>labels</code></strong> — Path to a label file mapping label IDs to names.[reference:24]</li>
+    </ul>
+
+    <p>When a detection is made, the filter adds side data with:</p>
+    <ul>
+      <li>Bounding box coordinates</li>
+      <li>Label name (if labels file is provided)</li>
+      <li>Confidence score</li>
+    </ul>
+
+    <p>As demonstrated in the FFmpeg developer mailing list, the output looks like:</p>
+
+    <pre><code>[Parsed_showinfo_1 @ 0x...] side data - detection bounding boxes:
+    index: 0, region: (1005, 813) -> (1086, 905), label: face, confidence: 10000/10000.
+    index: 1, region: (888, 839) -> (967, 926), label: face, confidence: 6917/10000.[reference:25]</code></pre>
+
+    <h2 id="dnn_classify">The <code>dnn_classify</code> Filter</h2>
+
+    <p>The <code>dnn_classify</code> filter performs <strong>classification</strong> on video frames or audio using deep neural networks.[reference:26] It supports three classification modes:[reference:27]</p>
+
+    <ul>
+      <li><strong>Standard image classification</strong> (OpenVINO backend)</li>
+      <li><strong>CLIP</strong> (Contrastive Language-Image Pre‑training) classification (Torch backend)</li>
+      <li><strong>CLAP</strong> (Contrastive Language-Audio Pre‑training) classification (Torch backend)</li>
+    </ul>
+
+    <p><strong>Syntax:</strong></p>
+
+    <pre><code>dnn_classify=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME:confidence=THRESHOLD[:labels=LABELS_FILE][:categories=CATEGORIES_FILE][:tokenizer=TOKENIZER_PATH]</code></pre>
+
+    <p><strong>Additional options:</strong></p>
+    <ul>
+      <li><strong><code>categories</code></strong> — Path to a categories file for hierarchical classification (CLIP/CLAP only).[reference:28]</li>
+      <li><strong><code>tokenizer</code></strong> — Path to the text tokenizer for CLIP/CLAP.[reference:29]</li>
+    </ul>
+
+    <h2 id="backends">DNN Backends: Native, TensorFlow, OpenVINO, and Torch</h2>
+
+    <p>FFmpeg supports <strong>four</strong> DNN backends, each with different capabilities and requirements.[reference:30]</p>
+
+    <div class="comparison-grid">
+      <div class="comparison-card">
+        <div class="icon">⚙️</div>
+        <h4>Native</h4>
+        <div class="desc"><span class="backend-badge backend-native">Native</span></div>
+        <div class="desc" style="margin-top:0.5rem;">Built‑in implementation. Requires models converted to <code>.model</code> format. Fastest for simple models.</div>
+      </div>
+      <div class="comparison-card">
+        <div class="icon">🧠</div>
+        <h4>TensorFlow</h4>
+        <div class="desc"><span class="backend-badge backend-tf">TensorFlow</span></div>
+        <div class="desc" style="margin-top:0.5rem;">Uses TensorFlow C API. Loads <code>.pb</code> files. Requires <code>--enable-libtensorflow</code> at build time.[reference:31]</div>
+      </div>
+      <div class="comparison-card">
+        <div class="icon">⚡</div>
+        <h4>OpenVINO</h4>
+        <div class="desc"><span class="backend-badge backend-ov">OpenVINO</span></div>
+        <div class="desc" style="margin-top:0.5rem;">Intel's inference engine. Loads <code>.xml</code>/<code>.bin</code> pairs. Optimized for Intel CPUs/GPUs.[reference:32]</div>
+      </div>
+      <div class="comparison-card">
+        <div class="icon">🔥</div>
+        <h4>Torch</h4>
+        <div class="desc"><span class="backend-badge backend-torch">Torch</span></div>
+        <div class="desc" style="margin-top:0.5rem;">LibTorch backend. Supports CLIP/CLAP classification. Loads <code>.pt</code> files.[reference:33]</div>
+      </div>
+    </div>
+
+    <h3>Backend Comparison</h3>
+
+    <table>
+      <thead>
+        <tr><th>Backend</th><th>Model Format</th><th>Best For</th><th>Build Requirement</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Native</strong></td><td><code>.model</code></td><td>Simple models, fast inference</td><td>None (built‑in)</td></tr>
+        <tr><td><strong>TensorFlow</strong></td><td><code>.pb</code></td><td>TensorFlow‑trained models</td><td><code>--enable-libtensorflow</code></td></tr>
+        <tr><td><strong>OpenVINO</strong></td><td><code>.xml</code> + <code>.bin</code></td><td>Intel hardware, face detection, object detection</td><td><code>--enable-libopenvino</code></td></tr>
+        <tr><td><strong>Torch</strong></td><td><code>.pt</code></td><td>CLIP/CLAP classification</td><td><code>--enable-libtorch</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>As noted in the FFmpeg documentation: <em>"Different backends use different file formats. TensorFlow and native backend can load files for only its format"</em>.[reference:34]</p>
+
+    <h2 id="setup">Setting Up DNN Support in FFmpeg</h2>
+
+    <p>To use DNN filters, you need to <strong>build FFmpeg from source</strong> with the appropriate backend enabled. Most pre‑built binaries do not include DNN support.[reference:35]</p>
+
+    <h3>1. Native Backend (No Additional Dependencies)</h3>
+
+    <p>The native backend is built‑in and requires no additional libraries. However, you need to convert models to the <code>.model</code> format.</p>
+
+    <h3>2. TensorFlow Backend</h3>
+
+    <pre><code># Install TensorFlow C library
+# Download from: https://www.tensorflow.org/install/install_c
+
+# Configure FFmpeg
+./configure --enable-libtensorflow \
+  --extra-cflags='-I/path/to/tensorflow/include' \
+  --extra-ldflags='-L/path/to/tensorflow/lib'</code></pre>
+
+    <h3>3. OpenVINO Backend</h3>
+
+    <p>As documented in the FFmpeg developer mailing list:[reference:36]</p>
+
+    <pre><code># 1. Download and install OpenVINO Toolkit
+# https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit/download.html
+
+# 2. Set environment variables
+export LD_LIBRARY_PATH=.../deployment_tools/inference_engine/lib/intel64/:.../deployment_tools/inference_engine/external/tbb/lib/
+
+# 3. Configure FFmpeg
+./configure --enable-libopenvino \
+  --extra-cflags='-I.../deployment_tools/inference_engine/include/' \
+  --extra-ldflags='-L.../deployment_tools/inference_engine/lib/intel64'</code></pre>
+
+    <h3>4. Torch (LibTorch) Backend</h3>
+
+    <p>For CLIP/CLAP support, you need the Torch backend.[reference:37]</p>
+
+    <pre><code># Download LibTorch from: https://pytorch.org/get-started/locally/
+./configure --enable-libtorch \
+  --extra-cflags='-I/path/to/libtorch/include' \
+  --extra-ldflags='-L/path/to/libtorch/lib'</code></pre>
+
+    <h2 id="model-conversion">Model Conversion: From TensorFlow to Native</h2>
+
+    <p>The native backend uses a <code>.model</code> file format that can be generated from a TensorFlow <code>.pb</code> file using FFmpeg's conversion script.[reference:38]</p>
+
+    <p>Here's a complete example from the FFmpeg commit that introduced <code>dnn_processing</code>:[reference:39]</p>
+
+    <h3>Step 1: Create a TensorFlow Model</h3>
+
+    <p>This Python script creates a simple model that halves the value of the first channel (e.g., reduces red channel intensity):[reference:40]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Python script to create a TensorFlow model (halve_first_channel.py)
+import tensorflow as tf
+import numpy as np
+import imageio
+
+in_img = imageio.imread('in.bmp')
+in_img = in_img.astype(np.float32)/255.0
+in_data = in_img[np.newaxis, :]
+
+# Filter that halves the first channel (R) and leaves G and B unchanged
+filter_data = np.array([0.5, 0, 0, 0, 1., 0, 0, 0, 1.]).reshape(1,1,3,3).astype(np.float32)
+filter = tf.Variable(filter_data)
+
+x = tf.placeholder(tf.float32, shape=[1, None, None, 3], name='dnn_in')
+y = tf.nn.conv2d(x, filter, strides=[1, 1, 1, 1], padding='VALID', name='dnn_out')
+
+sess=tf.Session()
+sess.run(tf.global_variables_initializer())
+output = sess.run(y, feed_dict={x: in_data})
+
+# Save as .pb file
+graph_def = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ['dnn_out'])
+tf.train.write_graph(graph_def, '.', 'halve_first_channel.pb', as_text=False)
+
+# Verify output
+output = output * 255.0
+output = output.astype(np.uint8)
+imageio.imsave("out.bmp", np.squeeze(output))[reference:41]</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h3>Step 2: Convert to Native Format</h3>
+
+    <p>Use FFmpeg's conversion script to generate the <code>.model</code> file for the native backend:[reference:42]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Convert .pb to .model for native backend
+python tools/python/convert.py halve_first_channel.pb halve_first_channel.model[reference:43]</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h3>Step 3: Run with FFmpeg</h3>
+
+    <p>Now you can use the model with both the native and TensorFlow backends:[reference:44]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Native backend
+ffmpeg -i input.jpg -vf "dnn_processing=model=halve_first_channel.model:input=dnn_in:output=dnn_out:fmt=rgb24:dnn_backend=native" -y out.native.png
+
+# TensorFlow backend
+ffmpeg -i input.jpg -vf "dnn_processing=model=halve_first_channel.pb:input=dnn_in:output=dnn_out:fmt=rgb24:dnn_backend=tensorflow" -y out.tf.png[reference:45]</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="practical-sr">Practical Example 1: Super‑Resolution</h2>
+
+    <p>Super‑resolution models upscale images while preserving detail. FFmpeg's <code>dnn_processing</code> filter can run super‑resolution models like SRCNN.[reference:46]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Super‑resolution with SRCNN model (OpenVINO backend)
+ffmpeg -i lowres.jpg -vf "dnn_processing=dnn_backend=openvino:model=srcnn.xml:input=data:output=srcnn" -y superres.jpg</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>As noted in the FFmpeg documentation: <em>"Scale factor is necessary for SRCNN model, because it input upscaled using bicubic upscaling with proper scale factor"</em>.[reference:47]</p>
+
+    <p>For the native backend, you can find pre‑trained models at:</p>
+    <pre><code>https://github.com/guoyejun/ffmpeg_dnn/tree/main/models/openvino/2021.1[reference:48]</code></pre>
+
+    <h2 id="practical-detect">Practical Example 2: Object Detection</h2>
+
+    <p>Face detection with OpenVINO—a complete example from the FFmpeg developer mailing list:[reference:49]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Face detection with OpenVINO
+# Download models:
+# wget https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/face-detection-adas-0001.bin
+# wget https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/face-detection-adas-0001.xml
+# wget https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/face-detection-adas-0001.label
+
+ffmpeg -i cici.jpg -vf "dnn_detect=dnn_backend=openvino:model=face-detection-adas-0001.xml:input=data:output=detection_out:confidence=0.6:labels=face-detection-adas-0001.label,showinfo" -f null -[reference:50]</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>The output will show detected faces with confidence scores:</p>
+
+    <pre><code>[Parsed_showinfo_1 @ 0x...] side data - detection bounding boxes:
+    index: 0, region: (1005, 813) -> (1086, 905), label: face, confidence: 10000/10000.
+    index: 1, region: (888, 839) -> (967, 926), label: face, confidence: 6917/10000.[reference:51]</code></pre>
+
+    <h2 id="practical-classify">Practical Example 3: Image Classification</h2>
+
+    <p>Classify images with the <code>dnn_classify</code> filter. The filter supports standard classification with OpenVINO, and CLIP/CLAP with the Torch backend.[reference:52]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Standard image classification with OpenVINO
+ffmpeg -i image.jpg -vf "dnn_classify=dnn_backend=openvino:model=classification.xml:input=data:output=prob:confidence=0.5:labels=imagenet.txt,showinfo" -f null -</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>For CLIP‑based classification with the Torch backend:</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># CLIP classification with Torch backend
+ffmpeg -i image.jpg -vf "dnn_classify=dnn_backend=torch:model=clip.pt:labels=categories.txt:categories=units.txt:tokenizer=tokenizer.txt,showinfo" -f null -[reference:53]</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <h2 id="practical-combined">Practical Example 4: Combined Detection + Classification</h2>
+
+    <p>You can chain <code>dnn_detect</code> and <code>dnn_classify</code> together to first detect objects, then classify each detected object.[reference:54]</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Combined detection + classification
+ffmpeg -i image.jpg -vf "dnn_detect=dnn_backend=openvino:model=face-detection-adas-0001.xml:input=data:output=detection_out:confidence=0.6:labels=face-detection-adas-0001.label,dnn_classify=dnn_backend=openvino:model=emotions-recognition-retail-0003.xml:input=data:output=prob_emotion:confidence=0.3:labels=emotions-recognition-retail-0003.label:backend_configs='async=0',showinfo" -f null -[reference:55]</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This detects faces, then classifies the emotion of each detected face. As noted in the FFmpeg developer mailing list, <em>"classification is done on every detection bounding box in frame's side data"</em>.[reference:56]</p>
+
+    <h2 id="performance">Performance &amp; Hardware Considerations</h2>
+
+    <p>DNN inference is computationally intensive. Here are some performance considerations:</p>
+
+    <ul>
+      <li><strong>GPU acceleration</strong> is available through the OpenVINO backend (Intel GPUs) and the Torch backend (CUDA for NVIDIA GPUs).</li>
+      <li><strong>Async execution</strong> is supported. As noted in the FFmpeg docs: <em>"To get full functionality (such as async execution), please use the dnn_processing filter"</em>.[reference:57]</li>
+      <li><strong>Model size</strong> matters—larger models are more accurate but slower. The `confidence` parameter can be adjusted to trade accuracy for speed.[reference:58]</li>
+      <li><strong>Resolution</strong> affects performance—higher resolution frames take longer to process.</li>
+    </ul>
+
+    <h2 id="debugging">Debugging Common DNN Issues</h2>
+
+    <p>Here are the most common issues and how to fix them.</p>
+
+    <table>
+      <thead>
+        <tr><th>Problem</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>"DNN backend not found"</strong></td>
+          <td>FFmpeg wasn't built with the required backend</td>
+          <td>Rebuild FFmpeg with the appropriate <code>--enable-lib*</code> flag[reference:59]</td>
+        </tr>
+        <tr>
+          <td><strong>"Model file not found"</strong></td>
+          <td>Incorrect model path or missing model files</td>
+          <td>Download models from <code>https://github.com/guoyejun/ffmpeg_dnn</code>[reference:60]</td>
+        </tr>
+        <tr>
+          <td><strong>"Unsupported pixel format"</strong></td>
+          <td>Input format isn't RGB24 or BGR24</td>
+          <td>Add <code>format=rgb24</code> before the DNN filter[reference:61]</td>
+        </tr>
+        <tr>
+          <td><strong>"Input name not found"</strong></td>
+          <td>Wrong input tensor name</td>
+          <td>Check the model's input name (often <code>data</code> or <code>dnn_in</code>)[reference:62]</td>
+        </tr>
+        <tr>
+          <td><strong>"Async mode crashes"</strong></td>
+          <td>Async mode may have issues with some backends</td>
+          <td>Set <code>backend_configs='async=0'</code> to disable async[reference:63]</td>
+        </tr>
+        <tr>
+          <td><strong>No detections</strong></td>
+          <td>Confidence threshold too high or model not compatible</td>
+          <td>Lower the <code>confidence</code> threshold[reference:64]</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="ide">Visualize DNN Filters with the FFmpegLab IDE</h2>
+
+    <p>DNN filters are <strong>much easier to debug</strong> with visual feedback. The FFmpegLab IDE lets you:</p>
+
+    <ul>
+      <li><strong>Preview DNN processing</strong> in real time—see super‑resolution, denoising, and detection results instantly</li>
+      <li><strong>Adjust confidence thresholds</strong> with sliders and see which objects are detected</li>
+      <li><strong>Overlay bounding boxes</strong> on the preview for <code>dnn_detect</code> results</li>
+      <li><strong>Display classification labels</strong> directly on the frame</li>
+      <li><strong>Compare different backends</strong> side by side</li>
+      <li><strong>Generate the exact command</strong> with your tuned parameters</li>
+    </ul>
+
+    <p>Here's how DNN object detection visualization looks in the FFmpegLab IDE.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🧠 Filter: dnn_detect (OpenVINO)</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">🎯 Model: face-detection-adas-0001</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#a1a1aa;">📊 Detections: 2 faces</span>
+          <span style="background:#2d2d3d; padding:4px 12px; border-radius:20px; font-size:0.75rem; color:#34d399;">✅ Confidence: 100%, 69.2%</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280;">
+            <div style="background:#2d2d3d; height:80px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563; position:relative;">
+              <span style="position:relative; z-index:1;">📷 Original</span>
+            </div>
+            <span style="color:#6b7280;">Input frame</span>
+          </div>
+          <div style="background:#1e1e2e; border-radius:6px; padding:8px; text-align:center; font-size:0.7rem; color:#6b7280; border:2px solid #34d399;">
+            <div style="background:#2d2d3d; height:80px; border-radius:4px; margin-bottom:4px; display:flex; align-items:center; justify-content:center; color:#4b5563; position:relative;">
+              <div style="position:absolute; top:15%; left:25%; width:20%; height:25%; border:2px solid #34d399; border-radius:4px;"></div>
+              <div style="position:absolute; top:20%; right:20%; width:18%; height:22%; border:2px solid #fbbf24; border-radius:4px;"></div>
+              <span style="position:relative; z-index:1; color:#34d399;">✅ Detected</span>
+            </div>
+            <span style="color:#34d399;">● 2 faces detected</span>
+          </div>
+        </div>
+        <div style="background:#1e1e2e; border-radius:6px; padding:8px; margin-bottom:12px; font-family:monospace; font-size:0.75rem; color:#a1a1aa;">
+          <div style="color:#34d399;">[detection]</div>
+          <div>  Face 1: (1005, 813) → (1086, 905) | confidence: 100%</div>
+          <div>  Face 2: (888, 839) → (967, 926) | confidence: 69.2%</div>
+        </div>
+        <pre class="em-code"># Visual DNN detection with bounding box overlay</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div style="display:flex; gap:12px; padding:8px 0; font-size:0.8rem; color:#6b7280; align-items:center;">
+          <span style="display:flex; align-items:center; gap:4px;">🧠 <span style="color:#fff;">Model: face-detection-adas-0001</span></span>
+          <span style="display:flex; align-items:center; gap:4px;">🎯 <span style="color:#fff;">Detections: 2</span></span>
+          <span style="display:flex; align-items:center; gap:4px; color:#34d399;">✅ Inference complete</span>
+        </div>
+      </div>
+    </div>
+
+    <p>The IDE shows you exactly what's happening—the original frame, the detected objects with bounding boxes, and the confidence scores. You can adjust the confidence threshold with a slider and see which detections appear or disappear in real time.</p>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What DNN backends does FFmpeg support?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">FFmpeg supports <strong>four</strong> DNN backends: <strong>Native</strong> (built‑in), <strong>TensorFlow</strong>, <strong>OpenVINO</strong>, and <strong>Torch</strong> (LibTorch).[reference:65] The native backend requires converting models to <code>.model</code> format, TensorFlow uses <code>.pb</code> files, OpenVINO uses <code>.xml</code>/<code>.bin</code> pairs, and Torch uses <code>.pt</code> files.[reference:66]</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I convert a TensorFlow model for FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use the <code>convert.py</code> script in FFmpeg's <code>tools/python</code> directory: <code>python tools/python/convert.py model.pb model.model</code>.[reference:67] The resulting <code>.model</code> file can be used with <code>dnn_backend=native</code>.[reference:68]</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What pixel formats does dnn_processing support?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Currently, <code>dnn_processing</code> only supports <strong>RGB24</strong> and <strong>BGR24</strong> formats. The filter documentation states that <em>"more formats will be added later"</em>.[reference:69]</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use dnn_detect and dnn_classify together?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. <code>dnn_detect</code> performs object detection and adds bounding boxes as side data. <code>dnn_classify</code> can then classify each detected object based on those bounding boxes.[reference:70] As noted in the FFmpeg developer mailing list, <em>"classification is done on every detection bounding box in frame's side data"</em>.[reference:71]</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does FFmpeg support GPU acceleration for DNN filters?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes, through the <strong>OpenVINO</strong> backend which can use Intel GPUs, and the <strong>Torch</strong> backend which can leverage CUDA for NVIDIA GPUs. The TensorFlow backend also supports GPU acceleration if TensorFlow was built with GPU support.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Where can I find pre‑trained models for FFmpeg DNN filters?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Pre‑trained models are available at <code>https://github.com/guoyejun/ffmpeg_dnn/tree/main/models/openvino/2021.1</code>.[reference:72] This repository contains face detection, emotion recognition, and other models in OpenVINO format. You can also convert your own TensorFlow models using the <code>convert.py</code> script.[reference:73]</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>FFmpeg's DNN filters represent the <strong>future of video processing</strong>. With <code>dnn_processing</code> for super‑resolution and denoising, <code>dnn_detect</code> for object detection, and <code>dnn_classify</code> for classification, you can bring AI‑powered intelligence to your video workflows—all from the command line.</p>
+
+    <p>The key is understanding the four backends and their requirements: <strong>Native</strong> for simplicity, <strong>TensorFlow</strong> for existing models, <strong>OpenVINO</strong> for Intel hardware, and <strong>Torch</strong> for CLIP/CLAP classification. Each has its strengths, and with the FFmpegLab IDE's visual feedback, you can experiment, debug, and perfect your DNN pipelines without the guesswork.</p>
+
+    <p>Next time you need to upscale old footage, detect faces, or classify images, reach for FFmpeg's DNN filters. The power of AI is now at your fingertips.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-debugging-troubleshooting-guide.html">FFmpeg Debugging &amp; Troubleshooting</a></li>
+        <li><a href="ffmpeg-optical-flow-motion-interpolation.html">Optical Flow &amp; Motion Interpolation</a></li>
+        <li><a href="ffmpeg-scene-detection-automated-editing.html">Scene Detection &amp; Automated Editing</a></li>
+        <li><a href="ffmpeg-roi-encoding.html">ROI Encoding – Region of Interest</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+<section
+  id="newsletter"
+  data-ffmpeglab-newsletter
+  data-endpoint="/_ploy/form-submit"
+  data-form-name="ffmpeglab-newsletter"
+  data-source="embedded-newsletter"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+>
+  <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="amber" aria-hidden="true" style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;"></div>
+
+  <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+    <div
+      data-newsletter-glass
+      style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);"
+    >
+      <div style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+        <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+          <div style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">✦&nbsp; Fresh from the render queue</div>
+          <h2 style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+          <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+          <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp; Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise</div>
+        </div>
+
+        <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+          <div data-newsletter-success hidden style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+            <span style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+            <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You’re on the list.</h3>
+            <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is headed your way.</p>
+          </div>
+
+          <form data-newsletter-form style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+            <div style="display:table;width:100%;table-layout:fixed;">
+              <div style="display:table-cell;vertical-align:middle;">
+                <label for="newsletter-embed-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+                <input
+                  id="newsletter-embed-email"
+                  data-newsletter-email
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;"
+                />
+              </div>
+              <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                <button data-newsletter-submit type="submit" style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp; →</button>
+              </div>
+            </div>
+            <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+              <span>One useful email at a time.</span>
+              <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went wrong. Try again.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
