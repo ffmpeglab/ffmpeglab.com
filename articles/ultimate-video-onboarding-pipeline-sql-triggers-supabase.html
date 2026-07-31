@@ -556,7 +556,7 @@
               <span class="sql-kw">PERFORM</span> pgmq.send(<span class="sql-str">'media_processing_queue'</span>, msg::<span class="sql-type">jsonb</span>);<br/>
       <br/>
               -- Insert into render table for job tracking<br/>
-              <span class="sql-kw">INSERT INTO</span> <span class="sql-str">"render"</span> (id, title, project, status, public, user_id, data)<br/>
+              <span class="sql-kw">INSERT INTO</span> <span class="sql-str">"render"</span> (id, title, project, status, public, user_id, progress, logs, data, result)<br/>
               <span class="sql-kw">VALUES</span> (<br/>
                   <span class="sql-fn">gen_random_uuid</span>(),<br/>
                   file_name,<br/>
@@ -564,7 +564,10 @@
                   <span class="sql-str">'queued'</span>,<br/>
                   <span class="sql-kw">false</span>,<br/>
                   user_id::<span class="sql-type">uuid</span>,<br/>
-                  msg<br/>
+                  0,<br/>
+                  <span class="sql-str">''</span>,<br/>
+                  msg,<br/>
+                  <span class="sql-str">'{}'</span><br/>
               );<br/>
       <br/>
               -- Notify via pg_notify<br/>
