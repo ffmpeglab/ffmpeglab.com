@@ -17,9 +17,6 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}📊 Service status:${NC}"
-docker compose ps
-
 echo -e "${GREEN}✅ Setup complete!${NC}"
 echo "================================================"
 echo -e "${GREEN}🔑 Your API Key: ${API_KEY}${NC}"
