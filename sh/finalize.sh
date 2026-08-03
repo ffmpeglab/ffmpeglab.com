@@ -17,9 +17,6 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}🐳 Starting FFmpegLab Server with Docker Compose...${NC}"
-docker compose up -d
-
 echo -e "${BLUE}📊 Service status:${NC}"
 docker compose ps
 
