@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+source ./.env.sh
 
 # Finalize Phase
 # Starts Docker Compose and displays summary
@@ -27,8 +28,5 @@ echo "================================================"
 echo -e "${GREEN}🔑 Your API Key: ${API_KEY}${NC}"
 echo -e "${BLUE}🌐 API Server: http://localhost:3000${NC}"
 echo -e "${BLUE}📝 Test with:${NC}"
-echo "  curl http://localhost:3000/"
-echo "  curl -H 'Authorization: Bearer ${API_KEY}' http://localhost:3000/renders"
-echo "================================================"
-echo -e "${YELLOW}💡 To view logs: docker compose logs -f${NC}"
-echo -e "${YELLOW}💡 To stop: docker compose down${NC}"
+echo "curl -v -H 'Authorization: Bearer ${API_KEY}' "http://localhost:3000/renders""
+curl -v -H "Authorization: Bearer ${API_KEY}" "http://localhost:3000/renders"

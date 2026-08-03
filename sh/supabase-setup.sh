@@ -21,61 +21,94 @@ echo -e "${BLUE}🔧 Configuring Supabase...${NC}"
 # Get credentials
 if [ "$SUPABASE_CHOICE" = "2" ]; then
     # Self-hosted
+    
     echo -e "${BLUE}📦 Setting up self-hosted Supabase...${NC}"
+
     if [ ! -d "supabase" ]; then
-        git clone --depth 1 https://github.com/supabase/supabase.git
-        cd supabase/docker
-        cp .env.example .env
-        echo -e "${YELLOW}⚠️  Please edit supabase/docker/.env to set your secrets.${NC}"
-        echo -e "${YELLOW}   Then run: docker compose up -d${NC}"
-        read -p "Press Enter after Supabase is running..."
-        cd ../..
-    else
-        cd supabase/docker
-        docker compose up -d
-        cd ../..
+        # Get the code
+        set -a 
+        git clone --depth 1 https://github.com/supabase/supabase
+        set +a
     fi
 
-    if [ -f "supabase/docker/.env" ]; then
-        source supabase/docker/.env
-        SUPABASE_URL="http://localhost:8000"
-        SUPABASE_ANON_KEY="$ANON_KEY"
-        SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
-        DB_PASSWORD="$POSTGRES_PASSWORD"
-        export SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD
-    else
-        echo -e "${YELLOW}⚠️  Could not find .env. Enter credentials manually.${NC}"
-        read -p "Supabase URL [http://localhost:8000]: " SUPABASE_URL
-        SUPABASE_URL=${SUPABASE_URL:-http://localhost:8000}
-        read -p "Supabase Anon Key: " SUPABASE_ANON_KEY
-        read -p "Supabase Service Role Key: " SUPABASE_SERVICE_ROLE_KEY
-        read -p "PostgreSQL Password: " DB_PASSWORD
-        export SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD
+    if [ ! -d "supabase-project" ]; then
+        # Make your new supabase project directory
+        mkdir supabase-project
+        # Tree should look like this
+        # .
+        # ├── supabase
+        # └── supabase-project
+        # Copy the configuration to your project
+        cp -rf supabase/docker/. supabase-project
+        # Switch to the project directory and create a .env from the example
+        cd supabase-project && cp .env.example .env
+        sh utils/generate-keys.sh
+        sh utils/add-new-auth-keys.sh
+        docker compose pull
+    else 
+        cd supabase-project
     fi
+
+    docker compose up -d
+    cd ..
+
+    ENV_VARS="$(cat supabase-project/.env | awk '!/^\s*#/' | awk '!/^\s*$/')"
+
+    eval "$(
+    printf '%s\n' "$ENV_VARS" | while IFS='' read -r line; do
+        key=$(printf '%s\n' "$line"| sed 's/"/\\"/g' | cut -d '=' -f 1)
+        value=$(printf '%s\n' "$line" | cut -d '=' -f 2- | sed 's/"/\\\"/g')
+        printf '%s\n' "export $key=\"$value\""
+    done
+    )"
+    # set -o allexport
+    # source supabase-project/.env.sh
+    # set +o allexport
+    SUPABASE_URL="http://localhost:8000"
+    SUPABASE_ANON_KEY="$ANON_KEY"
+    SUPABASE_FQDN=localhost
+    SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+    DB_PASSWORD="$POSTGRES_PASSWORD"
+    DB_NAME=postgres
+    DB_USER=postgres.your-tenant-id
+    # Storage bucket name
+    read -p "Storage Bucket Name [ffmpeglab-assets]: " S3_BUCKET
+    S3_BUCKET=${S3_BUCKET:-ffmpeglab-assets}
+    # Build DATABASE_URL
+    echo $S3_BUCKET
+    DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${SUPABASE_FQDN}/postgres"
+    export DATABASE_URL S3_BUCKET SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD;
 else
     # Supabase Cloud
     read -p "Supabase Project URL (e.g., https://your-project.supabase.co): " SUPABASE_URL
     read -p "Supabase Database Password: " DB_PASSWORD
     read -p "Supabase Anon Key: " SUPABASE_ANON_KEY
     read -p "Supabase Service Role Key: " SUPABASE_SERVICE_ROLE_KEY
-    export SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD
+    export SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DB_PASSWORD;
 fi
 
-# Build DATABASE_URL
-DATABASE_URL="postgresql://postgres:${DB_PASSWORD}@${SUPABASE_URL#https://}/postgres"
-export DATABASE_URL
+rm -rf .env.sh;
 
-# Storage bucket name
-read -p "Storage Bucket Name [ffmpeglab-assets]: " S3_BUCKET
-S3_BUCKET=${S3_BUCKET:-ffmpeglab-assets}
-export S3_BUCKET
+echo "export DATABASE_URL=${DATABASE_URL}" >> .env.sh;
+echo "export DB_MIGRATION_ENABLED=true" >> .env.sh;
+echo "export S3_BUCKET_ID=${S3_BUCKET}" >> .env.sh;
+echo "export S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_ID}" >> .env.sh;
+echo "export S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_SECRET}" >> .env.sh;
+echo "export SUPABASE_URL=${SUPABASE_URL}" >>  .env.sh;
+echo "export SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  .env.sh;
+echo "export DB_PASSWORD=${DB_PASSWORD}" >>  .env.sh;
+echo "export DB_USER=${DB_USER}" >>  .env.sh;
+echo "export DB_NAME=${DB_NAME}" >>  .env.sh;
+echo "export DB_HOST=$(ipconfig getifaddr en0)" >>  .env.sh;
+echo "export DB_PORT=6543" >>  .env.sh;
+sleep 10
+
 
 echo -e "${BLUE}🗄️  Enabling pgmq extension...${NC}"
 PGPASSWORD="$DB_PASSWORD" psql "$DATABASE_URL" <<EOF
 CREATE EXTENSION IF NOT EXISTS pgmq;
-SELECT pgmq.create('rendering_queue');
 EOF
-echo -e "${GREEN}✅ pgmq enabled, queue 'rendering_queue' created.${NC}"
+echo -e "${GREEN}✅ pgmq enabled, queue 'renders' created.${NC}"
 
 echo -e "${BLUE}📦 Creating storage bucket...${NC}"
 curl -s -X POST "${SUPABASE_URL}/storage/v1/bucket" \

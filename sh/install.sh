@@ -5,7 +5,7 @@ set -e
 # Main installer that orchestrates all phases
 
 BASE_URL="https://ffmpeglab.com/sh"
-LOG_FILE="$HOME/ffmpeglab-setup.log"
+LOG_FILE="ffmpeglab-setup.log"
 
 # Colors
 RED='\033[0;31m'
@@ -42,21 +42,9 @@ command -v openssl >/dev/null 2>&1 || { echo -e "${RED}❌ openssl is required.$
 
 echo -e "${GREEN}✅ All prerequisites satisfied.${NC}"
 
-# Ask which Supabase deployment type
-echo -e "${YELLOW}📌 Choose Supabase deployment:${NC}"
-echo "  1) Supabase Cloud (already created)"
-echo "  2) Self-hosted Supabase (run locally)"
-read -p "Enter choice [1-2]: " SUPABASE_CHOICE
-export SUPABASE_CHOICE
+export SUPABASE_CHOICE=2
 
 # Run phases
 run_phase "supabase-setup.sh"
 run_phase "server-setup.sh"
 run_phase "finalize.sh"
-
-echo -e "${GREEN}🎉 Setup complete!${NC}"
-echo "================================================"
-echo -e "${GREEN}🔑 Your API Key: ${API_KEY}${NC}"
-echo -e "${BLUE}🌐 API Server: http://localhost:3000${NC}"
-echo -e "${YELLOW}💡 To view logs: docker compose logs -f${NC}"
-echo -e "${YELLOW}💡 To stop: docker compose down${NC}"
