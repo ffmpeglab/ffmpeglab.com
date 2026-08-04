@@ -42,7 +42,7 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
         cp -rf supabase/docker/. supabase-project
         # Switch to the project directory and create a .env from the example
         cd supabase-project && cp .env.example .env
-        sh utils/generate-keys.sh
+        sh utils/generate-keys.sh --update-env
         sh utils/add-new-auth-keys.sh
         docker compose pull
     else 

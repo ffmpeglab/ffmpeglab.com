@@ -2,3 +2,5 @@
 supabase
 supabase-project
 ffmpeglab
+.env.sh
+.env
