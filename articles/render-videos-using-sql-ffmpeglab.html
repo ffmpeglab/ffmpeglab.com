@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Render Videos Using SQL – FFmpegLab Server Deep Dive</title>
-  <meta name="description" content="Learn how to render videos by directly manipulating the FFmpegLab Server database. Translate the SDK example into raw SQL with actual TypeORM schemas and Media types." />
+  <meta name="description" content="Learn how to render videos by directly manipulating the FFmpegLab Server database. Translate the SDK example into raw SQL with actual TypeORM schemas." />
   <meta name="keywords" content="ffmpeglab sql, render videos sql, postgresql video rendering, ffmpeglab database, ffmpeglab sdk to sql, pgmq" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="author" content="FFmpegLab" />
@@ -16,7 +16,7 @@
   <meta property="og:site_name" content="FFmpegLab" />
   <meta property="og:url" content="https://ffmpeglab.com/articles/render-videos-using-sql-ffmpeglab.html" />
   <meta property="og:title" content="Render Videos Using SQL – FFmpegLab Server Deep Dive" />
-  <meta property="og:description" content="Learn how to render videos by directly manipulating the FFmpegLab Server database. Translate the SDK example into raw SQL with actual TypeORM schemas and Media types." />
+  <meta property="og:description" content="Learn how to render videos by directly manipulating the FFmpegLab Server database. Translate the SDK example into raw SQL with actual TypeORM schemas." />
   <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
 
@@ -26,14 +26,14 @@
       "@context": "https://schema.org",
       "@type": "Article",
       "headline": "Render Videos Using SQL – FFmpegLab Server Deep Dive",
-      "description": "Learn how to render videos by directly manipulating the FFmpegLab Server database. Translate the SDK example into raw SQL with actual TypeORM schemas and Media types.",
+      "description": "Learn how to render videos by directly manipulating the FFmpegLab Server database. Translate the SDK example into raw SQL with actual TypeORM schemas.",
       "image": "https://ffmpeglab.com/og-image.png",
       "author": {
         "@type": "Organization",
         "name": "FFmpegLab"
       },
-      "datePublished": "2026-07-30",
-      "dateModified": "2026-07-30",
+      "datePublished": "2026-08-06",
+      "dateModified": "2026-08-06",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://ffmpeglab.com/articles/render-videos-using-sql-ffmpeglab.html"
@@ -46,6 +46,56 @@
           "url": "https://ffmpeglab.com/favicon.svg"
         }
       }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why would I use SQL instead of the SDK?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SQL is useful for batch operations, debugging, and integration with legacy systems. For example, inserting 1,000 renders via a single SQL script is faster than 1,000 API calls."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does SQL trigger the rendering pipeline?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. When you push a message to the pgmq queue, the render-runner picks it up and starts the FFmpeg job. The runner polls the queue for new messages."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I get the logs for a render?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can query the logpiece table using the render's UUID. For example: SELECT * FROM logpiece WHERE render = 'your-render-id' ORDER BY date ASC;"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I get the rendered video result?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "After the render finishes, the result column of the render table contains a MinimalMedia or Media object with the output file URL and metadata."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get real‑time updates when a render completes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. You can set up a PostgreSQL trigger that calls pg_notify on status changes, and then use LISTEN/NOTIFY in your application to receive real‑time updates."
+          }
+        }
+      ]
     }
   </script>
 
@@ -67,7 +117,6 @@
     .code-block .sql-str { color: #34d399; }
     .code-block .sql-comment { color: #6b7280; }
     .code-block .sql-fn { color: #f472b6; }
-    .code-block .sql-op { color: #f59e0b; }
     .code-block .sql-type { color: #60a5fa; }
     .code-block .json-key { color: #f472b6; }
     .code-block .json-str { color: #34d399; }
@@ -126,7 +175,6 @@
       width: 100%;
       border-collapse: collapse;
       margin: 1rem 0;
-      background: #0d0d1a;
     }
     .schema-table th {
       background: #2d2d3d;
@@ -144,7 +192,6 @@
     }
     .schema-table .col-name { color: #34d399; }
     .schema-table .col-type { color: #60a5fa; }
-    .schema-table .col-null { color: #f87171; }
     @media (max-width: 640px) {
       .schema-table td, .schema-table th {
         font-size: 0.7rem;
@@ -155,7 +202,7 @@
 </head>
 <body>
 
-  <header class="site">
+  <header>
     <div class="container-wide bar">
       <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
       <nav>
@@ -172,7 +219,7 @@
       <span class="eyebrow">FFmpegLab Deep Dive</span>
       <h1>Render Videos Using SQL – A Deep Dive into FFmpegLab Server</h1>
       <p class="dek">Translate the SDK example into raw SQL using the actual TypeORM schemas and Media types from the ffmpeglab/server repository.</p>
-      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated July 2026</div>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated August 2026</div>
     </div>
   </div>
 
@@ -182,13 +229,14 @@
       <h2>On this page</h2>
       <ul>
         <li><a href="#the-gap">The Gap: From SDK to Database</a></li>
-        <li><a href="#sdk-example">The SDK Example</a></li>
+        <li><a href="#sdk-example">The Updated SDK Example</a></li>
         <li><a href="#database-models">Database Models – The Actual TypeORM Schemas</a></li>
         <li><a href="#media-types">Media Types – The Building Blocks</a></li>
         <li><a href="#step-1-render">Step 1: Create the Render</a></li>
         <li><a href="#step-2-pgmq">Step 2: Push to pgmq</a></li>
         <li><a href="#monitoring">Monitoring – Logs, Results, and Notifications</a></li>
         <li><a href="#complete-sql">The Complete SQL Script</a></li>
+        <li><a href="#curl-example">The curl Example</a></li>
         <li><a href="#sdk-vs-sql">SDK vs. SQL – How They Compare</a></li>
         <li><a href="#troubleshooting">Troubleshooting</a></li>
         <li><a href="#faq">Frequently Asked Questions</a></li>
@@ -197,14 +245,14 @@
 
     <p>The FFmpegLab SDK provides a clean, TypeScript‑first interface for rendering videos. But behind the scenes, every SDK call maps to database operations. By understanding these operations, you can render videos directly from SQL — useful for debugging, integration with legacy systems, or building custom automation pipelines.</p>
 
-    <p>This guide takes the SDK example and translates it step‑by‑step into raw SQL, using the <strong>actual TypeORM schemas</strong> and <strong>Media types</strong> from the <a href="https://github.com/ffmpeglab/server">ffmpeglab/server</a> repository.</p>
+    <p>This guide takes the updated SDK example and translates it step‑by‑step into raw SQL, using the <strong>actual TypeORM schemas</strong> and <strong>Media types</strong> from the <a href="https://github.com/ffmpeglab/server">ffmpeglab/server</a> repository.</p>
 
     <div class="callout">
       <h3>Key takeaways</h3>
       <ul>
         <li><strong>The SDK example</strong> creates a render and triggers it — all in two API calls.</li>
         <li><strong>SQL does the same</strong> with <code>INSERT</code> statements across the <code>render</code> table and <code>pgmq</code> queue.</li>
-        <li><strong>TypeORM models</strong> map to PostgreSQL tables: <code>Render</code>, <code>ApiKey</code>, and <code>LogPiece</code> (though we skip those in this guide).</li>
+        <li><strong>TypeORM models</strong> map to PostgreSQL tables: <code>Render</code>, <code>ApiKey</code>, and <code>LogPiece</code>.</li>
         <li><strong>Media types</strong> define the structure of <code>data</code> and <code>result</code> JSONB columns: <code>RenderData</code>, <code>EditorProject</code>, <code>EditorLayer</code>, <code>MinimalMedia</code>, and <code>Media</code>.</li>
         <li><strong>pgmq</strong> handles the asynchronous job queue — we push directly to it.</li>
         <li><strong>Logs</strong> can be retrieved from <code>logpiece</code>, <strong>results</strong> from <code>render.result</code>, and you can use <strong>SQL triggers and <code>LISTEN/NOTIFY</code></strong> for real‑time monitoring.</li>
@@ -233,17 +281,17 @@
       <span style="color:#6b7280; font-size:0.8rem;">(This guide skips the SDK and API layers to work directly with SQL)</span>
     </div>
 
-    <h2 id="sdk-example">The SDK Example</h2>
+    <h2 id="sdk-example">The Updated SDK Example</h2>
 
-    <p>Here's the SDK example we'll be translating:</p>
+    <p>Here's the updated SDK example we'll be translating — it uses a public test video and includes the <code>folderId</code> and <code>encoding</code> fields that the API now expects:</p>
 
     <div class="code-block">
-      <span class="sql-comment">// SDK Example — Create and run a render</span>
+      <span class="sql-comment">// SDK Example — Create and run a render (updated)</span>
       <br/>
       <span class="sql-kw">import</span> * <span class="sql-kw">as</span> ffmpeglab <span class="sql-kw">from</span> <span class="sql-str">'ffmpeglab-sdk'</span>;
       <br/>
       <br/>
-      <span class="sql-kw">const</span> mediaUrl = <span class="sql-str">'https://www.ffmpeglab.com/media/zoompan.mp4'</span>;
+      <span class="sql-kw">const</span> mediaUrl = <span class="sql-str">'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4'</span>;
       <br/>
       <span class="sql-kw">const</span> clientConfig = <span class="sql-kw">new</span> ffmpeglab.Configuration({
       <br/>
@@ -265,9 +313,11 @@
       <br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;id: <span class="sql-str">'myproject'</span>,
       <br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;title: <span class="sql-str">'myproject'</span>,
+      <br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;editor: {
       <br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code: <span class="sql-str">'-i $MEDIA_1 -movflags +faststart myproject.mp4'</span>,
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code: <span class="sql-str">'-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH'</span>,
       <br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;selectedCode: <span class="sql-str">'custom'</span>
       <br/>
@@ -287,11 +337,19 @@
       <br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;id: <span class="sql-str">'media1'</span>,
       <br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;url: mediaUrl
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;url: mediaUrl,
+      <br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;folderId: <span class="sql-str">'myfolder'</span>,
+      <br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filename: <span class="sql-str">'zoompan.mp4'</span>,
+      <br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encoding: {}
       <br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
       <br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;],
+      <br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;editor: {}
       <br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
       <br/>
@@ -311,6 +369,14 @@
       <br/>
       }));
     </div>
+
+    <p><strong>Key differences from the earlier SDK example:</strong></p>
+    <ul>
+      <li><strong>Media URL</strong> — uses a public test video from <code>test-videos.co.uk</code></li>
+      <li><strong>Output path</strong> — now includes <code>-y $OUTPUT_PATH</code> to specify the output file</li>
+      <li><strong>Media fields</strong> — includes <code>folderId</code>, <code>filename</code>, and <code>encoding</code> for better storage management</li>
+      <li><strong>Project title</strong> — explicitly set in the project object</li>
+    </ul>
 
     <h2 id="database-models">Database Models – The Actual TypeORM Schemas</h2>
 
@@ -502,13 +568,14 @@
       <div class="step-title">Create the render record</div>
       <div class="step-desc">Insert a new render with initial status <code>queued</code>. The <code>data</code> column must be a valid <code>RenderData</code> JSON object.</div>
       <div class="code-block">
-        <span class="sql-comment">-- Create a new render</span><br/>
+        <span class="sql-comment">-- Create a new render (updated schema with folderId and encoding)</span>
+        <br/>
         <span class="sql-kw">INSERT INTO</span> "render" (<br/>
         &nbsp;&nbsp;id, title, project, status, public, user_id, progress, logs, data, result<br/>
         )<br/>
         <span class="sql-kw">VALUES</span> (<br/>
         &nbsp;&nbsp;<span class="sql-fn">gen_random_uuid</span>(),<br/>
-        &nbsp;&nbsp;<span class="sql-str">'My Render'</span>,<br/>
+        &nbsp;&nbsp;<span class="sql-str">'myproject'</span>,<br/>
         &nbsp;&nbsp;<span class="sql-str">'myproject'</span>,<br/>
         &nbsp;&nbsp;<span class="sql-str">'queued'</span>,<br/>
         &nbsp;&nbsp;<span class="sql-kw">false</span>,<br/>
@@ -517,16 +584,11 @@
         &nbsp;&nbsp;<span class="sql-str">''</span>, <span class="sql-comment">-- logs (will be updated by runner)</span><br/>
         &nbsp;&nbsp;<span class="sql-str">'{<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;"project": {<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "myproject",<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"title": "myproject",<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"editor": {<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"code": "-i $MEDIA_1 -movflags +faststart myproject.mp4",<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"selectedCode": "custom",<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"length": 5,<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"width": 1920,<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"height": 1080,<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"lastUpdated": 1743348893,<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"compressionLevel": 23,<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"preset": "medium",<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"output": "mp4"<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"code": "-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH",<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"selectedCode": "custom"<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;},<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;"layers": [<br/>
@@ -536,8 +598,8 @@
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"media": [<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "media1",<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url": "https://www.ffmpeglab.com/media/zoompan.mp4",<br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"title": "zoompan",<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"folderId": "myfolder",<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"filename": "zoompan.mp4",<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"encoding": {}<br/>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
@@ -557,14 +619,15 @@
     <p>To capture the render ID for later use:</p>
 
     <div class="code-block">
-      <span class="sql-comment">-- Capture the render ID</span><br/>
+      <span class="sql-comment">-- Capture the render ID</span>
+      <br/>
       <span class="sql-kw">WITH</span> new_render <span class="sql-kw">AS</span> (<br/>
       &nbsp;&nbsp;<span class="sql-kw">INSERT INTO</span> "render" (<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;id, title, project, status, public, user_id, progress, logs, data, result<br/>
       &nbsp;&nbsp;)<br/>
       &nbsp;&nbsp;<span class="sql-kw">VALUES</span> (<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-fn">gen_random_uuid</span>(),<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'My Render'</span>,<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'myproject'</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'myproject'</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'queued'</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-kw">false</span>,<br/>
@@ -573,16 +636,11 @@
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">''</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'{<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"project": {<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "myproject",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"title": "myproject",<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"editor": {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"code": "-i $MEDIA_1 -movflags +faststart myproject.mp4",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"selectedCode": "custom",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"length": 5,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"width": 1920,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"height": 1080,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"lastUpdated": 1743348893,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"compressionLevel": 23,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"preset": "medium",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"output": "mp4"<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"code": "-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"selectedCode": "custom"<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"layers": [<br/>
@@ -592,8 +650,8 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"media": [<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "media1",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url": "https://www.ffmpeglab.com/media/zoompan.mp4",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"title": "zoompan",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"folderId": "myfolder",<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"filename": "zoompan.mp4",<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"encoding": {}<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
@@ -617,7 +675,8 @@
       <div class="step-title">Push the job to pgmq</div>
       <div class="step-desc">Send a message to the <code>rendering_queue</code> with the render ID.</div>
       <div class="code-block">
-        <span class="sql-comment">-- Push the job to the pgmq queue</span><br/>
+        <span class="sql-comment">-- Push the job to the pgmq queue</span>
+        <br/>
         <span class="sql-kw">SELECT</span> pgmq.send(<br/>
         &nbsp;&nbsp;<span class="sql-str">'rendering_queue'</span>,<br/>
         &nbsp;&nbsp;<span class="sql-str">'{"renderId": "abc-123-def-456", "action": "process"}'</span><br/>
@@ -631,7 +690,8 @@
     <p>You can also add a delay:</p>
 
     <div class="code-block">
-      <span class="sql-comment">-- Push with a 10‑second delay</span><br/>
+      <span class="sql-comment">-- Push with a 10‑second delay</span>
+      <br/>
       <span class="sql-kw">SELECT</span> pgmq.send(<br/>
       &nbsp;&nbsp;<span class="sql-str">'rendering_queue'</span>,<br/>
       &nbsp;&nbsp;<span class="sql-str">'{"renderId": "abc-123-def-456"}'</span>,<br/>
@@ -648,7 +708,8 @@
     <p>The runner writes detailed logs to the <code>logpiece</code> table. Each log entry is tied to a specific render by the <code>render</code> column (which stores the render's UUID).</p>
 
     <div class="code-block">
-      <span class="sql-comment">-- Get all logs for a specific render</span><br/>
+      <span class="sql-comment">-- Get all logs for a specific render</span>
+      <br/>
       <span class="sql-kw">SELECT</span> date, logs, user_id<br/>
       <span class="sql-kw">FROM</span> logpiece<br/>
       <span class="sql-kw">WHERE</span> render = <span class="sql-str">'abc-123-def-456'</span><br/>
@@ -656,7 +717,8 @@
     </div>
 
     <div class="code-block">
-      <span class="sql-comment">-- Get error logs only (if any)</span><br/>
+      <span class="sql-comment">-- Get error logs only (if any)</span>
+      <br/>
       <span class="sql-kw">SELECT</span> date, logs<br/>
       <span class="sql-kw">FROM</span> logpiece<br/>
       <span class="sql-kw">WHERE</span> render = <span class="sql-str">'abc-123-def-456'</span><br/>
@@ -668,7 +730,8 @@
     <p>When the render completes successfully, the runner updates the <code>result</code> column of the <code>render</code> table. This column contains a <code>MinimalMedia</code> or <code>Media</code> object with details about the output video.</p>
 
     <div class="code-block">
-      <span class="sql-comment">-- Get the render result</span><br/>
+      <span class="sql-comment">-- Get the render result</span>
+      <br/>
       <span class="sql-kw">SELECT</span> id, status, result<br/>
       <span class="sql-kw">FROM</span> "render"<br/>
       <span class="sql-kw">WHERE</span> id = <span class="sql-str">'abc-123-def-456'</span>;
@@ -696,7 +759,8 @@
     <h4>Example: Trigger on Render Status Change</h4>
 
     <div class="code-block">
-      <span class="sql-comment">-- Create a function that notifies when a render status changes</span><br/>
+      <span class="sql-comment">-- Create a function that notifies when a render status changes</span>
+      <br/>
       <span class="sql-kw">CREATE OR REPLACE FUNCTION</span> notify_render_status()<br/>
       <span class="sql-kw">RETURNS TRIGGER AS $$</span><br/>
       <span class="sql-kw">BEGIN</span><br/>
@@ -708,7 +772,8 @@
       <span class="sql-kw">END;</span><br/>
       <span class="sql-kw">$$ LANGUAGE plpgsql;</span>
       <br/><br/>
-      <span class="sql-comment">-- Create a trigger on the render table</span><br/>
+      <span class="sql-comment">-- Create a trigger on the render table</span>
+      <br/>
       <span class="sql-kw">CREATE TRIGGER</span> render_status_trigger<br/>
       <span class="sql-kw">AFTER UPDATE OF</span> status <span class="sql-kw">ON</span> "render"<br/>
       <span class="sql-kw">FOR EACH ROW</span><br/>
@@ -721,7 +786,8 @@
     <p>In your application (e.g., Node.js, Python), you can listen for these notifications:</p>
 
     <div class="code-block">
-      <span style="color: #6b7280;">-- In your PostgreSQL client:</span><br/>
+      <span style="color: #6b7280;">-- In your PostgreSQL client:</span>
+      <br/>
       <span class="sql-kw">LISTEN</span> render_status_channel;
       <br/><br/>
       <span style="color: #6b7280;">-- When a render completes, you'll receive a notification with the render ID and new status.</span>
@@ -730,7 +796,8 @@
     <p>In Node.js with <code>pg</code>:</p>
 
     <div class="code-block">
-      <span style="color: #6b7280;">// Node.js example</span><br/>
+      <span style="color: #6b7280;">// Node.js example</span>
+      <br/>
       client.query(<span class="sql-str">'LISTEN render_status_channel'</span>);<br/>
       client.on(<span class="sql-str">'notification'</span>, (msg) => {<br/>
       &nbsp;&nbsp;<span class="sql-kw">const</span> payload = JSON.parse(msg.payload);<br/>
@@ -743,7 +810,8 @@
     <p>Similarly, you can set up a trigger on the <code>logpiece</code> table:</p>
 
     <div class="code-block">
-      <span class="sql-comment">-- Notify when a new log is inserted</span><br/>
+      <span class="sql-comment">-- Notify when a new log is inserted</span>
+      <br/>
       <span class="sql-kw">CREATE OR REPLACE FUNCTION</span> notify_new_log()<br/>
       <span class="sql-kw">RETURNS TRIGGER AS $$</span><br/>
       <span class="sql-kw">BEGIN</span><br/>
@@ -762,19 +830,22 @@
 
     <h2 id="complete-sql">The Complete SQL Script</h2>
 
-    <p>Here's the complete SQL script that replicates the SDK example using the actual TypeORM schemas and Media types:</p>
+    <p>Here's the complete SQL script that replicates the updated SDK example:</p>
 
     <div class="code-block">
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- Step 1: Create the render</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
+      <span class="sql-comment">-- ============================================================</span>
+      <br/>
+      <span class="sql-comment">-- Step 1: Create the render</span>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span>
+      <br/>
       <span class="sql-kw">WITH</span> new_render <span class="sql-kw">AS</span> (<br/>
       &nbsp;&nbsp;<span class="sql-kw">INSERT INTO</span> "render" (<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;id, title, project, status, public, user_id, progress, logs, data, result<br/>
       &nbsp;&nbsp;)<br/>
       &nbsp;&nbsp;<span class="sql-kw">VALUES</span> (<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-fn">gen_random_uuid</span>(),<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'My Render'</span>,<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'myproject'</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'myproject'</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'queued'</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-kw">false</span>,<br/>
@@ -783,16 +854,11 @@
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">''</span>,<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-str">'{<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"project": {<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "myproject",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"title": "myproject",<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"editor": {<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"code": "-i $MEDIA_1 -movflags +faststart myproject.mp4",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"selectedCode": "custom",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"length": 5,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"width": 1920,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"height": 1080,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"lastUpdated": 1743348893,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"compressionLevel": 23,<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"preset": "medium",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"output": "mp4"<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"code": "-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"selectedCode": "custom"<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"layers": [<br/>
@@ -802,8 +868,8 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"media": [<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": "media1",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url": "https://www.ffmpeglab.com/media/zoompan.mp4",<br/>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"title": "zoompan",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",<br/>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"folderId": "myfolder",<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"filename": "zoompan.mp4",<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"encoding": {}<br/>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
@@ -815,16 +881,172 @@
       &nbsp;&nbsp;)<br/>
       &nbsp;&nbsp;<span class="sql-kw">RETURNING</span> id<br/>
       )<br/>
-      <span class="sql-comment">-- Store the render ID for later use</span><br/>
+      <span class="sql-comment">-- Store the render ID for later use</span>
+      <br/>
       <span class="sql-kw">SELECT</span> id <span class="sql-kw">INTO</span> TEMP render_id <span class="sql-kw">FROM</span> new_render;
       <br/><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- Step 2: Push the job to pgmq</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-kw">SELECT</span> pgmq.<span class="sql-fn">send</span>(<br/>
+      <span class="sql-comment">-- ============================================================</span>
+      <br/>
+      <span class="sql-comment">-- Step 2: Push the job to pgmq</span>
+      <br/>
+      <span class="sql-comment">-- ============================================================</span>
+      <br/>
+      <span class="sql-kw">SELECT</span> pgmq.send(<br/>
       &nbsp;&nbsp;<span class="sql-fn">cast(</span><span class="sql-str">'render'</span> as <span class="sql-kw">TEXT</span><span class="sql-fn">)</span>,<br/>
-      &nbsp;&nbsp;<span class="sql-fn">cast(</span><span class="sql-str">'{"renderId": "'</span> || (<span class="sql-kw">SELECT</span> id <span class="sql-kw">FROM</span> render_id) || <span class="sql-str">'"}'</span> as <span class="sql-kw">JSONB</span><span class="sql-fn">)</span><br/>
+      &nbsp;&nbsp;<span class="sql-fn">cast(</span><span class="sql-str">'{"jobName":"render","data":{"userId":"550e8400-e29b-41d4-a716-446655440000","renderId": "'</span> || (<span class="sql-kw">SELECT</span> id <span class="sql-kw">FROM</span> render_id) || <span class="sql-str">'"}}'</span> as <span class="sql-kw">JSONB</span><span class="sql-fn">)</span>,<br/>
+      &nbsp;&nbsp;<span class="sql-fn">cast(</span><span class="sql-str">'{"messageId":"'||<span class="sql-fn">gen_random_uuid</span>()||'"}'</span> as <span class="sql-kw">JSONB</span><span class="sql-fn">)</span><br/>
       );
+    </div>
+
+    <h2 id="curl-example">The curl Example</h2>
+
+    <p>Here's the equivalent bash script using <code>curl</code> — perfect for scripting and automation. This is the working script from the ffmpeglab/server repository:</p>
+
+    <div class="code-block">
+      <span style="color: #6b7280;">#!/bin/bash</span>
+      <br/>
+      <br/>
+      <span style="color: #6b7280;"># Set the API host</span>
+      <br/>
+      API_HOST=https://api.ffmpeglab.com
+      <br/>
+      <br/>
+      <span style="color: #6b7280;"># Create a render</span>
+      <br/>
+      RENDER=$(curl -X POST ${API_HOST}/renders \
+      <br/>
+        -H "Authorization: Bearer ${API_KEY}" \
+      <br/>
+        -H "Content-Type: application/json" \
+      <br/>
+        -d '{
+      <br/>
+          "project": {
+      <br/>
+            "id": "myproject",
+      <br/>
+            "title": "myproject",
+      <br/>
+            "editor": {
+      <br/>
+              "code": "-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH",
+      <br/>
+              "selectedCode": "custom"
+      <br/>
+            }
+      <br/>
+          },
+      <br/>
+          "layers": [
+      <br/>
+            {
+      <br/>
+              "id": "layer1",
+      <br/>
+              "media": [
+      <br/>
+                {
+      <br/>
+                  "id": "media1",
+      <br/>
+                  "url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
+      <br/>
+                  "folderId": "myfolder",
+      <br/>
+                  "filename": "zoompan.mp4",
+      <br/>
+                  "encoding": {}
+      <br/>
+                }
+      <br/>
+              ],
+      <br/>
+              "editor": {}
+      <br/>
+            }
+      <br/>
+          ]
+      <br/>
+        }')
+      <br/>
+      <br/>
+      <span style="color: #6b7280;"># Extract the render ID from the response</span>
+      <br/>
+      RENDER_ID=$(echo "${RENDER}" | grep -o '"id":"[^"]*"' | head -1 | sed 's/"id":"\(.*\)"/\1/')
+      <br/>
+      echo "RENDER_ID: ${RENDER_ID}"
+      <br/>
+      <br/>
+      <span style="color: #6b7280;"># Run the render</span>
+      <br/>
+      RUN=$(curl -X PUT ${API_HOST}/renders/run \
+      <br/>
+        -H "Authorization: Bearer ${API_KEY}" \
+      <br/>
+        -H "Content-Type: application/json" \
+      <br/>
+        -d "{\"id\": \"$RENDER_ID\"}")
+      <br/>
+      <br/>
+      <span style="color: #6b7280;"># Check status (multiple times with sleeps)</span>
+      <br/>
+      curl -X GET ${API_HOST}/renders/${RENDER_ID} \
+      <br/>
+        -H "Authorization: Bearer ${API_KEY}" \
+      <br/>
+        -H "Content-Type: application/json"
+      <br/>
+      echo '\n'
+      <br/>
+      <br/>
+      sleep 3
+      <br/>
+      <br/>
+      curl -X GET ${API_HOST}/renders/${RENDER_ID} \
+      <br/>
+        -H "Authorization: Bearer ${API_KEY}" \
+      <br/>
+        -H "Content-Type: application/json"
+      <br/>
+      echo '\n'
+      <br/>
+      <br/>
+      sleep 5
+      <br/>
+      <br/>
+      curl -X GET ${API_HOST}/renders/${RENDER_ID} \
+      <br/>
+        -H "Authorization: Bearer ${API_KEY}" \
+      <br/>
+        -H "Content-Type: application/json"
+      <br/>
+      echo '\n'
+    </div>
+
+    <p><strong>How it works:</strong></p>
+    <ul>
+      <li><strong>Step 1:</strong> Creates a render using a <code>POST</code> request to <code>/renders</code></li>
+      <li><strong>Step 2:</strong> Extracts the <code>id</code> from the JSON response using <code>grep</code> and <code>sed</code> (no <code>jq</code> required!)</li>
+      <li><strong>Step 3:</strong> Runs the render with a <code>PUT</code> request to <code>/renders/run</code></li>
+      <li><strong>Step 4:</strong> Polls the status three times (0s, 3s, 5s) to track progress</li>
+    </ul>
+
+    <p>To run it:</p>
+
+    <div class="code-block">
+      <span style="color: #6b7280;"># Set your API key</span>
+      <br/>
+      export API_KEY="your-api-key-here"
+      <br/>
+      <br/>
+      <span style="color: #6b7280;"># Make the script executable</span>
+      <br/>
+      chmod +x example.sh
+      <br/>
+      <br/>
+      <span style="color: #6b7280;"># Run it</span>
+      <br/>
+      ./example.sh
     </div>
 
     <h2 id="sdk-vs-sql">SDK vs. SQL – How They Compare</h2>
@@ -848,7 +1070,7 @@
         <div style="font-size:0.7rem; text-transform:uppercase; color:#6b7280; margin-bottom:0.3rem;">Raw Database Operations</div>
         <ul style="color:#a1a1aa; font-size:0.85rem; padding-left:1.25rem;">
           <li><strong>2 SQL statements</strong> — insert render, push to pgmq</li>
-          <li>Requires manual authentication (you need the API key)</li>
+          <li>Requires manual API key verification</li>
           <li>No type validation</li>
           <li>Returns raw row data</li>
           <li>Works with any PostgreSQL client</li>
@@ -934,6 +1156,13 @@
       </div>
     </div>
 
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What are the actual table names in PostgreSQL?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The table names match the entity class names: <strong><code>render</code></strong>, <strong><code>apikey</code></strong>, and <strong><code>logpiece</code></strong>. These are derived from the TypeORM <code>@Entity()</code> decorators.</p>
+      </div>
+    </div>
+
     <h2>Final Word</h2>
 
     <p>The SDK provides a clean, type‑safe interface for rendering videos, but understanding the underlying SQL gives you superpowers. You can debug more effectively, build batch pipelines, and integrate FFmpegLab Server with any system that speaks SQL.</p>
@@ -959,8 +1188,10 @@
     <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
       <h3>More FFmpeg guides from FFmpegLab</h3>
       <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="agent-first-setup-ffmpeglab-server.html">Agent-First Setup Guide – FFmpegLab Server</a></li>
         <li><a href="ffmpeg-env-vars-scalable-runners.html">Environment Variables &amp; Scalable Runners</a></li>
         <li><a href="setting-up-supabase-storage-ffmpeglab.html">Setting Up Supabase Storage with FFmpegLab</a></li>
+        <li><a href="ffmpeg-applications-startups.html">Applications &amp; Startups Powered by FFmpeg</a></li>
       </ul>
     </aside>
 
