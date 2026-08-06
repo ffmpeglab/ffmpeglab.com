@@ -1793,9 +1793,10 @@
 
 <span class="ef">client</span>.<span class="ek">rendersControllerCreate</span>(<span class="ef">{</span>renderDto:{
   project: { 
-      id:<span class="ef">'myproject'</span>,
+      id: <span class="ef">'myproject'</span>,
+      title: <span class="ef">'myproject'</span>,
       editor: <span class="ef">{</span>
-        code: <span class="ef">'-i $MEDIA_1 -movflags +faststart myproject.mp4'</span>,
+        code: <span class="ef">'-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH'</span>,
         selectedCode: <span class="ef">'custom'</span>
       <span class="ef">}</span>
   },
@@ -1806,8 +1807,12 @@
         <span class="ef">{</span>
           id: <span class="ef">'media1'</span>,
           url: mediaUrl
+          folderId: <span class="ef">"myfolder"</span>,
+          filename: <span class="ef">"zoompan.mp4"</span>,
+          encoding: <span class="ef">{}</span>
         <span class="ef">}</span>
-      ]
+      ],
+      "editor":{}
     <span class="ef">}</span>
   ]
 }<span class="ef">}</span>)
