@@ -305,8 +305,12 @@
 
     <p><strong>Syntax:</strong></p>
 
-    <pre><code>dnn_processing=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME[:fmt=FORMAT]</code></pre>
-
+          <div class="code-window" style="max-width: 900px;">
+            <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
+                class="mono fname">render.ts</span></div>
+            <pre class="mono em-code">
+dnn_processing=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME[:fmt=FORMAT]</pre>
+</div>
     <p><strong>Options:</strong></p>
     <ul>
       <li><strong><code>dnn_backend</code></strong> — <code>native</code>, <code>tensorflow</code>, <code>openvino</code>, or <code>torch</code>. Default is <code>native</code>.[reference:14]</li>
@@ -329,8 +333,11 @@
 
     <p><strong>Syntax:</strong></p>
 
-    <pre><code>dnn_detect=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME:confidence=THRESHOLD[:labels=LABELS_FILE]</code></pre>
-
+          <div class="code-window" style="max-width: 900px;">
+            <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
+                class="mono fname">render.ts</span></div>
+            <pre class="mono em-code" style="overflow: hidden;">dnn_detect=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME:confidence=THRESHOLD[:labels=LABELS_FILE]</pre>
+</div>
     <p><strong>Options:</strong></p>
     <ul>
       <li><strong><code>confidence</code></strong> — Confidence threshold (default: 0.5). Detections below this threshold are ignored.[reference:23]</li>
@@ -362,8 +369,11 @@
 
     <p><strong>Syntax:</strong></p>
 
-    <pre><code>dnn_classify=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME:confidence=THRESHOLD[:labels=LABELS_FILE][:categories=CATEGORIES_FILE][:tokenizer=TOKENIZER_PATH]</code></pre>
-
+          <div class="code-window" style="max-width: 900px;">
+            <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
+                class="mono fname">render.ts</span></div>
+            <pre class="mono em-code">dnn_classify=dnn_backend=BACKEND:model=MODEL_PATH:input=INPUT_NAME:output=OUTPUT_NAME:confidence=THRESHOLD[:labels=LABELS_FILE][:categories=CATEGORIES_FILE][:tokenizer=TOKENIZER_PATH]</pre>
+</div>
     <p><strong>Additional options:</strong></p>
     <ul>
       <li><strong><code>categories</code></strong> — Path to a categories file for hierarchical classification (CLIP/CLAP only).[reference:28]</li>
@@ -439,7 +449,11 @@
 
     <p>As documented in the FFmpeg developer mailing list:[reference:36]</p>
 
-    <pre><code># 1. Download and install OpenVINO Toolkit
+          <div class="code-window" style="max-width: 900px;">
+            <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
+                class="mono fname">render.ts</span></div>
+            <pre class="mono em-code" >
+# 1. Download and install OpenVINO Toolkit
 # https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit/download.html
 
 # 2. Set environment variables
@@ -448,7 +462,7 @@ export LD_LIBRARY_PATH=.../deployment_tools/inference_engine/lib/intel64/:.../de
 # 3. Configure FFmpeg
 ./configure --enable-libopenvino \
   --extra-cflags='-I.../deployment_tools/inference_engine/include/' \
-  --extra-ldflags='-L.../deployment_tools/inference_engine/lib/intel64'</code></pre>
+  --extra-ldflags='-L.../deployment_tools/inference_engine/lib/intel64'</pre></div>
 
     <h3>4. Torch (LibTorch) Backend</h3>
 
