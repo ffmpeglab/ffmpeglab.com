@@ -20,70 +20,70 @@
   ];
 
   var CODE = {
-    yml: `name: "AI Upscaling Pipeline"
-pipelineId: "ai-upscaling"
+    yml: `# Video Transcoding Pipeline
+name: "Video Transcoding Pipeline"
+pipelineId: "video-transcode"
 runId:
   mode: "deterministic"
   template: "{baseFilename}"
-description: "Automated AI upscaling using DNN models (SRCNN) and bicubic fallback"
+description: "Generate thumbnails and transcoded videos"
 version: "1.0.0"
 
 storage:
-  output_bucket: "public-processed"
+  output_bucket: "processed"
   buckets:
-    - name: "upscale-uploads"
+    - name: "uploads"
       public: false
-      allowed_mime_types:
-        - "video/mp4"
-        - "video/quicktime"
-        - "video/x-msvideo"
-        - "video/webm"
-        - "video/mpeg"
-    - name: "public-processed"
+      allowed_mime_types: ["video/mp4"]
+    - name: "processed"
       public: true
-      allowed_mime_types:
-        - "video/mp4"
+      allowed_mime_types: ["image/jpeg", "video/mp4"]
 
   rls_policies:
     - name: "Users can upload to their own folder"
       operation: "INSERT"
       role: "authenticated"
       condition: |
-        bucket_id = 'upscale-uploads' AND
-        (storage.foldername(name))[1] = auth.uid()::text
-
-    - name: "Users can read their own processed media"
-      operation: "SELECT"
-      role: "authenticated"
-      condition: |
-        bucket_id = 'public-processed' AND
+        bucket_id = 'uploads' AND
         (storage.foldername(name))[1] = auth.uid()::text
 
 steps:
-  # Step 1: AI Upscaling with DNN (SRCNN)
-  - id: "ai_upscale"
+  - id: "thumbnail"
     trigger:
-      name: "handle_ai_upscale"
+      name: "handle_thumbnail"
       event: "INSERT"
       table: "storage.objects"
       condition: |
-        NEW.bucket_id = 'upscale-uploads' AND
-        NEW.metadata->>'mimetype' LIKE 'video/%'
-    command: -i $MEDIA_1 -vf "format=rgb24,dnn_processing=model=$DNN_MODEL_PATH:input=x:output=y:dnn_backend=$DNN_BACKEND,scale=iw*$UPSCALE_FACTOR:ih*$UPSCALE_FACTOR" -c:v libx264 -crf 18 -pix_fmt yuv420p -y $OUTPUT_PATH
+        NEW.bucket_id = 'uploads'
+    command: -i $MEDIA_1 -vf thumbnail,scale=320:180 -frames:v 1 -f image2 -y $OUTPUT_PATH
     inputs: ["INPUT_FILE"]
     outputs: ["OUTPUT_FILE"]
-    output_path: "{{userId}}/{{pipelineId}}/{{runId}}/upscaled/{{baseFilename}}_2x.mp4"
+    output_path: "{{userId}}/thumbnails/{{baseFilename}}.jpg"
+    editor:
+      output: "jpg"
+      preset: "fast"
+      selectedCode: "custom"
+    keep: true
+
+  - id: "transcode_720p"
+    trigger:
+      name: "handle_transcode"
+      event: "INSERT"
+      table: "storage.objects"
+      condition: |
+        NEW.bucket_id = 'uploads'
+    command: -i $MEDIA_1 -c:v libx264 -crf 23 -preset medium -vf scale=-2:720 -c:a aac -b:a 128k -movflags +faststart -f mp4 -y $OUTPUT_PATH
+    inputs: ["INPUT_FILE"]
+    outputs: ["OUTPUT_FILE"]
+    output_path: "{{userId}}/videos/{{baseFilename}}.mp4"
     editor:
       output: "mp4"
-      preset: "slow"
+      preset: "medium"
       selectedCode: "custom"
-      width: 0
-      height: 0
-      compressionLevel: 18
     keep: true
 
 render:
-  project_name: "upscaling"
+  project_name: "video-transcode"
   status: "queued"
   public: false`,
 
@@ -105,28 +105,28 @@ render:
       '      editor: {',
       '        code: \'-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH\',',
       '        selectedCode: \'custom\'',
-      '}',
+      '      }',
       '  },',
       '  layers: [',
-      '{',
+      '     {',
       '      id: \'layer1\',',
       '      media: [',
-      '{',
+      '        {',
       '          id: \'media1\',',
       '          url: mediaUrl,',
       '          folderId: "myfolder",',
       '          filename: "zoompan.mp4",',
       '          encoding: {}',
-      '}',
+      '         }',
       '      ],',
       '      "editor":{}',
-      '}',
+      '    }',
       '  ]',
       '}})',
       '.then((render)=>client.rendersControllerRunRender({',
       '  runDto:{',
       '    id:render.id',
-      '}',
+      '  }',
       '}))',
     ].join("\n"),
 
