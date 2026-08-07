@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Upscaling Pipeline – SQL Triggers, DNN & Supabase Storage</title>
-  <meta name="description" content="Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or 4x using SQL triggers, pgmq, and Supabase Storage." />
-  <meta name="keywords" content="ai upscaling pipeline, dnn_processing, super resolution, sql triggers, supabase storage, pgmq, ffmpeglab" />
+  <title>AI Upscaling Pipeline – YAML &amp; SQL Triggers, DNN &amp; Supabase Storage</title>
+  <meta name="description" content="Build an automated AI upscaling pipeline using YAML, SQL triggers, and DNN models to upscale videos 2x, 3x, or 4x with Supabase Storage." />
+  <meta name="keywords" content="ai upscaling pipeline, dnn_processing, super resolution, sql triggers, supabase storage, pgmq, ffmpeglab, yaml, transpiler" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="author" content="FFmpegLab" />
   <meta name="theme-color" content="#FC6D26" />
@@ -15,8 +15,8 @@
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="FFmpegLab" />
   <meta property="og:url" content="https://ffmpeglab.com/articles/ai-upscaling-pipeline-sql-triggers-supabase.html" />
-  <meta property="og:title" content="AI Upscaling Pipeline – SQL Triggers, DNN & Supabase Storage" />
-  <meta property="og:description" content="Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or 4x using SQL triggers, pgmq, and Supabase Storage." />
+  <meta property="og:title" content="AI Upscaling Pipeline – YAML &amp; SQL Triggers, DNN &amp; Supabase Storage" />
+  <meta property="og:description" content="Build an automated AI upscaling pipeline using YAML, SQL triggers, and DNN models to upscale videos 2x, 3x, or 4x with Supabase Storage." />
   <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
 
@@ -25,18 +25,18 @@
     {
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "AI Upscaling Pipeline – SQL Triggers, DNN & Supabase Storage",
-      "description": "Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or 4x using SQL triggers, pgmq, and Supabase Storage.",
+      "headline": "AI Upscaling Pipeline – YAML & SQL Triggers, DNN & Supabase Storage",
+      "description": "Build an automated AI upscaling pipeline using YAML, SQL triggers, and DNN models to upscale videos 2x, 3x, or 4x with Supabase Storage.",
       "image": "https://ffmpeglab.com/og-image.png",
       "author": {
         "@type": "Organization",
         "name": "FFmpegLab"
       },
-      "datePublished": "2026-07-30",
-      "dateModified": "2026-07-30",
+      "datePublished": "2026-08-07",
+      "dateModified": "2026-08-07",
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": "https://ffmpeglab.com/articles/ai-upscaling-pipeline-sql-triggers-supabase.html"
+        "@id": "https://ffmpeglab.com/articles/ai-upscaling-pipeline-yaml-supabase.html"
       },
       "publisher": {
         "@type": "Organization",
@@ -85,6 +85,14 @@
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "No. DNN-based upscaling is computationally intensive. A 5-minute video can take 1-2 hours to upscale, depending on the resolution and hardware. This pipeline is designed for batch processing where time is not critical."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does this pipeline create new tables?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The pipeline uses the existing render and logpiece tables from the FFmpegLab server. It only adds storage buckets, RLS policies, and the trigger function — no table conflicts."
           }
         }
       ]
@@ -183,11 +191,72 @@
     }
     .schema-table .col-name { color: #34d399; }
     .schema-table .col-type { color: #60a5fa; }
+    .svg-container {
+      background: transparent;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+    .svg-container svg {
+      max-width: 100%;
+      height: auto;
+    }
     @media (max-width: 640px) {
       .schema-table td, .schema-table th {
         font-size: 0.7rem;
         padding: 0.3rem;
       }
+    }
+
+    /* Code window component */
+    .code-window {
+      background: #0d0d1a;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border: 1px solid #2d2d3d;
+      overflow: hidden;
+    }
+    .code-window .titlebar {
+      background: #1a1a2e;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #2d2d3d;
+    }
+    .code-window .titlebar .dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+    }
+    .code-window .titlebar .dot.r { background: #ff5f56; }
+    .code-window .titlebar .dot.y { background: #ffbd2e; }
+    .code-window .titlebar .dot.g { background: #27c93f; }
+    .code-window .titlebar .fname {
+      margin-left: 0.8rem;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+    }
+    .code-window pre {
+      margin: 0;
+      padding: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    .code-window .mono {
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+    }
+    .code-window .el { color: #fbbf24; }
+    .code-window .ef { color: #34d399; }
+    .code-window .c { color: #6b7280; }
+    .code-window .em-code {
+      white-space: pre-wrap;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -208,9 +277,9 @@
     <div class="container inner">
       <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / AI Upscaling Pipeline</div>
       <span class="eyebrow">FFmpegLab Guide</span>
-      <h1>AI Upscaling Pipeline – SQL Triggers, DNN &amp; Supabase Storage</h1>
-      <p class="dek">Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or 4x using SQL triggers, pgmq, and Supabase Storage.</p>
-      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+      <h1>AI Upscaling Pipeline – YAML &amp; SQL Triggers, DNN &amp; Supabase Storage</h1>
+      <p class="dek">Declarative YAML pipeline for automated AI upscaling using DNN models (SRCNN) — upscale videos 2x, 3x, or 4x with SQL triggers and Supabase Storage.</p>
+      <div class="article-meta">FFmpeg tutorial · ~14 min read · Updated August 2026</div>
     </div>
   </div>
 
@@ -223,31 +292,35 @@
         <li><a href="#architecture">Architecture Overview</a></li>
         <li><a href="#what-it-delivers">What the Pipeline Delivers</a></li>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#quick-start">Quick Start – The Setup Script</a></li>
-        <li><a href="#setup-script">The Complete SQL Setup Script</a></li>
-        <li><a href="#what-it-does">What the Script Does</a></li>
-        <li><a href="#processing-logic">Processing Logic Explained</a></li>
-        <li><a href="#ffmpeg-commands">Exact FFmpeg Commands</a></li>
+        <li><a href="#yaml-approach">The YAML‑Driven Approach</a></li>
+        <li><a href="#yaml-template">The YAML Template</a></li>
+        <li><a href="#transpiler">Running the Transpiler</a></li>
+        <li><a href="#svg">Visualising the Pipeline</a></li>
+        <li><a href="#ffmpeg-commands">FFmpeg Commands</a></li>
         <li><a href="#model-download">Downloading DNN Models</a></li>
         <li><a href="#configure-runner">Configure ffmpeglab-runner</a></li>
         <li><a href="#monitor">Monitor the Pipeline</a></li>
+        <li><a href="#customising">Customising the Pipeline</a></li>
         <li><a href="#faq">Frequently Asked Questions</a></li>
       </ul>
     </nav>
 
     <p>AI upscaling is one of the most exciting applications of deep learning in video processing. Using FFmpeg's <strong>DNN (Deep Neural Network) filters</strong>, you can upscale low-resolution videos to 2x, 3x, or 4x their original resolution with remarkable quality — restoring detail, reducing artifacts, and breathing new life into old footage.</p>
 
-    <p>This guide shows you how to build a <strong>fully automated AI upscaling pipeline</strong> that turns a low‑resolution video into a high‑quality upscaled masterpiece — all driven by PostgreSQL triggers and pgmq.</p>
+    <p>This guide shows you how to build a <strong>fully automated AI upscaling pipeline</strong> using a <strong>declarative YAML template</strong> and a <strong>transpiler</strong> that generates the complete SQL migration. The pipeline turns a low‑resolution video into a high‑quality upscaled masterpiece — all driven by PostgreSQL triggers and pgmq.</p>
 
     <div class="callout">
       <h3>Key takeaways</h3>
       <ul>
-        <li><strong>One SQL script</strong> — everything is set up with a single execution.</li>
+        <li><strong>One YAML file</strong> — define your entire pipeline in a single, version‑controlled file.</li>
+        <li><strong>Automatic SQL generation</strong> — the transpiler produces the exact PostgreSQL migration.</li>
         <li><strong>Zero manual intervention</strong> — upload a low-res video, get a high-res upscaled version.</li>
         <li><strong>AI-powered upscaling</strong> — uses SRCNN and other DNN models for super‑resolution.</li>
         <li><strong>Scalable and reliable</strong> — pgmq provides durable, transaction‑safe job queuing.</li>
         <li><strong>Configurable</strong> — choose between 2x, 3x, and 4x upscaling factors.</li>
         <li><strong>Multiple backends</strong> — supports TensorFlow, OpenVINO, Torch, and Native backends.</li>
+        <li><strong>Visual graph</strong> — understand your pipeline at a glance with an SVG diagram.</li>
+        <li><strong>Per‑run grouping</strong> – all outputs for a single upload are stored under a unique <code>runId</code> folder.</li>
       </ul>
     </div>
 
@@ -255,7 +328,7 @@
 
     <p>Low‑resolution footage is everywhere: old home videos, legacy content, game captures, and low‑bitrate streams. Traditional upscaling (bicubic, lanczos) simply stretches pixels, creating blurry, artifact‑ridden results. AI upscaling uses deep learning to <strong>actually reconstruct</strong> missing detail, producing sharp, natural-looking results.</p>
 
-    <p>But AI upscaling is computationally intensive and time‑consuming. Doing it manually for every video is impractical. What if the pipeline could be <strong>fully automated</strong> — triggered by the upload itself, processing in the background, and delivering a high‑quality upscaled video when complete?</p>
+    <p>But AI upscaling is computationally intensive and time‑consuming. Doing it manually for every video is impractical. What if the pipeline could be <strong>fully automated</strong> — triggered by the upload itself, processing in the background, and delivering a high‑quality upscaled video when complete? And what if you could define that pipeline in a declarative YAML file that you can version, share, and reuse?</p>
 
     <p>This guide shows you exactly how to build that pipeline.</p>
 
@@ -266,7 +339,7 @@
       <span class="arrow">→</span>
       <span style="color:#34d399;">Supabase Storage</span>
       <span class="arrow">→</span>
-      <span style="color:#fbbf24;">PostgreSQL Trigger</span>
+      <span style="color:#fbbf24;">PostgreSQL Triggers</span>
       <span class="arrow">→</span>
       <span style="color:#34d399;">pgmq Queue</span>
       <span class="arrow">→</span>
@@ -283,12 +356,13 @@
 
     <p>The pipeline consists of:</p>
     <ul>
-      <li><strong>Supabase Storage</strong> — two buckets: <code>private-uploads</code> (per‑user) and <code>public-processed</code> (per‑user, with subfolders for upscaled videos).</li>
+      <li><strong>Supabase Storage</strong> — two buckets: <code>upscale-uploads</code> (per‑user) and <code>public-processed</code> (per‑user).</li>
       <li><strong>RLS policies</strong> — restrict access to each user's own folders.</li>
-      <li><strong>PostgreSQL trigger</strong> — fires on <code>INSERT</code> into <code>storage.objects</code>.</li>
-      <li><strong>pgmq</strong> — message queue for job processing.</li>
+      <li><strong>PostgreSQL triggers</strong> — one trigger per processing step. Each fires on <code>INSERT</code> into <code>storage.objects</code> when a file appears in a specific bucket.</li>
+      <li><strong>pgmq</strong> — message queue for job processing (uses the existing <code>render</code> queue).</li>
       <li><strong>ffmpeglab-runner</strong> — executes FFmpeg commands with DNN upscaling.</li>
       <li><strong>pg_notify</strong> — real‑time status updates.</li>
+      <li><strong>YAML transpiler</strong> — reads the pipeline definition and generates the SQL migration + SVG graph.</li>
     </ul>
 
     <p><strong>Important:</strong> This pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It does <strong>not</strong> create new tables — it only adds the pipeline components.</p>
@@ -300,7 +374,8 @@
         <tr><th>Output</th><th>Format</th><th>Location</th></tr>
       </thead>
       <tbody>
-        <tr><td><strong>Upscaled Video</strong></td><td>MP4 (H.264)</td><td><code>public-processed/{userId}/upscaled/</code></td></tr>
+        <tr><td><strong>Upscaled Video (AI)</strong></td><td>MP4 (H.264) with SRCNN upscaling</td><td><code>public-processed/{userId}/{pipelineId}/{runId}/upscaled/{{baseFilename}}_AI_2x.mp4</code></td></tr>
+        <tr><td><strong>Upscaled Video (Bicubic)</strong></td><td>MP4 (H.264) with lanczos upscaling + sharpening</td><td><code>public-processed/{userId}/{pipelineId}/{runId}/upscaled/{{baseFilename}}_bicubic_2x.mp4</code></td></tr>
         <tr><td><strong>Real‑time notifications</strong></td><td><code>pg_notify</code> channels</td><td>N/A</td></tr>
         <tr><td><strong>Job tracking</strong></td><td><code>render</code> table</td><td>Existing FFmpegLab table</td></tr>
         <tr><td><strong>Logs</strong></td><td><code>logpiece</code> table</td><td>Existing FFmpegLab table</td></tr>
@@ -311,362 +386,270 @@
 
     <ul>
       <li>A <a href="https://supabase.com">Supabase project</a> (cloud or self‑hosted).</li>
-      <li><strong>ffmpeglab-server</strong> and <strong>ffmpeglab-runner</strong> deployed (<a href="agent-first-setup-ffmpeglab-server.html">see setup guide</a>).</li>
-      <li>The <code>render</code> and <code>logpiece</code> tables must already exist (created by the FFmpegLab server migrations).</li>
+      <li><strong>ffmpeglab-server</strong> and <strong>ffmpeglab-runner</strong> deployed.</li>
       <li>FFmpeg compiled with <strong>DNN support</strong> (<code>--enable-libopenvino</code> or <code>--enable-libtensorflow</code>).</li>
       <li>DNN model files downloaded (see <a href="#model-download">Downloading DNN Models</a>).</li>
+      <li>The <code>render</code> and <code>logpiece</code> tables must already exist (created by the FFmpegLab server migrations).</li>
       <li>Access to your Supabase database (psql or the Supabase SQL Editor).</li>
+      <li><a href="https://deno.com">Deno</a> installed to run the transpiler.</li>
     </ul>
 
-    <h2 id="quick-start">Quick Start – The Setup Script</h2>
+    <h2 id="yaml-approach">The YAML‑Driven Approach</h2>
 
-    <p>The fastest way to set up the pipeline is to run the SQL script.</p>
-
-    <div class="step-box">
-      <div class="step-num">Step 1</div>
-      <div class="step-title">Save the SQL script</div>
-      <div class="step-desc">Copy the complete SQL script from the <a href="#setup-script">section below</a> and save it as <code>setup_upscaling_pipeline.sql</code>.</div>
-    </div>
-
-    <div class="step-box">
-      <div class="step-num">Step 2</div>
-      <div class="step-title">Run the script</div>
-      <div class="step-desc">Execute the script against your Supabase database.</div>
-      <div class="code-block">
-        <span style="color: #6b7280;"># Via psql</span>
-        psql -U postgres -d your_database -f setup_upscaling_pipeline.sql
-        <br/><br/>
-        <span style="color: #6b7280;"># Or via the Supabase SQL Editor</span>
-        <span style="color: #6b7280;"># Copy and paste the entire script into the SQL Editor and run it.</span>
-      </div>
-    </div>
-
-    <div class="step-box">
-      <div class="step-num">Step 3</div>
-      <div class="step-title">Download DNN models</div>
-      <div class="step-desc">Download the SRCNN models for upscaling.</div>
-      <div class="code-block">
-        <span style="color: #6b7280;"># Create models directory</span>
-        mkdir -p models/sr
-        <br/><br/>
-        <span style="color: #6b7280;"># Download SRCNN model files</span>
-        wget -O models/sr/srcnn.xml https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/super_resolution.xml
-        wget -O models/sr/srcnn.bin https://github.com/guoyejun/ffmpeg_dnn/raw/main/models/openvino/2021.1/super_resolution.bin
-      </div>
-    </div>
-
-    <div class="step-box">
-      <div class="step-num">Step 4</div>
-      <div class="step-title">Configure the runner</div>
-      <div class="step-desc">Add the upscaling queue to your runner's environment.</div>
-      <div class="code-block">
-        <span style="color: #6b7280;"># Add to your .env or docker-compose.yml</span>
-        UPSCALING_QUEUE_NAME=upscaling_queue
-        <br/><br/>
-        <span style="color: #6b7280;"># DNN model path</span>
-        DNN_MODEL_PATH=/app/models/sr/srcnn.xml
-        <br/><br/>
-        <span style="color: #6b7280;"># DNN backend (openvino, tensorflow, native, torch)</span>
-        DNN_BACKEND=openvino
-        <br/><br/>
-        <span style="color: #6b7280;"># Upscaling factor (2, 3, 4)</span>
-        UPSCALE_FACTOR=2
-      </div>
-    </div>
-
-    <div class="step-box">
-      <div class="step-num">Step 5</div>
-      <div class="step-title">Restart the runner</div>
-      <div class="step-desc">Restart the runner to pick up the new queue.</div>
-      <div class="code-block">
-        docker compose restart ffmpeglab-runner
-      </div>
-    </div>
-
-    <p>That's it! The pipeline is now live. Users can upload low‑resolution videos to <code>private-uploads/{userId}/</code>, and they will be automatically upscaled.</p>
-
-    <h2 id="setup-script">The Complete SQL Setup Script</h2>
-
-    <p><strong>Note:</strong> This script assumes that the <code>render</code> and <code>logpiece</code> tables already exist (from the FFmpegLab server migrations). It only adds the pipeline components.</p>
-
-    <div class="code-block">
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- AI UPSCALING PIPELINE</span><br/>
-      <span class="sql-comment">-- Complete SQL Setup Script</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- This script adds the AI upscaling pipeline components.</span><br/>
-      <span class="sql-comment">-- It assumes the render and logpiece tables already exist.</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 1. Create storage buckets</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-kw">INSERT INTO</span> storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)<br/>
-      <span class="sql-kw">VALUES</span> <br/>
-          (<span class="sql-str">'private-uploads'</span>, <span class="sql-str">'private-uploads'</span>, <span class="sql-kw">false</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>]),<br/>
-          (<span class="sql-str">'public-processed'</span>, <span class="sql-str">'public-processed'</span>, <span class="sql-kw">true</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>])<br/>
-      <span class="sql-kw">ON CONFLICT</span> (id) <span class="sql-kw">DO NOTHING</span>;<br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 2. RLS policies for private-uploads bucket</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <br/>
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can upload to their own folder"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can upload to their own folder"</span><br/>
-      <span class="sql-kw">ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR INSERT</span><br/>
-      <span class="sql-kw">TO authenticated</span><br/>
-      <span class="sql-kw">WITH CHECK</span> (<br/>
-          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
-      );<br/>
-      <br/>
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can download from their own folder"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can download from their own folder"</span><br/>
-      <span class="sql-kw">ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR SELECT</span><br/>
-      <span class="sql-kw">TO authenticated</span><br/>
-      <span class="sql-kw">USING</span> (<br/>
-          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
-      );<br/>
-      <br/>
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can update their own files"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can update their own files"</span><br/>
-      <span class="sql-kw">ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR UPDATE</span><br/>
-      <span class="sql-kw">TO authenticated</span><br/>
-      <span class="sql-kw">USING</span> (<br/>
-          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
-      );<br/>
-      <br/>
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can delete their own files"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can delete their own files"</span><br/>
-      <span class="sql-kw">ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR DELETE</span><br/>
-      <span class="sql-kw">TO authenticated</span><br/>
-      <span class="sql-kw">USING</span> (<br/>
-          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span><br/>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
-      );<br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 3. RLS policies for public-processed bucket</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <br/>
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Public read access to processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Public read access to processed media"</span><br/>
-      <span class="sql-kw">ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR SELECT</span><br/>
-      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);<br/>
-      <br/>
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Service role can manage processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Service role can manage processed media"</span><br/>
-      <span class="sql-kw">ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR ALL</span><br/>
-      <span class="sql-kw">TO service_role</span><br/>
-      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);<br/>
-      <br/>
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can read their own processed media"</span> <span class="sql-kw">ON</span> storage.objects;<br/>
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can read their own processed media"</span><br/>
-      <span class="sql-kw">ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR SELECT</span><br/>
-      <span class="sql-kw">TO authenticated</span><br/>
-      <span class="sql-kw">USING</span> (<br/>
-          bucket_id = <span class="sql-str">'public-processed'</span> <span class="sql-kw">AND</span><br/>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span><br/>
-      );<br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 4. Enable pgmq extension and create the queue</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> pgmq;<br/>
-      <br/>
-      <span class="sql-kw">SELECT</span> pgmq.create(<span class="sql-str">'upscaling_queue'</span>);<br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 5. Create the trigger function for video uploads</span><br/>
-      <span class="sql-comment">-- This function builds the exact FFmpeg commands to be executed by the runner.</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-kw">DROP FUNCTION IF EXISTS</span> handle_video_upscale() <span class="sql-kw">CASCADE</span>;<br/>
-      <br/>
-      <span class="sql-kw">CREATE OR REPLACE FUNCTION</span> handle_video_upscale()<br/>
-      <span class="sql-kw">RETURNS TRIGGER AS $$</span><br/>
-      <span class="sql-kw">DECLARE</span><br/>
-          user_id <span class="sql-type">text</span>;<br/>
-          file_path <span class="sql-type">text</span>;<br/>
-          file_name <span class="sql-type">text</span>;<br/>
-          file_extension <span class="sql-type">text</span>;<br/>
-          mime_type <span class="sql-type">text</span>;<br/>
-          base_filename <span class="sql-type">text</span>;<br/>
-          msg <span class="sql-type">jsonb</span>;<br/>
-          commands <span class="sql-type">jsonb</span> := <span class="sql-str">'[]'</span>;<br/>
-          video_mime_types <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>];<br/>
-          upscale_factor <span class="sql-type">text</span> := <span class="sql-str">'2'</span>; <span class="sql-comment">-- Default: 2x upscaling</span><br/>
-          dnn_backend <span class="sql-type">text</span> := <span class="sql-str">'openvino'</span>; <span class="sql-comment">-- Default backend</span><br/>
-          model_path <span class="sql-type">text</span> := <span class="sql-str">'/app/models/sr/srcnn.xml'</span>; <span class="sql-comment">-- SRCNN model path</span><br/>
-      <span class="sql-kw">BEGIN</span><br/>
-          -- Only process video files in the private-uploads bucket<br/>
-          <span class="sql-kw">IF</span> NEW.bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span> NEW.metadata->><span class="sql-str">'mimetype'</span> = <span class="sql-kw">ANY</span>(video_mime_types) <span class="sql-kw">THEN</span><br/>
-              user_id := (storage.foldername(NEW.name))[1];<br/>
-              file_path := NEW.name;<br/>
-              file_name := (storage.filename(NEW.name));<br/>
-              file_extension := split_part(file_name, <span class="sql-str">'.'</span>, array_length(string_to_array(file_name, <span class="sql-str">'.'</span>), 1));<br/>
-              mime_type := NEW.metadata->><span class="sql-str">'mimetype'</span>;<br/>
-              base_filename := replace(file_name, <span class="sql-str">'.'</span> || file_extension, <span class="sql-str">''</span>);<br/>
-      <br/>
-              -- Build the upscaling command<br/>
-              -- Option 1: Direct DNN upscaling with SRCNN (2x)<br/>
-              commands := commands || jsonb_build_object(<br/>
-                  <span class="sql-str">'type'</span>, <span class="sql-str">'upscale'</span>,<br/>
-                  <span class="sql-str">'scaleFactor'</span>, upscale_factor,<br/>
-                  <span class="sql-str">'backend'</span>, dnn_backend,<br/>
-                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/upscaled/'</span> || base_filename || <span class="sql-str">'_'</span> || upscale_factor || <span class="sql-str">'x.mp4'</span>,<br/>
-                  <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "format=rgb24,dnn_processing=model='</span> || model_path || <span class="sql-str">':input=x:output=y:dnn_backend='</span> || dnn_backend || <span class="sql-str">',scale=iw*'</span> || upscale_factor || <span class="sql-str">':ih*'</span> || upscale_factor || <span class="sql-str">'" -c:v libx264 -crf 18 -pix_fmt yuv420p "OUTPUT_FILE"'</span><br/>
-              );<br/>
-      <br/>
-              -- Option 2: Simple bicubic upscaling + sharpening (fallback)<br/>
-              commands := commands || jsonb_build_object(<br/>
-                  <span class="sql-str">'type'</span>, <span class="sql-str">'upscale'</span>,<br/>
-                  <span class="sql-str">'scaleFactor'</span>, upscale_factor,<br/>
-                  <span class="sql-str">'backend'</span>, <span class="sql-str">'bicubic'</span>,<br/>
-                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/upscaled/'</span> || base_filename || <span class="sql-str">'_'</span> || upscale_factor || <span class="sql-str">'x_bicubic.mp4'</span>,<br/>
-                  <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "scale=iw*'</span> || upscale_factor || <span class="sql-str">':ih*'</span> || upscale_factor || <span class="sql-str">':flags=lanczos,unsharp=5:5:1.5:5:5:0.5" -c:v libx264 -crf 18 -pix_fmt yuv420p "OUTPUT_FILE"'</span><br/>
-              );<br/>
-      <br/>
-              -- Build the job message<br/>
-              msg := jsonb_build_object(<br/>
-                  <span class="sql-str">'userId'</span>, user_id,<br/>
-                  <span class="sql-str">'inputPath'</span>, file_path,<br/>
-                  <span class="sql-str">'inputBucket'</span>, NEW.bucket_id,<br/>
-                  <span class="sql-str">'outputBucket'</span>, <span class="sql-str">'public-processed'</span>,<br/>
-                  <span class="sql-str">'fileName'</span>, file_name,<br/>
-                  <span class="sql-str">'baseFilename'</span>, base_filename,<br/>
-                  <span class="sql-str">'mimeType'</span>, mime_type,<br/>
-                  <span class="sql-str">'scaleFactor'</span>, upscale_factor,<br/>
-                  <span class="sql-str">'commands'</span>, commands,<br/>
-                  <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()<br/>
-              );<br/>
-      <br/>
-              -- Push to pgmq queue<br/>
-              <span class="sql-kw">PERFORM</span> pgmq.send(<span class="sql-str">'upscaling_queue'</span>, msg::<span class="sql-type">jsonb</span>);<br/>
-      <br/>
-              -- Insert into render table for job tracking<br/>
-              <span class="sql-kw">INSERT INTO</span> <span class="sql-str">"render"</span> (id, title, project, status, public, user_id, data)<br/>
-              <span class="sql-kw">VALUES</span> (<br/>
-                  <span class="sql-fn">gen_random_uuid</span>(),<br/>
-                  file_name,<br/>
-                  <span class="sql-str">'upscaling'</span>,<br/>
-                  <span class="sql-str">'queued'</span>,<br/>
-                  <span class="sql-kw">false</span>,<br/>
-                  user_id::<span class="sql-type">uuid</span>,<br/>
-                  msg<br/>
-              );<br/>
-      <br/>
-              -- Notify via pg_notify<br/>
-              <span class="sql-kw">PERFORM</span> pg_notify(<br/>
-                  <span class="sql-str">'upscaling_upload_channel'</span>,<br/>
-                  jsonb_build_object(<br/>
-                      <span class="sql-str">'userId'</span>, user_id,<br/>
-                      <span class="sql-str">'filePath'</span>, file_path,<br/>
-                      <span class="sql-str">'fileName'</span>, file_name,<br/>
-                      <span class="sql-str">'status'</span>, <span class="sql-str">'queued'</span>,<br/>
-                      <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()<br/>
-                  )::<span class="sql-type">text</span><br/>
-              );<br/>
-          <span class="sql-kw">END IF</span>;<br/>
-      <br/>
-          <span class="sql-kw">RETURN</span> NEW;<br/>
-      <span class="sql-kw">END;</span><br/>
-      <span class="sql-kw">$$ LANGUAGE plpgsql SECURITY DEFINER;</span><br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 6. Attach the trigger to storage.objects</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-kw">DROP TRIGGER IF EXISTS</span> upscaling_upload_trigger <span class="sql-kw">ON</span> storage.objects;<br/>
-      <br/>
-      <span class="sql-kw">CREATE TRIGGER</span> upscaling_upload_trigger<br/>
-      <span class="sql-kw">AFTER INSERT ON</span> storage.objects<br/>
-      <span class="sql-kw">FOR EACH ROW</span><br/>
-      <span class="sql-kw">EXECUTE FUNCTION</span> handle_video_upscale();<br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 7. Helper views for monitoring</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <br/>
-      <span class="sql-kw">DROP VIEW IF EXISTS</span> upscaling_queue_view;<br/>
-      <br/>
-      <span class="sql-kw">CREATE OR REPLACE VIEW</span> upscaling_queue_view <span class="sql-kw">AS</span><br/>
-      <span class="sql-kw">SELECT</span> <br/>
-          msg_id,<br/>
-          read_ct,<br/>
-          enqueued_at,<br/>
-          vt,<br/>
-          message::<span class="sql-type">jsonb</span> <span class="sql-kw">as</span> payload,<br/>
-          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'userId'</span>) <span class="sql-kw">as</span> user_id,<br/>
-          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'fileName'</span>) <span class="sql-kw">as</span> file_name,<br/>
-          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'scaleFactor'</span>) <span class="sql-kw">as</span> scale_factor<br/>
-      <span class="sql-kw">FROM</span> pgmq.q_upscaling_queue<br/>
-      <span class="sql-kw">ORDER BY</span> msg_id <span class="sql-kw">DESC</span>;<br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- 8. Initialize notification channels</span><br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-kw">DO $$</span><br/>
-      <span class="sql-kw">BEGIN</span><br/>
-          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'upscaling_upload_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
-          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'render_status_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
-          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'log_channel'</span>, <span class="sql-str">'{"init": true}'</span>);<br/>
-      <span class="sql-kw">END $$</span>;<br/>
-      <br/>
-      <span class="sql-comment">-- ============================================================</span><br/>
-      <span class="sql-comment">-- All done!</span><br/>
-      <span class="sql-comment">-- ============================================================</span>
-    </div>
-
-    <h2 id="what-it-does">What the Script Does</h2>
-
-    <table class="schema-table">
-      <thead>
-        <tr><th>Component</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><strong>Storage Buckets</strong></td><td>Creates <code>private-uploads</code> (private) and <code>public-processed</code> (public) buckets with file size limits and allowed MIME types</td></tr>
-        <tr><td><strong>RLS Policies</strong></td><td>Sets per‑user isolation for private uploads and public read access for processed media</td></tr>
-        <tr><td><strong>pgmq Queue</strong></td><td>Creates the <code>upscaling_queue</code> for job processing</td></tr>
-        <tr><td><strong>Trigger Function</strong></td><td><code>handle_video_upscale()</code> — fires on new uploads, builds FFmpeg commands for DNN upscaling, pushes to pgmq, inserts into <code>render</code>, sends notifications</td></tr>
-        <tr><td><strong>Views</strong></td><td>Helper views for monitoring queue status</td></tr>
-        <tr><td><strong>Uses Existing Tables</strong></td><td>Uses <code>render</code> for job tracking and <code>logpiece</code> for logs (from FFmpegLab server)</td></tr>
-      </tbody>
-    </table>
-
-    <h2 id="processing-logic">Processing Logic Explained</h2>
-
-    <p>When a video is uploaded to <code>private-uploads/{userId}/</code>, the pipeline:</p>
-
-    <ol>
-      <li><strong>Identifies the video</strong> — checks if the file is a video.</li>
-      <li><strong>Builds two FFmpeg commands</strong> — one for AI upscaling (DNN) and one for bicubic upscaling (fallback).</li>
-      <li><strong>Creates a render job</strong> in the existing <code>render</code> table with the commands in the <code>data</code> column.</li>
-      <li><strong>Pushes a job</strong> to the <code>upscaling_queue</code> with the commands payload.</li>
-      <li><strong>Sends a notification</strong> via <code>pg_notify</code>.</li>
-      <li>The <strong>ffmpeglab-runner</strong> picks up the job, resolves the <code>INPUT_FILE</code> and <code>OUTPUT_FILE</code> placeholders, and executes the commands.</li>
-    </ol>
-
-    <h2 id="ffmpeg-commands">Exact FFmpeg Commands</h2>
-
-    <p>The trigger function generates the following FFmpeg commands using placeholders:</p>
+    <p>While you can write the SQL directly, the <strong>recommended way</strong> is to use the <strong>YAML transpiler</strong>. This gives you:</p>
 
     <ul>
-      <li><strong><code>INPUT_FILE</code></strong> — The path to the downloaded input file (resolved by the runner).</li>
-      <li><strong><code>OUTPUT_FILE</code></strong> — The temporary path for the output file (resolved by the runner).</li>
+      <li><strong>Declarative pipeline definition</strong> — define steps, triggers, and buckets in clean YAML.</li>
+      <li><strong>Automatic SQL generation</strong> — the transpiler produces the exact PostgreSQL migration.</li>
+      <li><strong>Visual pipeline graph</strong> — generate an SVG diagram of your pipeline with <code>--svg</code>.</li>
+      <li><strong>Reusable templates</strong> — share and version your pipeline definitions.</li>
+    </ul>
+
+    <p>The transpiler is a single TypeScript file that reads your YAML and generates the SQL migration. It runs with Deno and has zero external dependencies (except <code>yaml</code> for parsing).</p>
+
+    <h2 id="yaml-template">The YAML Template</h2>
+
+    <p>Create a file called <code>ai-upscaling-pipeline.yaml</code> with the following content. It defines the buckets, RLS policies, and each processing step. The <code>runId</code> section configures how the per‑run ID is generated — in this case, deterministically from the input file name.</p>
+
+    <div class="code-window">
+      <div class="titlebar">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+        <span class="mono fname">ai-upscaling-pipeline.yaml</span>
+      </div>
+      <pre class="mono em-code"><span class="el">name</span>: <span class="ef">"AI Upscaling Pipeline"</span>
+<span class="el">pipelineId</span>: <span class="ef">"ai-upscaling"</span>
+<span class="el">runId</span>:
+  <span class="el">mode</span>: <span class="ef">"deterministic"</span>
+  <span class="el">template</span>: <span class="ef">"{baseFilename}"</span>
+<span class="el">description</span>: <span class="ef">"Automated AI upscaling using DNN models (SRCNN) and bicubic fallback"</span>
+<span class="el">version</span>: <span class="ef">"1.0.0"</span>
+
+<span class="el">editor</span>:
+  <span class="el">compressionLevel</span>: <span class="el">23</span>
+  <span class="el">preset</span>: <span class="ef">"medium"</span>
+  <span class="el">aspectRatio</span>: <span class="ef">"16:9"</span>
+  <span class="el">framerate</span>: <span class="el">30</span>
+  <span class="el">opacity</span>: <span class="el">1.0</span>
+  <span class="el">output</span>: <span class="ef">"mp4"</span>
+
+<span class="el">storage</span>:
+  <span class="el">output_bucket</span>: <span class="ef">"public-processed"</span>
+  <span class="el">buckets</span>:
+    - <span class="el">name</span>: <span class="ef">"upscale-uploads"</span>
+      <span class="el">public</span>: <span class="el">false</span>
+      <span class="el">allowed_mime_types</span>:
+        - <span class="ef">"video/mp4"</span>
+        - <span class="ef">"video/quicktime"</span>
+        - <span class="ef">"video/x-msvideo"</span>
+        - <span class="ef">"video/webm"</span>
+        - <span class="ef">"video/mpeg"</span>
+    - <span class="el">name</span>: <span class="ef">"public-processed"</span>
+      <span class="el">public</span>: <span class="el">true</span>
+      <span class="el">allowed_mime_types</span>:
+        - <span class="ef">"video/mp4"</span>
+
+  <span class="el">rls_policies</span>:
+    - <span class="el">name</span>: <span class="ef">"Users can upload to their own folder"</span>
+      <span class="el">operation</span>: <span class="ef">"INSERT"</span>
+      <span class="el">role</span>: <span class="ef">"authenticated"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'upscale-uploads' AND</span>
+        <span class="ef">(storage.foldername(name))[1] = auth.uid()::text</span>
+
+    - <span class="el">name</span>: <span class="ef">"Users can download from their own folder"</span>
+      <span class="el">operation</span>: <span class="ef">"SELECT"</span>
+      <span class="el">role</span>: <span class="ef">"authenticated"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'upscale-uploads' AND</span>
+        <span class="ef">(storage.foldername(name))[1] = auth.uid()::text</span>
+
+    - <span class="el">name</span>: <span class="ef">"Public read access to processed media"</span>
+      <span class="el">operation</span>: <span class="ef">"SELECT"</span>
+      <span class="el">role</span>: <span class="ef">"anon"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'public-processed'</span>
+
+    - <span class="el">name</span>: <span class="ef">"Service role can manage processed media"</span>
+      <span class="el">operation</span>: <span class="ef">"ALL"</span>
+      <span class="el">role</span>: <span class="ef">"service_role"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'public-processed'</span>
+
+    - <span class="el">name</span>: <span class="ef">"Users can read their own processed media"</span>
+      <span class="el">operation</span>: <span class="ef">"SELECT"</span>
+      <span class="el">role</span>: <span class="ef">"authenticated"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'public-processed' AND</span>
+        <span class="ef">(storage.foldername(name))[1] = auth.uid()::text</span>
+
+<span class="el">steps</span>:
+  <span class="c"># Step 1: AI Upscaling with DNN (SRCNN)</span>
+  - <span class="el">id</span>: <span class="ef">"ai_upscale"</span>
+    <span class="el">trigger</span>:
+      <span class="el">name</span>: <span class="ef">"handle_ai_upscale"</span>
+      <span class="el">event</span>: <span class="ef">"INSERT"</span>
+      <span class="el">table</span>: <span class="ef">"storage.objects"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">NEW.bucket_id = 'upscale-uploads' AND</span>
+        <span class="ef">NEW.metadata->>'mimetype' LIKE 'video/%'</span>
+    <span class="el">command</span>: <span class="ef">-i $MEDIA_1 -vf "format=rgb24,dnn_processing=model=$DNN_MODEL_PATH:input=x:output=y:dnn_backend=$DNN_BACKEND,scale=iw*$UPSCALE_FACTOR:ih*$UPSCALE_FACTOR" -c:v libx264 -crf 18 -pix_fmt yuv420p -y $OUTPUT_PATH</span>
+    <span class="el">inputs</span>: [<span class="ef">"INPUT_FILE"</span>]
+    <span class="el">outputs</span>: [<span class="ef">"OUTPUT_FILE"</span>]
+    <span class="el">output_path</span>: <span class="ef">"{{userId}}/{{pipelineId}}/{{runId}}/upscaled/{{baseFilename}}_AI_${UPSCALE_FACTOR}x.mp4"</span>
+    <span class="el">editor</span>:
+      <span class="el">output</span>: <span class="ef">"mp4"</span>
+      <span class="el">preset</span>: <span class="ef">"slow"</span>
+      <span class="el">selectedCode</span>: <span class="ef">"custom"</span>
+      <span class="el">width</span>: <span class="el">0</span>
+      <span class="el">height</span>: <span class="el">0</span>
+      <span class="el">compressionLevel</span>: <span class="el">18</span>
+    <span class="el">keep</span>: <span class="el">true</span>
+
+  <span class="c"># Step 2: Bicubic Upscaling (Fallback)</span>
+  - <span class="el">id</span>: <span class="ef">"bicubic_upscale"</span>
+    <span class="el">trigger</span>:
+      <span class="el">name</span>: <span class="ef">"handle_bicubic_upscale"</span>
+      <span class="el">event</span>: <span class="ef">"INSERT"</span>
+      <span class="el">table</span>: <span class="ef">"storage.objects"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">NEW.bucket_id = 'upscale-uploads' AND</span>
+        <span class="ef">NEW.metadata->>'mimetype' LIKE 'video/%'</span>
+    <span class="el">command</span>: <span class="ef">-i $MEDIA_1 -vf "scale=iw*$UPSCALE_FACTOR:ih*$UPSCALE_FACTOR:flags=lanczos,unsharp=5:5:1.5:5:5:0.5" -c:v libx264 -crf 18 -pix_fmt yuv420p -y $OUTPUT_PATH</span>
+    <span class="el">inputs</span>: [<span class="ef">"INPUT_FILE"</span>]
+    <span class="el">outputs</span>: [<span class="ef">"OUTPUT_FILE"</span>]
+    <span class="el">output_path</span>: <span class="ef">"{{userId}}/{{pipelineId}}/{{runId}}/upscaled/{{baseFilename}}_bicubic_${UPSCALE_FACTOR}x.mp4"</span>
+    <span class="el">editor</span>:
+      <span class="el">output</span>: <span class="ef">"mp4"</span>
+      <span class="el">preset</span>: <span class="ef">"slow"</span>
+      <span class="el">selectedCode</span>: <span class="ef">"custom"</span>
+      <span class="el">width</span>: <span class="el">0</span>
+      <span class="el">height</span>: <span class="el">0</span>
+      <span class="el">compressionLevel</span>: <span class="el">18</span>
+    <span class="el">keep</span>: <span class="el">true</span>
+
+<span class="el">render</span>:
+  <span class="el">project_name</span>: <span class="ef">"upscaling"</span>
+  <span class="el">status</span>: <span class="ef">"queued"</span>
+  <span class="el">public</span>: <span class="el">false</span></pre>
+    </div>
+
+    <p>The <code>keep: true</code> flag on both steps tells the transpiler to send the output directly to the final bucket (<code>public-processed</code>). The <code>runId</code> is computed deterministically from the input file name (using <code>mode: "deterministic"</code> and <code>template: "{baseFilename}"</code>). This ensures all steps in the parallel pipeline compute the same run ID, grouping all outputs for a single upload under one folder.</p>
+
+    <h2 id="transpiler">Running the Transpiler</h2>
+
+    <p>Download the transpiler and the SVG generator:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Download transpiler and SVG generator</span>
+      curl -O https://raw.githubusercontent.com/ffmpeglab/server/main/sdk/yaml/transpiler.ts
+      curl -O https://raw.githubusercontent.com/ffmpeglab/server/main/sdk/yaml/svg.ts
+    </div>
+
+    <p>Run the transpiler to generate the migration files:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Generate the migration files</span>
+      deno run --allow-read --allow-write transpiler.ts ai-upscaling-pipeline.yaml ./supabase/migrations
+    </div>
+
+    <p>Add the <code>--svg</code> flag to also generate a visual graph of your pipeline:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Generate migration files + SVG graph</span>
+      deno run --allow-read --allow-write transpiler.ts ai-upscaling-pipeline.yaml ./supabase/migrations --svg
+    </div>
+
+    <p>The output will be:</p>
+
+    <div class="code-block">
+      <span class="sql-comment">✅ Migration files created:</span>
+         UP:   ./supabase/migrations/20260807120000_ai-upscaling.sql
+         DOWN: ./supabase/migrations/20260807120000_ai-upscaling_down.sql
+         SVG:  ./supabase/migrations/20260807120000_ai-upscaling.svg
+    </div>
+
+    <p>Apply the migration to your Supabase database:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Via psql</span>
+      psql -U postgres -d your_database -f ./supabase/migrations/20260807120000_ai-upscaling.sql
+    </div>
+
+    <h2 id="svg">Visualising the Pipeline</h2>
+
+    <p>The generated SVG gives you a clear overview of your pipeline. Steps marked with <strong>KEEP</strong> are green – their outputs are permanently stored in the final bucket. Edges are labelled with the bucket they use for data flow.</p>
+
+    <div class="svg-container">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 200 700 400" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;background:transparent;font-family:system-ui,-apple-system,sans-serif;">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+          </marker>
+          <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+          </filter>
+          <linearGradient id="startGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1a2a4a"/>
+            <stop offset="100%" stop-color="#1a2a4a"/>
+          </linearGradient>
+          <linearGradient id="keepGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1a3a2a"/>
+            <stop offset="100%" stop-color="#1a3a2a"/>
+          </linearGradient>
+          <linearGradient id="templateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3a2a1a"/>
+            <stop offset="100%" stop-color="#3a2a1a"/>
+          </linearGradient>
+          <linearGradient id="sourceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1a1a3a"/>
+            <stop offset="100%" stop-color="#1a1a3a"/>
+          </linearGradient>
+          <linearGradient id="waitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3a1a1a"/>
+            <stop offset="100%" stop-color="#3a1a1a"/>
+          </linearGradient>
+        </defs>
+        <path d="M300,400 Q350,355 400,310" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="" marker-end="url(#arrow)"/>
+        <rect x="305" y="331" width="90" height="24" rx="4" fill="#2d2d44" stroke="#6b7280" stroke-width="1.5" opacity="0.95"/>
+        <text x="350" y="347" text-anchor="middle" dominant-baseline="central" fill="#e5e7eb" font-size="11" font-weight="600">→ public-processed</text>
+        <path d="M300,400 Q350,445 400,490" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="" marker-end="url(#arrow)"/>
+        <rect x="305" y="421" width="90" height="24" rx="4" fill="#2d2d44" stroke="#6b7280" stroke-width="1.5" opacity="0.95"/>
+        <text x="350" y="437" text-anchor="middle" dominant-baseline="central" fill="#e5e7eb" font-size="11" font-weight="600">→ public-processed</text>
+        <rect x="60" y="350" width="240" height="100" rx="10" fill="url(#startGrad)" stroke="#4a8aef" stroke-width="2"  filter="url(#shadow)"/>
+        <text x="180" y="368" text-anchor="middle" dominant-baseline="central" fill="#90caf9" font-size="12" font-weight="600">📤 upscale-uploads</text>
+        <rect x="400" y="260" width="240" height="100" rx="10" fill="url(#keepGrad)" stroke="#4a8a5a" stroke-width="2"  filter="url(#shadow)"/>
+        <text x="520" y="278" text-anchor="middle" dominant-baseline="central" fill="#a5d6a7" font-size="12" font-weight="600">ai_upscale</text>
+        <rect x="594" y="268" width="36" height="18" rx="4" fill="#4a8a5a" opacity="0.9"/>
+        <text x="612" y="277" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="8" font-weight="bold">KEEP</text>
+        <text x="520" y="302" text-anchor="middle" dominant-baseline="central" fill="#a5d6a7" font-size="9" font-family="monospace">📁 {userId}/ai-upscaling/{filename}/upsca…</text>
+        <text x="520" y="334" text-anchor="middle" dominant-baseline="central" fill="#e5e7eb" font-size="8">(slow)</text>
+        <rect x="400" y="440" width="240" height="100" rx="10" fill="url(#keepGrad)" stroke="#4a8a5a" stroke-width="2"  filter="url(#shadow)"/>
+        <text x="520" y="458" text-anchor="middle" dominant-baseline="central" fill="#a5d6a7" font-size="12" font-weight="600">bicubic_upscale</text>
+        <rect x="594" y="448" width="36" height="18" rx="4" fill="#4a8a5a" opacity="0.9"/>
+        <text x="612" y="457" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="8" font-weight="bold">KEEP</text>
+        <text x="520" y="482" text-anchor="middle" dominant-baseline="central" fill="#a5d6a7" font-size="9" font-family="monospace">📁 {userId}/ai-upscaling/{filename}/upsca…</text>
+        <text x="520" y="514" text-anchor="middle" dominant-baseline="central" fill="#e5e7eb" font-size="8">(slow)</text>
+      </svg>
+    </div>
+
+    <p>In the graph above, both steps trigger on the same <code>upscale-uploads</code> bucket and output directly to <code>public-processed</code>. This parallel execution allows both AI and bicubic upscaling to run simultaneously, giving you a comparison of results.</p>
+
+    <h2 id="ffmpeg-commands">FFmpeg Commands</h2>
+
+    <p>The YAML steps define the following FFmpeg commands using placeholders:</p>
+
+    <ul>
+      <li><code>$MEDIA_1</code> — The path to the downloaded input file (resolved by the runner).</li>
+      <li><code>$OUTPUT_PATH</code> — The temporary path for the output file (resolved by the runner).</li>
+      <li><code>$DNN_MODEL_PATH</code>, <code>$DNN_BACKEND</code>, <code>$UPSCALE_FACTOR</code> — Environment variables for model configuration.</li>
     </ul>
 
     <h3>1. AI Upscaling with DNN (SRCNN)</h3>
 
     <div class="code-block">
-      ffmpeg -i "INPUT_FILE" -vf "format=rgb24,dnn_processing=model=/app/models/sr/srcnn.xml:input=x:output=y:dnn_backend=openvino,scale=iw*2:ih*2" -c:v libx264 -crf 18 -pix_fmt yuv420p "OUTPUT_FILE"
+      ffmpeg -i $MEDIA_1 -vf "format=rgb24,dnn_processing=model=/app/models/sr/srcnn.xml:input=x:output=y:dnn_backend=openvino,scale=iw*2:ih*2" -c:v libx264 -crf 18 -pix_fmt yuv420p -y $OUTPUT_PATH
     </div>
 
     <div class="step-box">
@@ -676,11 +659,12 @@
         <ul>
           <li><strong><code>format=rgb24</code></strong> — DNN models typically expect RGB24 format.</li>
           <li><strong><code>dnn_processing</code></strong> — FFmpeg's DNN processing filter.</li>
-          <li><strong><code>model=/app/models/sr/srcnn.xml</code></strong> — Path to the SRCNN model (OpenVINO format).</li>
+          <li><strong><code>model=$DNN_MODEL_PATH</code></strong> — Path to the SRCNN model (OpenVINO format).</li>
           <li><strong><code>input=x:output=y</code></strong> — Input and output tensor names for the model.</li>
-          <li><strong><code>dnn_backend=openvino</code></strong> — DNN backend (openvino, tensorflow, native, torch).</li>
-          <li><strong><code>scale=iw*2:ih*2</code></strong> — Upscale the DNN output to the target size.</li>
+          <li><strong><code>dnn_backend=$DNN_BACKEND</code></strong> — DNN backend (openvino, tensorflow, native, torch).</li>
+          <li><strong><code>scale=iw*$UPSCALE_FACTOR:ih*$UPSCALE_FACTOR</code></strong> — Upscale the DNN output to the target size.</li>
           <li><strong><code>-crf 18</code></strong> — High quality encoding for the upscaled result.</li>
+          <li><strong><code>-y</code></strong> — Overwrite output file without prompting.</li>
         </ul>
       </div>
     </div>
@@ -688,7 +672,7 @@
     <h3>2. Bicubic Upscaling (Fallback)</h3>
 
     <div class="code-block">
-      ffmpeg -i "INPUT_FILE" -vf "scale=iw*2:ih*2:flags=lanczos,unsharp=5:5:1.5:5:5:0.5" -c:v libx264 -crf 18 -pix_fmt yuv420p "OUTPUT_FILE"
+      ffmpeg -i $MEDIA_1 -vf "scale=iw*$UPSCALE_FACTOR:ih*$UPSCALE_FACTOR:flags=lanczos,unsharp=5:5:1.5:5:5:0.5" -c:v libx264 -crf 18 -pix_fmt yuv420p -y $OUTPUT_PATH
     </div>
 
     <div class="step-box">
@@ -696,9 +680,10 @@
       <div class="step-title">Bicubic Upscaling Parameters Explained</div>
       <div class="step-desc">
         <ul>
-          <li><strong><code>scale=iw*2:ih*2:flags=lanczos</code></strong> — Lanczos scaling (highest quality).</li>
+          <li><strong><code>scale=iw*$UPSCALE_FACTOR:ih*$UPSCALE_FACTOR:flags=lanczos</code></strong> — Lanczos scaling (highest quality).</li>
           <li><strong><code>unsharp=5:5:1.5:5:5:0.5</code></strong> — Unsharp mask to restore sharpness after scaling.</li>
           <li><strong><code>-crf 18</code></strong> — High quality encoding.</li>
+          <li><strong><code>-y</code></strong> — Overwrite output file without prompting.</li>
         </ul>
       </div>
     </div>
@@ -761,21 +746,24 @@
 
     <h2 id="configure-runner">Configure ffmpeglab-runner</h2>
 
-    <p>The runner needs to be configured to poll the <code>upscaling_queue</code>, mount the model files, and execute the provided FFmpeg commands.</p>
+    <p>The runner needs to be configured to poll the <code>render</code> queue (used by the transpiler) and execute the provided FFmpeg commands.</p>
 
     <div class="step-box">
       <div class="step-num">Step 1</div>
       <div class="step-title">Add the queue to your environment</div>
       <div class="step-desc">Add the following to your <code>.env</code> file or Docker Compose configuration.</div>
       <div class="code-block">
-        <span style="color: #6b7280;"># Upscaling queue</span>
-        UPSCALING_QUEUE_NAME=upscaling_queue
-        <br/><br/>
+        <span style="color: #6b7280;"># Render queue (already used by FFmpegLab server)</span>
+        RENDER_QUEUE_NAME=render
+
         <span style="color: #6b7280;"># DNN model path</span>
         DNN_MODEL_PATH=/app/models/sr/srcnn.xml
-        <br/><br/>
+
         <span style="color: #6b7280;"># DNN backend</span>
         DNN_BACKEND=openvino
+
+        <span style="color: #6b7280;"># Upscaling factor (2, 3, 4)</span>
+        UPSCALE_FACTOR=2
       </div>
     </div>
 
@@ -801,7 +789,7 @@
         <br/><br/>
         <span style="color: #6b7280;"># 2. For each job:</span>
         <br/>
-        <span style="color: #6b7280;">#    a. Download the input file from private-uploads</span>
+        <span style="color: #6b7280;">#    a. Download the input file from upscale-uploads</span>
         <br/>
         <span style="color: #6b7280;">#    b. Parse the 'commands' array from the job payload</span>
         <br/>
@@ -854,9 +842,11 @@
     <div class="step-box">
       <div class="step-num">Step 1</div>
       <div class="step-title">Check queued jobs</div>
-      <div class="step-desc">Use the helper view to see all queued jobs.</div>
+      <div class="step-desc">Query the render table to see queued jobs.</div>
       <div class="code-block">
-        <span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> upscaling_queue_view;
+        <span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> <span class="sql-str">"render"</span>
+        <span class="sql-kw">WHERE</span> status = <span class="sql-str">'queued'</span>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
       </div>
     </div>
 
@@ -865,9 +855,9 @@
       <div class="step-title">Check render status</div>
       <div class="step-desc">Query the existing <code>render</code> table for job status.</div>
       <div class="code-block">
-        <span class="sql-kw">SELECT</span> id, title, status, progress, data<br/>
-        <span class="sql-kw">FROM</span> <span class="sql-str">"render"</span><br/>
-        <span class="sql-kw">WHERE</span> project = <span class="sql-str">'upscaling'</span><br/>
+        <span class="sql-kw">SELECT</span> id, title, status, progress, data
+        <span class="sql-kw">FROM</span> <span class="sql-str">"render"</span>
+        <span class="sql-kw">WHERE</span> project = <span class="sql-str">'ai-upscaling'</span>
         <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
       </div>
     </div>
@@ -877,9 +867,8 @@
       <div class="step-title">Listen to notifications</div>
       <div class="step-desc">In your application, listen for real‑time updates.</div>
       <div class="code-block">
-        <span style="color: #6b7280;">-- In your PostgreSQL client:</span><br/>
-        <span class="sql-kw">LISTEN</span> upscaling_upload_channel;<br/>
-        <span class="sql-kw">LISTEN</span> render_status_channel;<br/>
+        <span style="color: #6b7280;">-- In your PostgreSQL client:</span>
+        <span class="sql-kw">LISTEN</span> render_status_channel;
         <span class="sql-kw">LISTEN</span> log_channel;
       </div>
     </div>
@@ -889,10 +878,64 @@
       <div class="step-title">Check processed files</div>
       <div class="step-desc">List all processed files in the public bucket.</div>
       <div class="code-block">
-        <span class="sql-kw">SELECT</span> name, metadata, created_at <span class="sql-kw">FROM</span> storage.objects<br/>
-        <span class="sql-kw">WHERE</span> bucket_id = <span class="sql-str">'public-processed'</span><br/>
+        <span class="sql-kw">SELECT</span> name, metadata, created_at <span class="sql-kw">FROM</span> storage.objects
+        <span class="sql-kw">WHERE</span> bucket_id = <span class="sql-str">'public-processed'</span>
         <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
       </div>
+    </div>
+
+    <h2 id="customising">Customising the Pipeline</h2>
+
+    <h3>Change Upscaling Factor</h3>
+
+    <p>Update the <code>UPSCALE_FACTOR</code> environment variable in your runner:</p>
+
+    <div class="code-block">
+      <span style="color: #6b7280;"># In your .env or docker-compose.yml</span>
+      UPSCALE_FACTOR=3
+    </div>
+
+    <p>The YAML command uses <code>$UPSCALE_FACTOR</code> so it will automatically apply the new value.</p>
+
+    <h3>Use a Different DNN Model</h3>
+
+    <p>Replace the model path and tensor names:</p>
+
+    <div class="code-block">
+      <span style="color: #6b7280;"># In your environment</span>
+      DNN_MODEL_PATH=/app/models/sr/espcn.xml
+      DNN_INPUT=image
+      DNN_OUTPUT=detection_out
+    </div>
+
+    <p>Update the YAML command accordingly:</p>
+
+    <div class="code-block">
+      <span class="sql-kw">command</span>: <span class="ef">-i $MEDIA_1 -vf "format=rgb24,dnn_processing=model=$DNN_MODEL_PATH:input=$DNN_INPUT:output=$DNN_OUTPUT:dnn_backend=$DNN_BACKEND,scale=iw*$UPSCALE_FACTOR:ih*$UPSCALE_FACTOR" -c:v libx264 -crf 18 -pix_fmt yuv420p -y $OUTPUT_PATH</span>
+    </div>
+
+    <h3>Add a Third Upscaling Method</h3>
+
+    <p>Duplicate an existing step and modify the command:</p>
+
+    <div class="code-block">
+      <span class="sql-kw">- id</span>: <span class="ef">"neural_upscale"</span>
+        <span class="sql-kw">trigger</span>:
+          <span class="sql-kw">name</span>: <span class="ef">"handle_neural_upscale"</span>
+          <span class="sql-kw">event</span>: <span class="ef">"INSERT"</span>
+          <span class="sql-kw">table</span>: <span class="ef">"storage.objects"</span>
+          <span class="sql-kw">condition</span>: <span class="ef">|</span>
+            <span class="ef">NEW.bucket_id = 'upscale-uploads' AND</span>
+            <span class="ef">NEW.metadata->>'mimetype' LIKE 'video/%'</span>
+        <span class="sql-kw">command</span>: <span class="ef">-i $MEDIA_1 -vf "dnn_processing=model=neural_net.xml:input=x:output=y:dnn_backend=openvino,scale=iw*2:ih*2" -c:v libx264 -crf 18 -y $OUTPUT_PATH</span>
+        <span class="sql-kw">inputs</span>: [<span class="ef">"INPUT_FILE"</span>]
+        <span class="sql-kw">outputs</span>: [<span class="ef">"OUTPUT_FILE"</span>]
+        <span class="sql-kw">output_path</span>: <span class="ef">"{{userId}}/{{pipelineId}}/{{runId}}/upscaled/{{baseFilename}}_neural_2x.mp4"</span>
+        <span class="sql-kw">editor</span>:
+          <span class="sql-kw">output</span>: <span class="ef">"mp4"</span>
+          <span class="sql-kw">preset</span>: <span class="ef">"slow"</span>
+          <span class="sql-kw">selectedCode</span>: <span class="ef">"custom"</span>
+        <span class="sql-kw">keep</span>: <span class="el">true</span>
     </div>
 
     <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
@@ -907,7 +950,7 @@
     <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
       <h3 itemprop="name">What upscaling factors are supported?</h3>
       <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-        <p itemprop="text">The pipeline supports <strong>2x, 3x, and 4x upscaling</strong>. The default is 2x upscaling using the SRCNN model. You can configure the scale factor in the trigger function or by modifying the FFmpeg command.</p>
+        <p itemprop="text">The pipeline supports <strong>2x, 3x, and 4x upscaling</strong>. The default is 2x upscaling using the SRCNN model. You can configure the scale factor in the runner's environment variable (<code>UPSCALE_FACTOR</code>).</p>
       </div>
     </div>
 
@@ -932,9 +975,16 @@
       </div>
     </div>
 
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does this pipeline create new tables?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No. The pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It only adds storage buckets, RLS policies, and the trigger function — no table conflicts.</p>
+      </div>
+    </div>
+
     <h2>Final Word</h2>
 
-    <p>You now have a <strong>fully automated AI upscaling pipeline</strong> that uses deep learning to transform low‑resolution videos into high‑quality upscaled content. With PostgreSQL triggers, pgmq, and Supabase Storage, you get:</p>
+    <p>You now have a <strong>fully automated AI upscaling pipeline</strong> defined in YAML and generated via a transpiler. With PostgreSQL triggers, pgmq, and Supabase Storage, you get:</p>
 
     <ul>
       <li><strong>AI-powered upscaling</strong> — SRCNN models for super‑resolution</li>
@@ -942,6 +992,8 @@
       <li><strong>Multiple DNN backends</strong> — TensorFlow, OpenVINO, Torch, Native</li>
       <li><strong>Real‑time notifications</strong> — know when processing is complete</li>
       <li><strong>Full observability</strong> — monitoring views and logs</li>
+      <li><strong>Declarative YAML</strong> — version‑controlled, reusable pipeline definitions</li>
+      <li><strong>Per‑run grouping</strong> via deterministic <code>runId</code> – all outputs for one upload stay together.</li>
     </ul>
 
     <p>The pipeline is <strong>production‑ready</strong>, <strong>scalable</strong>, and <strong>configurable</strong>. It uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server, so there are no table conflicts — just pure, AI-powered upscaling.</p>
@@ -954,8 +1006,9 @@
       <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
         <li><a href="agent-first-setup-ffmpeglab-server.html">Agent-First Setup Guide – FFmpegLab Server</a></li>
         <li><a href="ffmpeg-env-vars-scalable-runners.html">Environment Variables &amp; Scalable Runners</a></li>
-        <li><a href="setting-up-supabase-storage-ffmpeglab.html">Setting Up Supabase Storage with FFmpegLab</a></li>
+        <li><a href="ffmpeg-dnn-filters.html">DNN Filters – AI-Powered Video Processing</a></li>
         <li><a href="ffmpeg-applications-startups.html">Applications &amp; Startups Powered by FFmpeg</a></li>
+        <li><a href="ultimate-video-onboarding-pipeline-yaml-supabase.html">Ultimate Video Onboarding Pipeline – YAML &amp; SQL Triggers</a></li>
       </ul>
     </aside>
 
