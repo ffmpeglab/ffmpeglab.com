@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Automated Subtitle Generation & Burn-in Pipeline – SQL + DNN</title>
-  <meta name="description" content="Build an automated subtitle generation pipeline that uses Whisper AI to transcribe audio and burn subtitles into videos using SQL triggers, pgmq, and Supabase Storage." />
-  <meta name="keywords" content="automatic subtitles, whisper transcription, burn subtitles, sql triggers, pgmq, supabase storage, ffmpeglab, speech-to-text, video accessibility" />
+  <title>Automated Subtitle Generation & Burn-in Pipeline – YAML &amp; SQL + DNN</title>
+  <meta name="description" content="Build an automated subtitle generation pipeline using YAML, SQL triggers, and Whisper AI. Transcribe audio and burn subtitles into videos with Supabase Storage." />
+  <meta name="keywords" content="automatic subtitles, whisper transcription, burn subtitles, sql triggers, pgmq, supabase storage, ffmpeglab, speech-to-text, video accessibility, yaml, transpiler" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="author" content="FFmpegLab" />
   <meta name="theme-color" content="#FC6D26" />
-  <link rel="canonical" href="https://ffmpeglab.com/articles/automated-subtitle-generation-pipeline-sql-triggers-supabase.html" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/automated-subtitle-generation-pipeline-yaml-supabase.html" />
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
 
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="FFmpegLab" />
-  <meta property="og:url" content="https://ffmpeglab.com/articles/automated-subtitle-generation-pipeline-sql-triggers-supabase.html" />
-  <meta property="og:title" content="Automated Subtitle Generation & Burn-in Pipeline – SQL + DNN" />
-  <meta property="og:description" content="Build an automated subtitle generation pipeline that uses Whisper AI to transcribe audio and burn subtitles into videos using SQL triggers, pgmq, and Supabase Storage." />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/automated-subtitle-generation-pipeline-yaml-supabase.html" />
+  <meta property="og:title" content="Automated Subtitle Generation & Burn-in Pipeline – YAML &amp; SQL + DNN" />
+  <meta property="og:description" content="Build an automated subtitle generation pipeline using YAML, SQL triggers, and Whisper AI. Transcribe audio and burn subtitles into videos with Supabase Storage." />
   <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
 
@@ -25,18 +25,18 @@
     {
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Automated Subtitle Generation & Burn-in Pipeline – SQL + DNN",
-      "description": "Build an automated subtitle generation pipeline that uses Whisper AI to transcribe audio and burn subtitles into videos using SQL triggers, pgmq, and Supabase Storage.",
+      "headline": "Automated Subtitle Generation & Burn-in Pipeline – YAML & SQL + DNN",
+      "description": "Build an automated subtitle generation pipeline using YAML, SQL triggers, and Whisper AI. Transcribe audio and burn subtitles into videos with Supabase Storage.",
       "image": "https://ffmpeglab.com/og-image.png",
       "author": {
         "@type": "Organization",
         "name": "FFmpegLab"
       },
-      "datePublished": "2026-07-31",
-      "dateModified": "2026-07-31",
+      "datePublished": "2026-08-07",
+      "dateModified": "2026-08-07",
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": "https://ffmpeglab.com/articles/automated-subtitle-generation-pipeline-sql-triggers-supabase.html"
+        "@id": "https://ffmpeglab.com/articles/automated-subtitle-generation-pipeline-yaml-supabase.html"
       },
       "publisher": {
         "@type": "Organization",
@@ -183,11 +183,73 @@
     }
     .schema-table .col-name { color: #34d399; }
     .schema-table .col-type { color: #60a5fa; }
+    .svg-container {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .svg-container svg {
+      max-width: 100%;
+      height: auto;
+    }
     @media (max-width: 640px) {
       .schema-table td, .schema-table th {
         font-size: 0.7rem;
         padding: 0.3rem;
       }
+    }
+
+    /* Code window component */
+    .code-window {
+      background: #0d0d1a;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border: 1px solid #2d2d3d;
+      overflow: hidden;
+    }
+    .code-window .titlebar {
+      background: #1a1a2e;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #2d2d3d;
+    }
+    .code-window .titlebar .dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+    }
+    .code-window .titlebar .dot.r { background: #ff5f56; }
+    .code-window .titlebar .dot.y { background: #ffbd2e; }
+    .code-window .titlebar .dot.g { background: #27c93f; }
+    .code-window .titlebar .fname {
+      margin-left: 0.8rem;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+    }
+    .code-window pre {
+      margin: 0;
+      padding: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    .code-window .mono {
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+    }
+    .code-window .el { color: #fbbf24; }
+    .code-window .ef { color: #34d399; }
+    .code-window .c { color: #6b7280; }
+    .code-window .em-code {
+      white-space: pre-wrap;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -208,9 +270,9 @@
     <div class="container inner">
       <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Subtitle Generation Pipeline</div>
       <span class="eyebrow">FFmpegLab Guide</span>
-      <h1>Automated Subtitle Generation &amp; Burn-in Pipeline – SQL + DNN</h1>
-      <p class="dek">Build an automated pipeline that uses Whisper AI to transcribe audio and burn subtitles into videos using SQL triggers, pgmq, and Supabase Storage.</p>
-      <div class="article-meta">FFmpeg tutorial · ~12 min read · Updated July 2026</div>
+      <h1>Automated Subtitle Generation &amp; Burn-in Pipeline – YAML &amp; SQL + DNN</h1>
+      <p class="dek">Declarative YAML pipeline for automated subtitle generation using Whisper AI — transcribe audio and burn subtitles into videos with SQL triggers and Supabase Storage.</p>
+      <div class="article-meta">FFmpeg tutorial · ~14 min read · Updated August 2026</div>
     </div>
   </div>
 
@@ -223,19 +285,22 @@
         <li><a href="#architecture">Architecture Overview</a></li>
         <li><a href="#what-it-delivers">What the Pipeline Delivers</a></li>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#quick-start">Quick Start – The Setup Script</a></li>
-        <li><a href="#setup-script">The Complete SQL Setup Script</a></li>
+        <li><a href="#yaml-approach">The YAML‑Driven Approach</a></li>
+        <li><a href="#yaml-template">The YAML Template</a></li>
+        <li><a href="#transpiler">Running the Transpiler</a></li>
+        <li><a href="#svg">Visualising the Pipeline</a></li>
         <li><a href="#ffmpeg-commands">FFmpeg Commands</a></li>
         <li><a href="#whisper-setup">Setting Up Whisper</a></li>
         <li><a href="#configure-runner">Configure ffmpeglab-runner</a></li>
         <li><a href="#monitor">Monitor the Pipeline</a></li>
+        <li><a href="#customising">Customising the Pipeline</a></li>
         <li><a href="#faq">Frequently Asked Questions</a></li>
       </ul>
     </nav>
 
     <p>Subtitles are essential for accessibility, global reach, and viewer engagement. But generating and burning subtitles manually is tedious and time‑consuming. With AI‑powered speech‑to‑text, you can automate the entire process — from audio transcription to subtitle burn‑in — making your content accessible to a global audience.</p>
 
-    <p>This guide shows you how to build a <strong>fully automated subtitle generation pipeline</strong> that:</p>
+    <p>This guide shows you how to build a <strong>fully automated subtitle generation pipeline</strong> using a <strong>declarative YAML template</strong> and a <strong>transpiler</strong> that generates the complete SQL migration. The pipeline:</p>
     <ul>
       <li>Extracts audio from uploaded videos</li>
       <li>Transcribes speech using <strong>OpenAI Whisper</strong> (state‑of‑the‑art multilingual model)</li>
@@ -247,11 +312,13 @@
     <div class="callout">
       <h3>Key takeaways</h3>
       <ul>
-        <li><strong>One SQL script</strong> — everything is set up with a single execution against your Supabase database.</li>
+        <li><strong>One YAML file</strong> — define your entire pipeline in a single, version‑controlled file.</li>
+        <li><strong>Automatic SQL generation</strong> — the transpiler produces the exact PostgreSQL migration.</li>
         <li><strong>Whisper AI</strong> — state‑of‑the‑art speech‑to‑text supporting 99 languages.</li>
         <li><strong>Zero manual intervention</strong> — upload a video, get a subtitled version automatically.</li>
         <li><strong>Scalable and reliable</strong> — pgmq provides durable, transaction‑safe job queuing.</li>
         <li><strong>Configurable</strong> — adjust language, model size, and subtitle styling.</li>
+        <li><strong>Visual graph</strong> — understand your pipeline at a glance with an SVG diagram.</li>
       </ul>
     </div>
 
@@ -265,7 +332,7 @@
       <li><strong>Compliance</strong> — accessibility regulations (ADA, WCAG, etc.)</li>
     </ul>
 
-    <p>But generating subtitles manually is expensive and doesn't scale. What if the pipeline could be <strong>fully automated</strong> — triggered by the upload itself, transcribing and burning subtitles in the background?</p>
+    <p>But generating subtitles manually is expensive and doesn't scale. What if the pipeline could be <strong>fully automated</strong> — triggered by the upload itself, transcribing and burning subtitles in the background? And what if you could define that pipeline in a declarative YAML file that you can version, share, and reuse?</p>
 
     <p>This guide shows you exactly how to build that pipeline.</p>
 
@@ -304,10 +371,13 @@
       <li><strong>Supabase Storage</strong> — two buckets: <code>private-uploads</code> (per‑user) and <code>public-processed</code> (per‑user).</li>
       <li><strong>RLS policies</strong> — restrict access to each user's own folders.</li>
       <li><strong>PostgreSQL trigger</strong> — fires on <code>INSERT</code> into <code>storage.objects</code>.</li>
-      <li><strong>pgmq</strong> — message queue for job processing.</li>
+      <li><strong>pgmq</strong> — message queue for job processing (uses the existing <code>render</code> queue).</li>
       <li><strong>ffmpeglab-runner</strong> — extracts audio, runs Whisper, burns subtitles.</li>
       <li><strong>pg_notify</strong> — real‑time status updates.</li>
+      <li><strong>YAML transpiler</strong> — reads the pipeline definition and generates the SQL migration + SVG graph.</li>
     </ul>
+
+    <p><strong>Important:</strong> This pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It does <strong>not</strong> create new tables — it only adds the pipeline components.</p>
 
     <h2 id="what-it-delivers">What the Pipeline Delivers</h2>
 
@@ -330,270 +400,284 @@
       <li>A <a href="https://supabase.com">Supabase project</a> (cloud or self‑hosted).</li>
       <li><strong>ffmpeglab-server</strong> and <strong>ffmpeglab-runner</strong> deployed.</li>
       <li><strong>Whisper.cpp</strong> installed on the runner (see <a href="#whisper-setup">Setting Up Whisper</a>).</li>
-      <li><code>render</code> and <code>logpiece</code> tables must exist (from FFmpegLab server migrations).</li>
+      <li>The <code>render</code> and <code>logpiece</code> tables must already exist (created by the FFmpegLab server migrations).</li>
       <li>Access to your Supabase database (psql or the Supabase SQL Editor).</li>
+      <li><a href="https://deno.com">Deno</a> installed to run the transpiler.</li>
     </ul>
 
-    <h2 id="quick-start">Quick Start – The Setup Script</h2>
+    <h2 id="yaml-approach">The YAML‑Driven Approach</h2>
 
-    <div class="step-box">
-      <div class="step-num">Step 1</div>
-      <div class="step-title">Save the SQL script</div>
-      <div class="step-desc">Copy the complete SQL script from the <a href="#setup-script">section below</a> and save it as <code>setup_subtitle_pipeline.sql</code>.</div>
-    </div>
+    <p>While you can write the SQL directly, the <strong>recommended way</strong> is to use the <strong>YAML transpiler</strong>. This gives you:</p>
 
-    <div class="step-box">
-      <div class="step-num">Step 2</div>
-      <div class="step-title">Run the script</div>
-      <div class="step-desc">Execute the script against your Supabase database.</div>
-      <div class="code-block">
-        <span style="color: #6b7280;"># Via psql</span>
-        psql -U postgres -d your_database -f setup_subtitle_pipeline.sql
-        <br/><br/>
-        <span style="color: #6b7280;"># Or via the Supabase SQL Editor</span>
-        <span style="color: #6b7280;"># Copy and paste the entire script into the SQL Editor and run it.</span>
+    <ul>
+      <li><strong>Declarative pipeline definition</strong> — define steps, triggers, and buckets in clean YAML.</li>
+      <li><strong>Automatic SQL generation</strong> — the transpiler produces the exact PostgreSQL migration.</li>
+      <li><strong>Visual pipeline graph</strong> — generate an SVG diagram of your pipeline with <code>--svg</code>.</li>
+      <li><strong>Reusable templates</strong> — share and version your pipeline definitions.</li>
+    </ul>
+
+    <p>The transpiler is a single TypeScript file that reads your YAML and generates the SQL migration. It runs with Deno and has zero external dependencies (except <code>yaml</code> for parsing).</p>
+
+    <h2 id="yaml-template">The YAML Template</h2>
+
+    <p>Create a file called <code>subtitle-pipeline.yaml</code> with the following content. It defines the buckets, RLS policies, and each processing step.</p>
+
+    <div class="code-window">
+      <div class="titlebar">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+        <span class="mono fname">subtitle-pipeline.yaml</span>
       </div>
+      <pre class="mono em-code"><span class="el">name</span>: <span class="ef">"Automated Subtitle Generation Pipeline"</span>
+<span class="el">description</span>: <span class="ef">"Extract audio, transcribe with Whisper, burn subtitles into video"</span>
+<span class="el">version</span>: <span class="ef">"1.0.0"</span>
+
+<span class="el">storage</span>:
+  <span class="el">output_bucket</span>: <span class="ef">"public-processed"</span>
+  <span class="el">buckets</span>:
+    - <span class="el">name</span>: <span class="ef">"private-uploads"</span>
+      <span class="el">public</span>: <span class="el">false</span>
+      <span class="el">allowed_mime_types</span>:
+        - <span class="ef">"video/mp4"</span>
+        - <span class="ef">"video/quicktime"</span>
+        - <span class="ef">"video/x-msvideo"</span>
+        - <span class="ef">"video/webm"</span>
+        - <span class="ef">"video/mpeg"</span>
+    - <span class="el">name</span>: <span class="ef">"public-processed"</span>
+      <span class="el">public</span>: <span class="el">true</span>
+      <span class="el">allowed_mime_types</span>:
+        - <span class="ef">"video/mp4"</span>
+        - <span class="ef">"text/plain"</span>
+
+  <span class="el">rls_policies</span>:
+    - <span class="el">name</span>: <span class="ef">"Users can upload to their own folder"</span>
+      <span class="el">operation</span>: <span class="ef">"INSERT"</span>
+      <span class="el">role</span>: <span class="ef">"authenticated"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'private-uploads' AND</span>
+        <span class="ef">(storage.foldername(name))[1] = auth.uid()::text</span>
+
+    - <span class="el">name</span>: <span class="ef">"Users can download from their own folder"</span>
+      <span class="el">operation</span>: <span class="ef">"SELECT"</span>
+      <span class="el">role</span>: <span class="ef">"authenticated"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'private-uploads' AND</span>
+        <span class="ef">(storage.foldername(name))[1] = auth.uid()::text</span>
+
+    - <span class="el">name</span>: <span class="ef">"Public read access to processed media"</span>
+      <span class="el">operation</span>: <span class="ef">"SELECT"</span>
+      <span class="el">role</span>: <span class="ef">"anon"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'public-processed'</span>
+
+    - <span class="el">name</span>: <span class="ef">"Service role can manage processed media"</span>
+      <span class="el">operation</span>: <span class="ef">"ALL"</span>
+      <span class="el">role</span>: <span class="ef">"service_role"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'public-processed'</span>
+
+    - <span class="el">name</span>: <span class="ef">"Users can read their own processed media"</span>
+      <span class="el">operation</span>: <span class="ef">"SELECT"</span>
+      <span class="el">role</span>: <span class="ef">"authenticated"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">bucket_id = 'public-processed' AND</span>
+        <span class="ef">(storage.foldername(name))[1] = auth.uid()::text</span>
+
+<span class="el">steps</span>:
+  <span class="c"># Step 1: Extract audio from video</span>
+  - <span class="el">id</span>: <span class="ef">"extract_audio"</span>
+    <span class="el">trigger</span>:
+      <span class="el">name</span>: <span class="ef">"handle_extract_audio"</span>
+      <span class="el">event</span>: <span class="ef">"INSERT"</span>
+      <span class="el">table</span>: <span class="ef">"storage.objects"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">NEW.bucket_id = 'private-uploads' AND</span>
+        <span class="ef">NEW.metadata->>'mimetype' LIKE 'video/%'</span>
+    <span class="el">command</span>: <span class="ef">-i $MEDIA_1 -ac 1 -ar 16000 -vn -y $OUTPUT_PATH</span>
+    <span class="el">inputs</span>: [<span class="ef">"INPUT_FILE"</span>]
+    <span class="el">outputs</span>: [<span class="ef">"OUTPUT_FILE"</span>]
+    <span class="el">output_path</span>: <span class="ef">"{{userId}}/temp/{{baseFilename}}.wav"</span>
+    <span class="el">editor</span>:
+      <span class="el">output</span>: <span class="ef">"wav"</span>
+      <span class="el">preset</span>: <span class="ef">"medium"</span>
+    <span class="el">next_bucket</span>: <span class="ef">"private-uploads"</span>
+    <span class="el">keep</span>: <span class="el">false</span>
+
+  <span class="c"># Step 2: Transcribe with Whisper</span>
+  - <span class="el">id</span>: <span class="ef">"transcribe"</span>
+    <span class="el">trigger</span>:
+      <span class="el">name</span>: <span class="ef">"handle_transcribe"</span>
+      <span class="el">event</span>: <span class="ef">"INSERT"</span>
+      <span class="el">table</span>: <span class="ef">"storage.objects"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">NEW.bucket_id = 'private-uploads' AND</span>
+        <span class="ef">NEW.name LIKE '%.wav' AND</span>
+        <span class="ef">NEW.name NOT LIKE '%.emptyFolderPlaceholder'</span>
+    <span class="el">command</span>: <span class="ef">whisper --model $WHISPER_MODEL --language $WHISPER_LANG --output-srt $OUTPUT_PATH $MEDIA_1</span>
+    <span class="el">inputs</span>: [<span class="ef">"INPUT_FILE"</span>]
+    <span class="el">outputs</span>: [<span class="ef">"OUTPUT_FILE"</span>]
+    <span class="el">output_path</span>: <span class="ef">"{{userId}}/subtitles/{{baseFilename}}.srt"</span>
+    <span class="el">editor</span>:
+      <span class="el">output</span>: <span class="ef">"srt"</span>
+      <span class="el">preset</span>: <span class="ef">"medium"</span>
+    <span class="el">next_bucket</span>: <span class="ef">"private-uploads"</span>
+    <span class="el">keep</span>: <span class="el">false</span>
+
+  <span class="c"># Step 3: Burn subtitles into video</span>
+  - <span class="el">id</span>: <span class="ef">"burn_subtitles"</span>
+    <span class="el">trigger</span>:
+      <span class="el">name</span>: <span class="ef">"handle_burn_subtitles"</span>
+      <span class="el">event</span>: <span class="ef">"INSERT"</span>
+      <span class="el">table</span>: <span class="ef">"storage.objects"</span>
+      <span class="el">condition</span>: <span class="ef">|</span>
+        <span class="ef">NEW.bucket_id = 'private-uploads' AND</span>
+        <span class="ef">NEW.name LIKE '%.srt' AND</span>
+        <span class="ef">NEW.name NOT LIKE '%.emptyFolderPlaceholder'</span>
+    <span class="el">command</span>: <span class="ef">-i $MEDIA_1 -vf "subtitles=$MEDIA_2:force_style='FontName=Arial,FontSize=24,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2'" -c:a copy -y $OUTPUT_PATH</span>
+    <span class="el">inputs</span>: [<span class="ef">"INPUT_FILE"</span>, <span class="ef">"SUBTITLE_FILE"</span>]
+    <span class="el">outputs</span>: [<span class="ef">"OUTPUT_FILE"</span>]
+    <span class="el">output_path</span>: <span class="ef">"{{userId}}/subtitled/{{baseFilename}}_subtitled.mp4"</span>
+    <span class="el">editor</span>:
+      <span class="el">output</span>: <span class="ef">"mp4"</span>
+      <span class="el">preset</span>: <span class="ef">"medium"</span>
+    <span class="el">next_bucket</span>: <span class="ef">"public-processed"</span>
+    <span class="el">keep</span>: <span class="el">true</span>
+
+<span class="el">render</span>:
+  <span class="el">project_name</span>: <span class="ef">"subtitle-generation"</span>
+  <span class="el">status</span>: <span class="ef">"queued"</span>
+  <span class="el">public</span>: <span class="el">false</span></pre>
     </div>
 
-    <div class="step-box">
-      <div class="step-num">Step 3</div>
-      <div class="step-title">Configure the runner</div>
-      <div class="step-desc">Add the subtitle queue to your runner's environment.</div>
-      <div class="code-block">
-        <span style="color: #6b7280;"># Add to your .env or docker-compose.yml</span>
-        SUBTITLE_QUEUE_NAME=subtitle_queue
-        <br/><br/>
-        <span style="color: #6b7280;"># Whisper model path</span>
-        WHISPER_MODEL_PATH=/app/models/whisper/ggml-base.bin
-        <br/><br/>
-        <span style="color: #6b7280;"># Whisper language (auto, en, es, fr, etc.)</span>
-        WHISPER_LANGUAGE=auto
-      </div>
-    </div>
+    <p>The <code>keep: true</code> flag on the last step tells the transpiler to send the output directly to the final bucket (<code>public-processed</code>). Intermediate steps use <code>next_bucket</code> to pass the result to the next step's trigger.</p>
 
-    <div class="step-box">
-      <div class="step-num">Step 4</div>
-      <div class="step-title">Restart the runner</div>
-      <div class="step-desc">Restart the runner to pick up the new queue.</div>
-      <div class="code-block">
-        docker compose restart ffmpeglab-runner
-      </div>
-    </div>
+    <h2 id="transpiler">Running the Transpiler</h2>
 
-    <h2 id="setup-script">The Complete SQL Setup Script</h2>
+    <p>Download the transpiler and the SVG generator:</p>
 
     <div class="code-block">
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- AUTOMATED SUBTITLE GENERATION PIPELINE</span>
-      <span class="sql-comment">-- Complete SQL Setup Script</span>
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- This script adds the subtitle generation pipeline components.</span>
-      <span class="sql-comment">-- It assumes the render and logpiece tables already exist.</span>
-      <span class="sql-comment">-- ============================================================</span>
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 1. Create storage buckets</span>
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-kw">INSERT INTO</span> storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
-      <span class="sql-kw">VALUES</span>
-          (<span class="sql-str">'private-uploads'</span>, <span class="sql-str">'private-uploads'</span>, <span class="sql-kw">false</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>]),
-          (<span class="sql-str">'public-processed'</span>, <span class="sql-str">'public-processed'</span>, <span class="sql-kw">true</span>, <span class="sql-kw">false</span>, <span class="sql-type">5368709120</span>, <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'text/plain'</span>])
-      <span class="sql-kw">ON CONFLICT</span> (id) <span class="sql-kw">DO NOTHING</span>;
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 2. RLS policies for private-uploads bucket</span>
-      <span class="sql-comment">-- ============================================================</span>
-
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can upload to their own folder"</span> <span class="sql-kw">ON</span> storage.objects;
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can upload to their own folder"</span>
-      <span class="sql-kw">ON</span> storage.objects
-      <span class="sql-kw">FOR INSERT</span>
-      <span class="sql-kw">TO authenticated</span>
-      <span class="sql-kw">WITH CHECK</span> (
-          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span>
-      );
-
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can download from their own folder"</span> <span class="sql-kw">ON</span> storage.objects;
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can download from their own folder"</span>
-      <span class="sql-kw">ON</span> storage.objects
-      <span class="sql-kw">FOR SELECT</span>
-      <span class="sql-kw">TO authenticated</span>
-      <span class="sql-kw">USING</span> (
-          bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span>
-      );
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 3. RLS policies for public-processed bucket</span>
-      <span class="sql-comment">-- ============================================================</span>
-
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Public read access to processed media"</span> <span class="sql-kw">ON</span> storage.objects;
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Public read access to processed media"</span>
-      <span class="sql-kw">ON</span> storage.objects
-      <span class="sql-kw">FOR SELECT</span>
-      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);
-
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Service role can manage processed media"</span> <span class="sql-kw">ON</span> storage.objects;
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Service role can manage processed media"</span>
-      <span class="sql-kw">ON</span> storage.objects
-      <span class="sql-kw">FOR ALL</span>
-      <span class="sql-kw">TO service_role</span>
-      <span class="sql-kw">USING</span> (bucket_id = <span class="sql-str">'public-processed'</span>);
-
-      <span class="sql-kw">DROP POLICY IF EXISTS</span> <span class="sql-str">"Users can read their own processed media"</span> <span class="sql-kw">ON</span> storage.objects;
-      <span class="sql-kw">CREATE POLICY</span> <span class="sql-str">"Users can read their own processed media"</span>
-      <span class="sql-kw">ON</span> storage.objects
-      <span class="sql-kw">FOR SELECT</span>
-      <span class="sql-kw">TO authenticated</span>
-      <span class="sql-kw">USING</span> (
-          bucket_id = <span class="sql-str">'public-processed'</span> <span class="sql-kw">AND</span>
-          (storage.foldername(name))[1] = <span class="sql-kw">auth</span>.uid()::<span class="sql-type">text</span>
-      );
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 4. Enable pgmq extension and create the queue</span>
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-kw">CREATE EXTENSION IF NOT EXISTS</span> pgmq;
-      <span class="sql-kw">SELECT</span> pgmq.create(<span class="sql-str">'subtitle_queue'</span>);
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 5. Create the trigger function for subtitle generation</span>
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-kw">DROP FUNCTION IF EXISTS</span> handle_subtitle_generation() <span class="sql-kw">CASCADE</span>;
-
-      <span class="sql-kw">CREATE OR REPLACE FUNCTION</span> handle_subtitle_generation()
-      <span class="sql-kw">RETURNS TRIGGER AS $$</span>
-      <span class="sql-kw">DECLARE</span>
-          user_id <span class="sql-type">text</span>;
-          file_path <span class="sql-type">text</span>;
-          file_name <span class="sql-type">text</span>;
-          file_extension <span class="sql-type">text</span>;
-          base_filename <span class="sql-type">text</span>;
-          msg <span class="sql-type">jsonb</span>;
-          commands <span class="sql-type">jsonb</span> := <span class="sql-str">'[]'</span>;
-          video_mime_types <span class="sql-type">text</span>[] := <span class="sql-type">ARRAY</span>[<span class="sql-str">'video/mp4'</span>, <span class="sql-str">'video/quicktime'</span>, <span class="sql-str">'video/x-msvideo'</span>, <span class="sql-str">'video/webm'</span>, <span class="sql-str">'video/mpeg'</span>];
-      <span class="sql-kw">BEGIN</span>
-          <span class="sql-kw">IF</span> NEW.bucket_id = <span class="sql-str">'private-uploads'</span> <span class="sql-kw">AND</span> NEW.metadata->><span class="sql-str">'mimetype'</span> = <span class="sql-kw">ANY</span>(video_mime_types) <span class="sql-kw">THEN</span>
-              user_id := (storage.foldername(NEW.name))[1];
-              file_path := NEW.name;
-              file_name := (storage.filename(NEW.name));
-              file_extension := split_part(file_name, <span class="sql-str">'.'</span>, array_length(string_to_array(file_name, <span class="sql-str">'.'</span>), 1));
-              base_filename := replace(file_name, <span class="sql-str">'.'</span> || file_extension, <span class="sql-str">''</span>);
-
-              <span class="sql-comment">-- Command 1: Extract audio</span>
-              commands := commands || jsonb_build_object(
-                  <span class="sql-str">'type'</span>, <span class="sql-str">'extract_audio'</span>,
-                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/temp/'</span> || base_filename || <span class="sql-str">'.wav'</span>,
-                  <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -ac 1 -ar 16000 -vn "AUDIO_OUTPUT"'</span>
-              );
-
-              <span class="sql-comment">-- Command 2: Run Whisper transcription</span>
-              commands := commands || jsonb_build_object(
-                  <span class="sql-str">'type'</span>, <span class="sql-str">'transcribe'</span>,
-                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/subtitles/'</span> || base_filename || <span class="sql-str">'.srt'</span>,
-                  <span class="sql-str">'command'</span>, <span class="sql-str">'whisper --model "WHISPER_MODEL" --language "WHISPER_LANG" --output-srt "AUDIO_INPUT"'</span>
-              );
-
-              <span class="sql-comment">-- Command 3: Burn subtitles into video</span>
-              commands := commands || jsonb_build_object(
-                  <span class="sql-str">'type'</span>, <span class="sql-str">'burn_subtitles'</span>,
-                  <span class="sql-str">'output_path'</span>, user_id || <span class="sql-str">'/subtitled/'</span> || base_filename || <span class="sql-str">'_subtitled.mp4'</span>,
-                  <span class="sql-str">'command'</span>, <span class="sql-str">'ffmpeg -i "INPUT_FILE" -vf "subtitles=SRT_FILE:force_style=\'FontName=Arial,FontSize=24,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2\'" -c:a copy "OUTPUT_FILE"'</span>
-              );
-
-              msg := jsonb_build_object(
-                  <span class="sql-str">'userId'</span>, user_id,
-                  <span class="sql-str">'inputPath'</span>, file_path,
-                  <span class="sql-str">'inputBucket'</span>, NEW.bucket_id,
-                  <span class="sql-str">'outputBucket'</span>, <span class="sql-str">'public-processed'</span>,
-                  <span class="sql-str">'fileName'</span>, file_name,
-                  <span class="sql-str">'baseFilename'</span>, base_filename,
-                  <span class="sql-str">'commands'</span>, commands,
-                  <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()
-              );
-
-              <span class="sql-kw">PERFORM</span> pgmq.send(<span class="sql-str">'subtitle_queue'</span>, msg::<span class="sql-type">jsonb</span>);
-
-              <span class="sql-kw">INSERT INTO</span> <span class="sql-str">"render"</span> (id, title, project, status, public, user_id, data)
-              <span class="sql-kw">VALUES</span> (
-                  <span class="sql-fn">gen_random_uuid</span>(),
-                  file_name,
-                  <span class="sql-str">'subtitle-generation'</span>,
-                  <span class="sql-str">'queued'</span>,
-                  <span class="sql-kw">false</span>,
-                  user_id::<span class="sql-type">uuid</span>,
-                  msg
-              );
-
-              <span class="sql-kw">PERFORM</span> pg_notify(
-                  <span class="sql-str">'subtitle_generation_channel'</span>,
-                  jsonb_build_object(
-                      <span class="sql-str">'userId'</span>, user_id,
-                      <span class="sql-str">'filePath'</span>, file_path,
-                      <span class="sql-str">'status'</span>, <span class="sql-str">'queued'</span>,
-                      <span class="sql-str">'timestamp'</span>, <span class="sql-fn">NOW</span>()
-                  )::<span class="sql-type">text</span>
-              );
-          <span class="sql-kw">END IF</span>;
-          <span class="sql-kw">RETURN</span> NEW;
-      <span class="sql-kw">END;</span>
-      <span class="sql-kw">$$ LANGUAGE plpgsql SECURITY DEFINER;</span>
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 6. Attach the trigger to storage.objects</span>
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-kw">DROP TRIGGER IF EXISTS</span> subtitle_upload_trigger <span class="sql-kw">ON</span> storage.objects;
-      <span class="sql-kw">CREATE TRIGGER</span> subtitle_upload_trigger
-      <span class="sql-kw">AFTER INSERT ON</span> storage.objects
-      <span class="sql-kw">FOR EACH ROW</span>
-      <span class="sql-kw">EXECUTE FUNCTION</span> handle_subtitle_generation();
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 7. Helper views for monitoring</span>
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-kw">DROP VIEW IF EXISTS</span> subtitle_queue_view;
-      <span class="sql-kw">CREATE OR REPLACE VIEW</span> subtitle_queue_view <span class="sql-kw">AS</span>
-      <span class="sql-kw">SELECT</span>
-          msg_id,
-          read_ct,
-          enqueued_at,
-          vt,
-          message::<span class="sql-type">jsonb</span> <span class="sql-kw">as</span> payload,
-          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'userId'</span>) <span class="sql-kw">as</span> user_id,
-          (message::<span class="sql-type">jsonb</span>->><span class="sql-str">'fileName'</span>) <span class="sql-kw">as</span> file_name
-      <span class="sql-kw">FROM</span> pgmq.q_subtitle_queue
-      <span class="sql-kw">ORDER BY</span> msg_id <span class="sql-kw">DESC</span>;
-
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-comment">-- 8. Initialize notification channels</span>
-      <span class="sql-comment">-- ============================================================</span>
-      <span class="sql-kw">DO $$</span>
-      <span class="sql-kw">BEGIN</span>
-          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'subtitle_generation_channel'</span>, <span class="sql-str">'{"init": true}'</span>);
-          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'render_status_channel'</span>, <span class="sql-str">'{"init": true}'</span>);
-          <span class="sql-kw">PERFORM</span> pg_notify(<span class="sql-str">'log_channel'</span>, <span class="sql-str">'{"init": true}'</span>);
-      <span class="sql-kw">END $$</span>;
+      <span class="sql-comment"># Download transpiler and SVG generator</span>
+      curl -O https://raw.githubusercontent.com/ffmpeglab/server/main/sdk/yaml/transpiler.ts
+      curl -O https://raw.githubusercontent.com/ffmpeglab/server/main/sdk/yaml/svg.ts
     </div>
+
+    <p>Run the transpiler to generate the migration files:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Generate the migration files</span>
+      deno run --allow-read --allow-write transpiler.ts subtitle-pipeline.yaml ./supabase/migrations
+    </div>
+
+    <p>Add the <code>--svg</code> flag to also generate a visual graph of your pipeline:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Generate migration files + SVG graph</span>
+      deno run --allow-read --allow-write transpiler.ts subtitle-pipeline.yaml ./supabase/migrations --svg
+    </div>
+
+    <p>The output will be:</p>
+
+    <div class="code-block">
+      <span class="sql-comment">✅ Migration files created:</span>
+         UP:   ./supabase/migrations/20260807120000_subtitle-generation.sql
+         DOWN: ./supabase/migrations/20260807120000_subtitle-generation_down.sql
+         SVG:  ./supabase/migrations/20260807120000_subtitle-generation.svg
+    </div>
+
+    <p>Apply the migration to your Supabase database:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Via psql</span>
+      psql -U postgres -d your_database -f ./supabase/migrations/20260807120000_subtitle-generation.sql
+    </div>
+
+    <h2 id="svg">Visualising the Pipeline</h2>
+
+    <p>The generated SVG gives you a clear overview of your pipeline. Steps marked with <strong>KEEP</strong> are green – their outputs are permanently stored in the final bucket. Edges are labelled with the bucket they use for data flow.</p>
+
+    <div class="svg-container">
+      <!-- Inline SVG from the subtitle pipeline graph -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="820" height="500" style="background:linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);font-family:system-ui,-apple-system,sans-serif;">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+          </marker>
+          <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+          </filter>
+          <linearGradient id="startGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e3f2fd"/>
+            <stop offset="100%" stop-color="#90caf9"/>
+          </linearGradient>
+          <linearGradient id="keepGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e8f5e9"/>
+            <stop offset="100%" stop-color="#a5d6a7"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Edges -->
+        <path d="M240,170 Q420,170 360,70" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="280" y="115" width="80" height="20" rx="4" fill="#fff" stroke="#ccc" stroke-width="1" opacity="0.9"/>
+        <text x="320" y="129" text-anchor="middle" dominant-baseline="central" fill="#555" font-size="10">private-uploads</text>
+
+        <path d="M540,70 Q680,70 540,170" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="610" y="115" width="80" height="20" rx="4" fill="#fff" stroke="#ccc" stroke-width="1" opacity="0.9"/>
+        <text x="650" y="129" text-anchor="middle" dominant-baseline="central" fill="#555" font-size="10">private-uploads</text>
+
+        <path d="M540,170 Q680,170 540,280" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="610" y="220" width="80" height="20" rx="4" fill="#fff" stroke="#ccc" stroke-width="1" opacity="0.9"/>
+        <text x="650" y="234" text-anchor="middle" dominant-baseline="central" fill="#555" font-size="10">private-uploads</text>
+
+        <!-- Start node -->
+        <rect x="60" y="140" width="180" height="60" rx="10" fill="url(#startGrad)" stroke="#1976d2" stroke-width="2" filter="url(#shadow)"/>
+        <text x="150" y="165" text-anchor="middle" dominant-baseline="central" fill="#0d47a1" font-size="13" font-weight="bold">📤 private-uploads</text>
+
+        <!-- Step 1: extract_audio -->
+        <rect x="360" y="40" width="180" height="60" rx="10" fill="#ffffff" stroke="#ccc" stroke-width="2" filter="url(#shadow)"/>
+        <text x="450" y="64" text-anchor="middle" dominant-baseline="central" fill="#333" font-size="13" font-weight="600">extract_audio</text>
+        <text x="450" y="82" text-anchor="middle" dominant-baseline="central" fill="#777" font-size="9" font-family="monospace">-i $MEDIA_1 -ac 1 -ar …</text>
+
+        <!-- Step 2: transcribe -->
+        <rect x="360" y="140" width="180" height="60" rx="10" fill="#ffffff" stroke="#ccc" stroke-width="2" filter="url(#shadow)"/>
+        <text x="450" y="164" text-anchor="middle" dominant-baseline="central" fill="#333" font-size="13" font-weight="600">transcribe</text>
+        <text x="450" y="182" text-anchor="middle" dominant-baseline="central" fill="#777" font-size="9" font-family="monospace">whisper --model $WHIS…</text>
+
+        <!-- Step 3: burn_subtitles (keep: true) -->
+        <rect x="360" y="250" width="180" height="60" rx="10" fill="url(#keepGrad)" stroke="#2e7d32" stroke-width="2" filter="url(#shadow)"/>
+        <text x="450" y="274" text-anchor="middle" dominant-baseline="central" fill="#1b5e20" font-size="13" font-weight="600">burn_subtitles</text>
+        <text x="450" y="292" text-anchor="middle" dominant-baseline="central" fill="#777" font-size="9" font-family="monospace">-i $MEDIA_1 -vf "subti…</text>
+        <rect x="495" y="242" width="36" height="18" rx="4" fill="#2e7d32" opacity="0.9"/>
+        <text x="513" y="252" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="8" font-weight="bold">KEEP</text>
+      </svg>
+    </div>
+
+    <p>In the graph above, the steps run sequentially. Each step triggers on the <code>private-uploads</code> bucket but with different file type conditions (video, WAV, SRT). The final step outputs to <code>public-processed</code> with the subtitled video.</p>
 
     <h2 id="ffmpeg-commands">FFmpeg Commands</h2>
 
-    <p>The trigger function generates the following commands:</p>
+    <p>The YAML steps define the following FFmpeg commands using placeholders:</p>
+
+    <ul>
+      <li><code>$MEDIA_1</code> — The path to the downloaded input file (resolved by the runner).</li>
+      <li><code>$OUTPUT_PATH</code> — The temporary path for the output file (resolved by the runner).</li>
+    </ul>
 
     <h3>1. Extract Audio</h3>
 
     <div class="code-block">
-      ffmpeg -i "INPUT_FILE" -ac 1 -ar 16000 -vn "AUDIO_OUTPUT"
+      ffmpeg -i $MEDIA_1 -ac 1 -ar 16000 -vn -y $OUTPUT_PATH
     </div>
 
     <div class="step-box">
       <div class="step-num">💡</div>
-      <div class="step-title">Audio Extraction Parameters Explained</div>
+      <div class="step-title">Parameters Explained</div>
       <div class="step-desc">
         <ul>
           <li><strong><code>-ac 1</code></strong> — Convert to mono (Whisper works best with mono audio)</li>
           <li><strong><code>-ar 16000</code></strong> — Resample to 16kHz (Whisper's optimal sample rate)</li>
           <li><strong><code>-vn</code></strong> — Disable video output (audio only)</li>
+          <li><strong><code>-y</code></strong> — Overwrite output file without prompting</li>
         </ul>
       </div>
     </div>
@@ -601,12 +685,12 @@
     <h3>2. Whisper Transcription</h3>
 
     <div class="code-block">
-      whisper --model /app/models/whisper/ggml-base.bin --language auto --output-srt "AUDIO_INPUT"
+      whisper --model $WHISPER_MODEL --language $WHISPER_LANG --output-srt $OUTPUT_PATH $MEDIA_1
     </div>
 
     <div class="step-box">
       <div class="step-num">💡</div>
-      <div class="step-title">Whisper Parameters Explained</div>
+      <div class="step-title">Parameters Explained</div>
       <div class="step-desc">
         <ul>
           <li><strong><code>--model</code></strong> — Path to the Whisper model (base, small, medium, large)</li>
@@ -619,15 +703,15 @@
     <h3>3. Burn Subtitles into Video</h3>
 
     <div class="code-block">
-      ffmpeg -i "INPUT_FILE" -vf "subtitles=SRT_FILE:force_style='FontName=Arial,FontSize=24,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2'" -c:a copy "OUTPUT_FILE"
+      ffmpeg -i $MEDIA_1 -vf "subtitles=$MEDIA_2:force_style='FontName=Arial,FontSize=24,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2'" -c:a copy -y $OUTPUT_PATH
     </div>
 
     <div class="step-box">
       <div class="step-num">💡</div>
-      <div class="step-title">Subtitle Burn-in Parameters Explained</div>
+      <div class="step-title">Parameters Explained</div>
       <div class="step-desc">
         <ul>
-          <li><strong><code>subtitles=SRT_FILE</code></strong> — Input SRT file</li>
+          <li><strong><code>subtitles=$MEDIA_2</code></strong> — Input SRT file (second input)</li>
           <li><strong><code>force_style</code></strong> — Styling options:</li>
           <ul>
             <li><code>FontName=Arial</code> — Font family</li>
@@ -637,6 +721,7 @@
             <li><code>Outline=2</code> — Outline width</li>
           </ul>
           <li><strong><code>-c:a copy</code></strong> — Copy audio stream without re-encoding</li>
+          <li><strong><code>-y</code></strong> — Overwrite output file without prompting</li>
         </ul>
       </div>
     </div>
@@ -690,13 +775,15 @@
 
     <h2 id="configure-runner">Configure ffmpeglab-runner</h2>
 
+    <p>The runner needs to be configured to poll the <code>render</code> queue and execute the provided commands. The transpiler uses the existing <code>render</code> queue.</p>
+
     <div class="step-box">
       <div class="step-num">Step 1</div>
       <div class="step-title">Add the queue to your environment</div>
       <div class="step-desc">Add the following to your <code>.env</code> file or Docker Compose configuration.</div>
       <div class="code-block">
-        <span style="color: #6b7280;"># Subtitle generation queue</span>
-        SUBTITLE_QUEUE_NAME=subtitle_queue
+        <span style="color: #6b7280;"># Render queue (already used by FFmpegLab server)</span>
+        RENDER_QUEUE_NAME=render
 
         <span style="color: #6b7280;"># Whisper settings</span>
         WHISPER_MODEL_PATH=/app/models/whisper/ggml-base.bin
@@ -707,7 +794,7 @@
     <div class="step-box">
       <div class="step-num">Step 2</div>
       <div class="step-title">Implement the processing loop</div>
-      <div class="step-desc">The runner should execute the following steps:</div>
+      <div class="step-desc">The runner should execute the following steps for each job:</div>
       <div class="code-block" style="max-height: 300px;">
         <span style="color: #6b7280;"># 1. Connect to Supabase and listen to the queue</span>
         <br/><br/>
@@ -744,12 +831,16 @@
 
     <h2 id="monitor">Monitor the Pipeline</h2>
 
+    <p>You can monitor the pipeline using SQL queries and notifications.</p>
+
     <div class="step-box">
       <div class="step-num">Step 1</div>
       <div class="step-title">Check queued jobs</div>
-      <div class="step-desc">Use the helper view to see all queued jobs.</div>
+      <div class="step-desc">Query the render table to see queued jobs.</div>
       <div class="code-block">
-        <span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> subtitle_queue_view;
+        <span class="sql-kw">SELECT</span> * <span class="sql-kw">FROM</span> <span class="sql-str">"render"</span>
+        <span class="sql-kw">WHERE</span> status = <span class="sql-str">'queued'</span>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
       </div>
     </div>
 
@@ -771,11 +862,59 @@
       <div class="step-desc">In your application, listen for real‑time updates.</div>
       <div class="code-block">
         <span style="color: #6b7280;">-- In your PostgreSQL client:</span>
-        <span class="sql-kw">LISTEN</span> subtitle_generation_channel;
         <span class="sql-kw">LISTEN</span> render_status_channel;
         <span class="sql-kw">LISTEN</span> log_channel;
       </div>
     </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 4</div>
+      <div class="step-title">Check processed files</div>
+      <div class="step-desc">List all processed files in the public bucket.</div>
+      <div class="code-block">
+        <span class="sql-kw">SELECT</span> name, metadata, created_at <span class="sql-kw">FROM</span> storage.objects
+        <span class="sql-kw">WHERE</span> bucket_id = <span class="sql-str">'public-processed'</span>
+        <span class="sql-kw">ORDER BY</span> created_at <span class="sql-kw">DESC</span>;
+      </div>
+    </div>
+
+    <h2 id="customising">Customising the Pipeline</h2>
+
+    <h3>Change Whisper Model Size</h3>
+
+    <p>Replace <code>$WHISPER_MODEL</code> with a different model path:</p>
+    <ul>
+      <li><strong><code>ggml-base.bin</code></strong> — Fast, ~50x real-time, ~85% accuracy</li>
+      <li><strong><code>ggml-small.bin</code></strong> — Balanced, ~30x real-time, ~90% accuracy</li>
+      <li><strong><code>ggml-medium.bin</code></strong> — Accurate, ~15x real-time, ~95% accuracy</li>
+      <li><strong><code>ggml-large.bin</code></strong> — Best accuracy, ~5x real-time</li>
+    </ul>
+
+    <h3>Change Subtitle Language</h3>
+
+    <p>Set <code>WHISPER_LANGUAGE</code> to a specific language code:</p>
+    <ul>
+      <li><code>en</code> — English</li>
+      <li><code>es</code> — Spanish</li>
+      <li><code>fr</code> — French</li>
+      <li><code>de</code> — German</li>
+      <li><code>zh</code> — Chinese</li>
+      <li><code>ja</code> — Japanese</li>
+      <li><code>hi</code> — Hindi</li>
+      <li><code>auto</code> — Auto-detect</li>
+    </ul>
+
+    <h3>Customise Subtitle Styling</h3>
+
+    <p>Modify the <code>force_style</code> in the burn step:</p>
+
+    <div class="code-block">
+      <span class="sql-kw">command</span>: -i $MEDIA_1 -vf "subtitles=$MEDIA_2:force_style='FontName=Impact,FontSize=32,PrimaryColour=&HFF00FF,OutlineColour=&H000000,Outline=3,Shadow=1'" -c:a copy -y $OUTPUT_PATH
+    </div>
+
+    <h3>Add Multiple Language Subtitles</h3>
+
+    <p>To generate subtitles in multiple languages, duplicate the <code>transcribe</code> step with different language settings and burn steps for each language.</p>
 
     <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
 
@@ -814,9 +953,16 @@
       </div>
     </div>
 
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does this pipeline create new tables?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No. The pipeline uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server. It only adds storage buckets, RLS policies, and the trigger function — no table conflicts.</p>
+      </div>
+    </div>
+
     <h2>Final Word</h2>
 
-    <p>You now have a <strong>fully automated subtitle generation pipeline</strong> that uses Whisper AI to transcribe speech and burn subtitles into videos. With PostgreSQL triggers, pgmq, and Supabase Storage, you get:</p>
+    <p>You now have a <strong>fully automated subtitle generation pipeline</strong> defined in YAML and generated via a transpiler. With PostgreSQL triggers, pgmq, and Supabase Storage, you get:</p>
 
     <ul>
       <li><strong>AI-powered transcription</strong> — state-of-the-art Whisper model</li>
@@ -824,6 +970,7 @@
       <li><strong>Real‑time notifications</strong> — know when processing is complete</li>
       <li><strong>Full observability</strong> — monitoring views and logs</li>
       <li><strong>Scalable architecture</strong> — handles any volume of videos</li>
+      <li><strong>Declarative YAML</strong> — version-controlled, reusable pipeline definitions</li>
     </ul>
 
     <p>The pipeline is <strong>production‑ready</strong>, <strong>scalable</strong>, and <strong>configurable</strong>. It uses the existing <code>render</code> and <code>logpiece</code> tables from the FFmpegLab server, so there are no table conflicts — just pure, automated subtitle generation.</p>
@@ -836,6 +983,7 @@
         <li><a href="ffmpeg-env-vars-scalable-runners.html">Environment Variables &amp; Scalable Runners</a></li>
         <li><a href="ffmpeg-applications-startups.html">Applications &amp; Startups Powered by FFmpeg</a></li>
         <li><a href="ffmpeg-dnn-filters.html">DNN Filters – AI-Powered Video Processing</a></li>
+        <li><a href="ultimate-video-onboarding-pipeline-yaml-supabase.html">Ultimate Video Onboarding Pipeline – YAML &amp; SQL Triggers</a></li>
       </ul>
     </aside>
 

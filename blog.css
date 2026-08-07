@@ -183,3 +183,50 @@ footer.site .links a { font-size: 0.85rem; color: #8C87A3; }
 footer.site .links a:hover { color: #fff; text-decoration: none; }
 footer.site .copy { font-size: 0.75rem; color: #6F6A87; }
 @media (min-width: 700px) { footer.site .row { flex-direction: row; } }
+.code-window {
+  background: #0d0d1a;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  border: 1px solid #2d2d3d;
+  overflow: hidden;
+}
+.code-window .titlebar {
+  background: #1a1a2e;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #2d2d3d;
+}
+.code-window .titlebar .dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+}
+.code-window .titlebar .dot.r { background: #ff5f56; }
+.code-window .titlebar .dot.y { background: #ffbd2e; }
+.code-window .titlebar .dot.g { background: #27c93f; }
+.code-window .titlebar .fname {
+  margin-left: 0.8rem;
+  font-size: 0.8rem;
+  color: #a1a1aa;
+}
+.code-window pre {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  overflow-x: auto;
+}
+.code-window .mono {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+.code-window .el { color: #fbbf24; }
+.code-window .ef { color: #34d399; }
+.code-window .c { color: #6b7280; }
+.code-window .em-code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
