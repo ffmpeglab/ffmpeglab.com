@@ -286,9 +286,17 @@
     }
 
     .code-window .fname {
+      cursor: pointer;
       margin-left: 0.75rem;
       font-size: 0.75rem;
       color: var(--faint);
+    }
+
+    .fname.active {
+      cursor: default;
+      margin-left: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--orange);
     }
 
     .code-window pre {
@@ -1358,9 +1366,13 @@
       height: 100%;
       position: absolute;
     }
+
     .inner-sdk-container {
-      flex-direction: column; gap:30px; display:flex;
+      flex-direction: column;
+      gap: 30px;
+      display: flex;
     }
+
     /* ---------- Responsive ---------- */
     @media (min-width: 640px) {
       .signin {
@@ -1395,9 +1407,11 @@
         flex-direction: row-reverse;
         align-items: center;
       }
+
       .inner-sdk-container .code-window {
         min-width: 600px;
       }
+
       .hero .grid {
         grid-template-columns: 1fr 1fr;
         padding-block: 7rem;
@@ -1468,7 +1482,8 @@
         <div>
           <h1 class="balance">Build multimedia rich apps, in a new way.</h1>
           <p class="lede">FFmpegLab is an embedabble ffmpeg runtime. Edit the raw render script, build custom
-            filter-graph effects, and run the whole pipeline on any platform with scheduling, automatic scaling and asset
+            filter-graph effects, and run the whole pipeline on any platform with scheduling, automatic scaling and
+            asset
             management.</p>
           <div class="cta-row">
             <a class="btn btn-primary" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start editing free</a>
@@ -1535,7 +1550,8 @@
     <section class="features">
       <div class="container inner">
         <h2 class="balance">Built for developers and ai development</h2>
-        <p class="sub">A real timeline on top, the real command underneath, api to manage it. Switch between them whenever you want.</p>
+        <p class="sub">A real timeline on top, the real command underneath, api to manage it. Switch between them
+          whenever you want.</p>
         <div class="feature-rows">
 
           <!-- Feature 1 -->
@@ -1755,24 +1771,29 @@
         <div class="inner-sdk-container">
 
           <div style="gap:20px;display: flex;flex-direction: column; padding-bottom: 20px;">
-        <!-- <div class="head" style="padding-bottom: 20px;"> -->
-          <div>
-            <h2 class="balance">Embed FFmpeg into your applications using the FFmpegLab SDK or SQL</h2>
-          </div>
-        <!-- </div> -->
+            <!-- <div class="head" style="padding-bottom: 20px;"> -->
+            <div>
+              <h2 class="balance">Embed FFmpeg into your applications using the FFmpegLab SDK or SQL</h2>
+            </div>
+            <!-- </div> -->
             <p class="sub">
               FFmpegLab is open source and developer-first. Choose from a wide selection of available Software
               Development Kits or use a direct SQL approach to build around your data and AI built into Supabase.</p>
             <div class="cta-row">
               <a class="btn btn-ghost" href="https://www.npmjs.com/package/ffmpeglab-sdk">Typescript</a>
               <a class="btn btn-ghost" href="/articles/render-videos-using-sql-ffmpeglab.html">SQL</a>
+              <a class="btn btn-ghost" href="https://github.com/ffmpeglab/server/tree/main/sdk/yaml">YML</a>
               <a class="btn btn-ghost" href="https://github.com/ffmpeglab/server/blob/main/example.sh">CURL</a>
             </div>
           </div>
 
-          <div class="code-window" style="max-width: 900px;">
-            <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
-                class="mono fname">render.ts</span></div>
+          <div class="code-window" id="fflab-render-code-window" style="max-width: 900px;">
+            <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="mono fname active">render.ts</span>
+              <span class="mono fname">render.sql</span>
+              <span class="mono fname">render.yml</span>
+              <span class="mono fname">render.sh</span>
+            </div>
             <pre class="mono em-code" style="overflow: hidden;">
 <span class="ek">import</span> <span class="ef">*</span> <span class="ek">as</span> ffmpeglab <span class="ek">from</span> <span class="ef">'ffmpeglab-sdk'</span>;
 
@@ -1816,10 +1837,11 @@
 </span>}<span class="ek">)</span><span class="en">)</span>
           </pre>
           </div>
-        </div>
-        </div>
-    </section>
 
+          <script src="/examples.js"></script>
+        </div>
+      </div>
+    </section>
     <!-- ===== Self-host ===== -->
     <section class="selfhost">
       <div class="container grid">
@@ -1897,7 +1919,9 @@
             <div class="content">
               <div class="k">Compression</div>
               <div class="t">Ultimate Video Onboarding Pipeline – SQL Triggers &amp; Supabase Storage</div>
-              <div class="d">The complete end‑to‑end automated video and image onboarding pipeline. Upload once — get thumbnails, resized videos, and real‑time notifications — all driven by PostgreSQL triggers and pgmq.</div>
+              <div class="d">The complete end‑to‑end automated video and image onboarding pipeline. Upload once — get
+                thumbnails, resized videos, and real‑time notifications — all driven by PostgreSQL triggers and pgmq.
+              </div>
             </div>
           </a>
           <a class="guide-card ribbon" href="articles/audio-processing-podcast-pipeline-sql-triggers-supabase.html">
@@ -1905,15 +1929,18 @@
             <div class="content">
               <div class="k">Audio</div>
               <div class="t">Audio Processing Pipeline for Podcasts – SQL Triggers &amp; Supabase Storage</div>
-              <div class="d">Build an automated audio processing pipeline that normalizes loudness, reduces noise, converts formats, adds metadata, and generates waveforms for podcasts.</div>
+              <div class="d">Build an automated audio processing pipeline that normalizes loudness, reduces noise,
+                converts formats, adds metadata, and generates waveforms for podcasts.</div>
             </div>
           </a>
-          <a class="guide-card ribbon" href="articles/automated-subtitle-generation-pipeline-sql-triggers-supabase.html">
+          <a class="guide-card ribbon"
+            href="articles/automated-subtitle-generation-pipeline-sql-triggers-supabase.html">
             <span aria-label="New" class="template-ribbon">New</span>
             <div class="content">
               <div class="k">Whisper AI</div>
               <div class="t">Automated Subtitle Generation &amp; Burn-in Pipeline – SQL + DNN</div>
-              <div class="d">Build an automated pipeline that uses Whisper AI to transcribe audio and burn subtitles into videos using SQL triggers, pgmq, and Supabase Storage.</div>
+              <div class="d">Build an automated pipeline that uses Whisper AI to transcribe audio and burn subtitles
+                into videos using SQL triggers, pgmq, and Supabase Storage.</div>
             </div>
           </a>
           <a class="guide-card ribbon" href="articles/ai-upscaling-pipeline-sql-triggers-supabase.html">
@@ -1921,7 +1948,8 @@
             <div class="content">
               <div class="k">AI</div>
               <div class="t">AI Upscaling Pipeline – SQL Triggers, DNN &amp; Supabase Storage</div>
-              <div class="d">Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or 4x using SQL triggers, pgmq, and Supabase Storage.</div>
+              <div class="d">Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or
+                4x using SQL triggers, pgmq, and Supabase Storage.</div>
             </div>
           </a>
           <a class="guide-card ribbon" href="articles/video-labeling-dnn-pipeline-sql-triggers-supabase.html">
@@ -1929,7 +1957,8 @@
             <div class="content">
               <div class="k">AI</div>
               <div class="t">Video Labeling with DNN Filters – Object Detection &amp; Classification Pipeline</div>
-              <div class="d">Build an automated video labeling pipeline that detects objects, faces, and scenes using FFmpeg's DNN filters. SQL triggers + pgmq + Supabase Storage.</div>
+              <div class="d">Build an automated video labeling pipeline that detects objects, faces, and scenes using
+                FFmpeg's DNN filters. SQL triggers + pgmq + Supabase Storage.</div>
             </div>
           </a>
         </div>
@@ -2048,7 +2077,8 @@
               <div class="d">Remove grain, salt‑and‑pepper, and compression artifacts with FFmpeg's powerful denoise
                 filters. Compare <code>hqdn3d</code>, <code>nlmeans</code>, <code>vaguedenoiser</code>,
                 <code>bm3d</code>,
-                and more.</div>
+                and more.
+              </div>
             </div>
           </a>
           <a class="guide-card" href="articles/ffmpeg-optical-flow-motion-interpolation.html">
@@ -2308,14 +2338,15 @@
             <div class="content">
               <div class="k">AI</div>
               <div class="t">DNN Filters – AI-Powered Video Processing</div>
-              <div class="d">Super‑resolution, denoising, object detection, and image classification—all inside FFmpeg. Master the <code>dnn_processing</code>, <code>dnn_detect</code>, and <code>dnn_classify</code> filters.
+              <div class="d">Super‑resolution, denoising, object detection, and image classification—all inside FFmpeg.
+                Master the <code>dnn_processing</code>, <code>dnn_detect</code>, and <code>dnn_classify</code> filters.
               </div>
             </div>
           </a>
         </div>
       </div>
     </section>
-   
+
     <!-- ===== Developer ===== -->
     <section class="guides" id="guides">
       <div class="container inner">
@@ -2327,7 +2358,8 @@
             <div class="content">
               <div class="k">AI</div>
               <div class="t">Agent-First Setup – FFmpegLab Server with Supabase</div>
-              <div class="d">Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts for automated setup of PostgreSQL, pgmq, S3 storage, and API keys.</div>
+              <div class="d">Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts
+                for automated setup of PostgreSQL, pgmq, S3 storage, and API keys.</div>
             </div>
           </a>
           <a class="guide-card ribbon" href="articles/render-videos-using-sql-ffmpeglab.html">
@@ -2335,7 +2367,8 @@
             <div class="content">
               <div class="k">SQL</div>
               <div class="t">Render Videos Using SQL – A Deep Dive into FFmpegLab Server</div>
-              <div class="d">Translate the SDK example into raw SQL. Learn how the database models work and how to render videos by directly manipulating PostgreSQL.</div>
+              <div class="d">Translate the SDK example into raw SQL. Learn how the database models work and how to
+                render videos by directly manipulating PostgreSQL.</div>
             </div>
           </a>
           <a class="guide-card ribbon" href="articles/ffmpeg-env-vars-scalable-runners.html">
@@ -2404,7 +2437,8 @@
             <div class="content">
               <div class="k">Business &amp; Technology</div>
               <div class="t">Applications &amp; Startups Powered by FFmpeg</div>
-              <div class="d">From AI video editors to privacy-first converters, discover the startups and applications built on FFmpeg. Learn how FFmpegLab enables the next generation of media companies.
+              <div class="d">From AI video editors to privacy-first converters, discover the startups and applications
+                built on FFmpeg. Learn how FFmpegLab enables the next generation of media companies.
               </div>
             </div>
           </a>
@@ -2546,4 +2580,5 @@
     </div>
   </footer>
 </body>
+
 </html>
