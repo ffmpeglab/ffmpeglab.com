@@ -16,7 +16,7 @@
     { name: "render.yml", lang: "yml", active: true },
     { name: "render.ts", lang: "ts", active: false },
     { name: "render.sql", lang: "sql", active: false },
-    { name: "curl.sh", lang: "sh", active: false },
+    { name: "render.sh", lang: "sh", active: false },
   ];
 
   var CODE = {
