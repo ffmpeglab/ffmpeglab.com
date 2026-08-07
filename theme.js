@@ -99,7 +99,6 @@
       "html[data-theme=\"dark\"] body{background:var(--fflab-page-bg);}",
       "html[data-theme=\"dark\"] main{background:var(--fflab-page-bg);}",
       "html[data-theme=\"dark\"] section{background:var(--fflab-page-bg)!important;}",
-      "html[data-theme=\"dark\"] .btn{background:var(--fflab-page-bg)!important;}",
       "html[data-theme=\"dark\"] .guide-card{background:var(--fflab-page-bg)!important;}",
       "html[data-theme=\"dark\"] header.site{border-bottom-color:var(--fflab-header-border);background:var(--fflab-header-bg);}",
       "html[data-theme=\"dark\"] .article-head{background:var(--fflab-section-bg);border-bottom-color:var(--fflab-section-border);}",
