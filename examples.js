@@ -55,7 +55,7 @@ steps:
       table: "storage.objects"
       condition: |
         NEW.bucket_id = 'uploads'
-    command: -i $MEDIA_1 -vf thumbnail,scale=320:180 -frames:v 1 -f image2 -y $OUTPUT_PATH
+    command: -i $MEDIA_1 -vf thumbnail,scale=320:180 -frames:v 1 -y $OUTPUT_PATH
     inputs: ["INPUT_FILE"]
     outputs: ["OUTPUT_FILE"]
     output_path: "{{userId}}/thumbnails/{{baseFilename}}.jpg"
@@ -72,7 +72,7 @@ steps:
       table: "storage.objects"
       condition: |
         NEW.bucket_id = 'uploads'
-    command: -i $MEDIA_1 -c:v libx264 -crf 23 -preset medium -vf scale=-2:720 -c:a aac -b:a 128k -movflags +faststart -f mp4 -y $OUTPUT_PATH
+    command: -i $MEDIA_1 -vf scale=-2:720 -movflags +faststart -y $OUTPUT_PATH
     inputs: ["INPUT_FILE"]
     outputs: ["OUTPUT_FILE"]
     output_path: "{{userId}}/videos/{{baseFilename}}.mp4"
