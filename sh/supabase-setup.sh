@@ -88,6 +88,7 @@ else
 fi
 
 rm -rf .env.sh;
+rm -rf .env
 
 echo "export DATABASE_URL=${DATABASE_URL}" >> .env.sh;
 echo "export DB_MIGRATION_ENABLED=true" >> .env.sh;
@@ -101,6 +102,19 @@ echo "export DB_USER=${DB_USER}" >>  .env.sh;
 echo "export DB_NAME=${DB_NAME}" >>  .env.sh;
 echo "export DB_HOST=$(ipconfig getifaddr en0)" >>  .env.sh;
 echo "export DB_PORT=6543" >>  .env.sh;
+
+echo "DATABASE_URL=${DATABASE_URL}" >> .env;
+echo "DB_MIGRATION_ENABLED=true" >> .env;
+echo "S3_BUCKET_ID=${S3_BUCKET}" >> .env;
+echo "S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_ID}" >> .env;
+echo "S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_SECRET}" >> .env;
+echo "SUPABASE_URL=${SUPABASE_URL}" >>  $WEBAPP_DIR/.env;
+echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  $WEBAPP_DIR/.env;
+echo "DB_PASSWORD=${DB_PASSWORD}" >>  .env;
+echo "DB_USER=${DB_USER}" >>  .env;
+echo "DB_NAME=${DB_NAME}" >>  .env;
+echo "DB_HOST=$(ipconfig getifaddr en0)" >>  .env;
+echo "DB_PORT=6543" >>  .env;
 sleep 10
 
 

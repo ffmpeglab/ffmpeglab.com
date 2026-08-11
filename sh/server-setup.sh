@@ -1,7 +1,9 @@
 #!/bin/bash
 
+cd $APP_ROOT_DIR
 source ./.env.sh
 
+cd $SERVER_DIR
 
 set -e
 # FFmpegLab Server Setup Phase
@@ -21,12 +23,6 @@ NC='\033[0m'
 
 echo -e "${BLUE}📦 Setting up FFmpegLab Server...${NC}"
 
-# Clone repo
-REPO_DIR="ffmpeglab"
-if [ ! -d "$REPO_DIR" ]; then
-    git clone https://github.com/ffmpeglab/server.git ffmpeglab
-fi
-cd $REPO_DIR
 
 docker compose pull
 docker compose up -d
@@ -47,5 +43,5 @@ VALUES (
   '{"permissions": ["render:*", "project:*", "user:read"]}'
 ) ON CONFLICT DO NOTHING;
 EOF
-echo "export API_KEY=${API_KEY}" >> ../.env.sh
+echo "export FFMPEGLAB_API_KEY=${API_KEY}" >> ../.env.sh
 echo -e "${GREEN}✅ User and API key inserted.${NC}"
