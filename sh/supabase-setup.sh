@@ -105,12 +105,15 @@ echo "DATABASE_URL=${DATABASE_URL}" >> $SERVER_DIR/.env;
 echo "DB_MIGRATION_ENABLED=true" >> $SERVER_DIR/.env;
 echo "S3_BUCKET_ID=${S3_BUCKET}" >> $SERVER_DIR/.env;
 echo "S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_ID}" >> $SERVER_DIR/.env;
-echo "S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_SECRET}" >> $SERVER_DIR/.env;
+echo "S3_SECRET_KEY=${S3_PROTOCOL_ACCESS_KEY_SECRET}" >> $SERVER_DIR/.env;
+echo "S3_ENDPOINT=http://$(ipconfig getifaddr en0)/storage/v1/s3" >>  $SERVER_DIR/.env;
 echo "DB_PASSWORD=${DB_PASSWORD}" >>  $SERVER_DIR/.env;
 echo "DB_USER=${DB_USER}" >>  $SERVER_DIR/.env;
 echo "DB_NAME=${DB_NAME}" >>  $SERVER_DIR/.env;
 echo "DB_HOST=$(ipconfig getifaddr en0)" >>  $SERVER_DIR/.env;
 echo "DB_PORT=6543" >>  $SERVER_DIR/.env;
+echo "SUPABASE_URL=${SUPABASE_URL}" >>  $SUPABASE_URL/.env;
+echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  $SUPABASE_URL/.env;
 
 #WEBAPP .env
 echo "SUPABASE_URL=${SUPABASE_URL}" >>  $WEBAPP_DIR/.env;
