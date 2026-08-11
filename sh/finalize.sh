@@ -5,7 +5,7 @@ source ./.env.sh
 # Finalize Phase
 # Starts Docker Compose and displays summary
 
-if [ -z "$API_KEY" ]; then
+if [ -z "$FFMPEGLAB_API_KEY" ]; then
     echo -e "${RED}❌ API_KEY not set. Run server-setup.sh first.${NC}"
     exit 1
 fi
