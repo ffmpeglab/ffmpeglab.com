@@ -4,7 +4,7 @@ set -e
 # FFmpegLab Server - Agent-First Setup
 # Main installer that orchestrates all phases
 
-BASE_URL="http://localhost:8082/sh"
+BASE_URL="https://ffmpeglab.com/sh"
 LOG_FILE="ffmpeglab-setup.log"
 
 # Colors
