@@ -42,9 +42,35 @@ command -v openssl >/dev/null 2>&1 || { echo -e "${RED}❌ openssl is required.$
 
 echo -e "${GREEN}✅ All prerequisites satisfied.${NC}"
 
+# ROOT DIRECTORY
+export APP_ROOT_DIR="ffmpeglab"
+
+if [ ! -d "$APP_ROOT_DIR" ]; then
+    mkdir $APP_ROOT_DIR
+fi
+
+cd $APP_ROOT_DIR
+
+
+# Clone repo
+export SERVER_DIR="server"
+if [ ! -d "$SERVER_DIR" ]; then
+    git clone https://github.com/ffmpeglab/server.git $WEBAPP_DIR
+fi
+
+
+# Clone repo
+export WEBAPP_DIR="webapp"
+if [ ! -d "$WEBAPP_DIR" ]; then
+    git clone https://github.com/ffmpeglab/webapp.git $WEBAPP_DIR
+    cp $WEBAPP_DIR/.env.example $WEBAPP_DIR/.env
+fi
+
+
 export SUPABASE_CHOICE=2
 
 # Run phases
 run_phase "supabase-setup.sh"
 run_phase "server-setup.sh"
+run_phase "webapp-setup.sh"
 run_phase "finalize.sh"

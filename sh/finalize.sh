@@ -19,8 +19,9 @@ NC='\033[0m'
 
 echo -e "${GREEN}✅ Setup complete!${NC}"
 echo "================================================"
-echo -e "${GREEN}🔑 Your API Key: ${API_KEY}${NC}"
+echo -e "${GREEN}🔑 Your API Key: ${FFMPEGLAB_API_KEY}${NC}"
 echo -e "${BLUE}🌐 API Server: http://localhost:3000${NC}"
 echo -e "${BLUE}📝 Test with:${NC}"
-echo "curl -v -H 'Authorization: Bearer ${API_KEY}' "http://localhost:3000/renders""
-curl -v -H "Authorization: Bearer ${API_KEY}" "http://localhost:3000/renders"
+echo "curl -v -H 'Authorization: Bearer ${FFMPEGLAB_API_KEY}' "http://localhost:3000/renders""
+curl -v -H "Authorization: Bearer ${FFMPEGLAB_API_KEY}" "http://localhost:3000/renders"
+open http://localhost:7778/webapp
