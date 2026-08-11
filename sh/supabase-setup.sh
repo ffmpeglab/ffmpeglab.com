@@ -64,9 +64,9 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
     # set -o allexport
     # source supabase-project/.env.sh
     # set +o allexport
-    SUPABASE_URL="http://localhost:8000"
+    SUPABASE_URL=http://$(ipconfig getifaddr en0):8000
     SUPABASE_ANON_KEY="$ANON_KEY"
-    SUPABASE_FQDN=localhost
+    SUPABASE_FQDN=$(ipconfig getifaddr en0)
     SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
     DB_PASSWORD="$POSTGRES_PASSWORD"
     DB_NAME=postgres
