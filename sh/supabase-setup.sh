@@ -114,10 +114,11 @@ echo "DB_USER=${DB_USER}" >>  $SERVER_DIR/.env;
 echo "DB_NAME=${DB_NAME}" >>  $SERVER_DIR/.env;
 echo "DB_HOST=${SUPABASE_FQDN}" >>  $SERVER_DIR/.env;
 echo "DB_PORT=6543" >>  $SERVER_DIR/.env;
-echo "SUPABASE_URL=${SUPABASE_URL}" >>  $SUPABASE_URL/.env;
-echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  $SUPABASE_URL/.env;
+echo "SUPABASE_URL=${SUPABASE_URL}" >>  $SERVER_DIR/.env;
+echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  $SERVER_DIR/.env;
 
 #WEBAPP .env
+echo "" >>  $WEBAPP_DIR/.env;
 echo "SUPABASE_URL=${SUPABASE_URL}" >>  $WEBAPP_DIR/.env;
 echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  $WEBAPP_DIR/.env;
 sleep 10
