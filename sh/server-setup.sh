@@ -44,4 +44,5 @@ VALUES (
 ) ON CONFLICT DO NOTHING;
 EOF
 echo "export FFMPEGLAB_API_KEY=${API_KEY}" >> ../.env.sh
+echo "export FFMPEGLAB_API_KEY=${API_KEY}" >> ../${WEBAPP_DIR}/.env
 echo -e "${GREEN}✅ User and API key inserted.${NC}"
