@@ -4,7 +4,7 @@ set -e
 # FFmpegLab Server - Agent-First Setup
 # Main installer that orchestrates all phases
 
-BASE_URL="https://ffmpeglab.com/sh"
+BASE_URL="http://localhost:8082/sh"
 LOG_FILE="ffmpeglab-setup.log"
 
 # Colors
@@ -55,14 +55,14 @@ cd $APP_ROOT_DIR
 # Clone repo
 export SERVER_DIR="server"
 if [ ! -d "$SERVER_DIR" ]; then
-    git clone https://github.com/ffmpeglab/server.git $WEBAPP_DIR
+    git clone --depth 1 https://github.com/ffmpeglab/server $WEBAPP_DIR
 fi
 
 
 # Clone repo
 export WEBAPP_DIR="webapp"
 if [ ! -d "$WEBAPP_DIR" ]; then
-    git clone https://github.com/ffmpeglab/webapp.git $WEBAPP_DIR
+    git clone --depth 1 https://github.com/ffmpeglab/webapp $WEBAPP_DIR
     cp $WEBAPP_DIR/.env.example $WEBAPP_DIR/.env
 fi
 
