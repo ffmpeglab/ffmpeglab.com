@@ -64,9 +64,9 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
     # set -o allexport
     # source supabase-project/.env.sh
     # set +o allexport
-    SUPABASE_URL=http://$(ipconfig getifaddr en0):8000
-    SUPABASE_ANON_KEY="$ANON_KEY"
     SUPABASE_FQDN=$(ipconfig getifaddr en0)
+    SUPABASE_URL="http://${SUPABASE_FQDN}:8000"
+    SUPABASE_ANON_KEY="$ANON_KEY"
     SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
     DB_PASSWORD="$POSTGRES_PASSWORD"
     DB_NAME=postgres
@@ -97,7 +97,7 @@ echo "export SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  .env.sh;
 echo "export DB_PASSWORD=${DB_PASSWORD}" >>  .env.sh;
 echo "export DB_USER=${DB_USER}" >>  .env.sh;
 echo "export DB_NAME=${DB_NAME}" >>  .env.sh;
-echo "export DB_HOST=$(ipconfig getifaddr en0)" >>  .env.sh;
+echo "export DB_HOST=${SUPABASE_FQDN}" >>  .env.sh;
 echo "export DB_PORT=6543" >>  .env.sh;
 
 #SERVER .env
@@ -110,7 +110,7 @@ echo "S3_ENDPOINT=${SUPABASE_URL}/storage/v1/s3" >>  $SERVER_DIR/.env;
 echo "DB_PASSWORD=${DB_PASSWORD}" >>  $SERVER_DIR/.env;
 echo "DB_USER=${DB_USER}" >>  $SERVER_DIR/.env;
 echo "DB_NAME=${DB_NAME}" >>  $SERVER_DIR/.env;
-echo "DB_HOST=$(ipconfig getifaddr en0)" >>  $SERVER_DIR/.env;
+echo "DB_HOST=${SUPABASE_FQDN}" >>  $SERVER_DIR/.env;
 echo "DB_PORT=6543" >>  $SERVER_DIR/.env;
 echo "SUPABASE_URL=${SUPABASE_URL}" >>  $SUPABASE_URL/.env;
 echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >>  $SUPABASE_URL/.env;
