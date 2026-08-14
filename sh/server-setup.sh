@@ -39,7 +39,8 @@ VALUES (
   'Admin API Key',
   '${API_KEY}',
   gen_random_uuid(),
-  '{"permissions": ["render:*", "project:*", "user:read"]}'
+  '{"permissions": ["renders:*", "files:*", "pipelines:*"]}',
+  CURRENT_DATE
 ) ON CONFLICT DO NOTHING;
 EOF
 echo "export FFMPEGLAB_API_KEY=${API_KEY}" >> ../.env.sh
