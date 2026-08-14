@@ -26,7 +26,10 @@ echo -e "${BLUE}📦 Setting up FFmpegLab Server...${NC}"
 docker compose pull
 docker compose up -d
 
-sleep 10
+
+echo -e "${BLUE}📦 Waiting for Migrations...${NC}"
+sleep 20
+
 # Generate API key
 API_KEY_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6")
 API_KEY="${API_KEY_SECRET}"
