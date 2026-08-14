@@ -33,13 +33,14 @@ API_KEY="${API_KEY_SECRET}"
 
 echo -e "${BLUE}💾 Inserting user and API key...${NC}"
 PGPASSWORD="$DB_PASSWORD" psql "$DATABASE_URL" <<EOF
-INSERT INTO public.api_key (id, title, apikey, user_id, data)
+INSERT INTO public.api_key (id, title, apikey, user_id, data, date)
 VALUES (
   gen_random_uuid(),
   'Admin API Key',
   '${API_KEY}',
   gen_random_uuid(),
-  '{"permissions": ["render:*", "project:*", "user:read"]}'
+  '{"permissions": ["renders:*", "files:*", "pipelines:*"]}',
+  CURRENT_DATE
 ) ON CONFLICT DO NOTHING;
 EOF
 echo "export FFMPEGLAB_API_KEY=${API_KEY}" >> ../.env.sh
