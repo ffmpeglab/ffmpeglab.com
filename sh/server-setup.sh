@@ -33,7 +33,7 @@ API_KEY="${API_KEY_SECRET}"
 
 echo -e "${BLUE}💾 Inserting user and API key...${NC}"
 PGPASSWORD="$DB_PASSWORD" psql "$DATABASE_URL" <<EOF
-INSERT INTO public.api_key (id, title, apikey, user_id, data)
+INSERT INTO public.api_key (id, title, apikey, user_id, data, date)
 VALUES (
   gen_random_uuid(),
   'Admin API Key',
