@@ -45,6 +45,7 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
         cd supabase-project && cp .env.example .env
         sh utils/generate-keys.sh --update-env
         sh utils/add-new-auth-keys.sh
+        grep -v "SUPABASE_PUBLIC_URL=http://localhost:8000" .env > temp && mv temp .env
         echo "SUPABASE_PUBLIC_URL=http://${SUPABASE_FQDN}:8000" >> .env;
         docker compose pull
     else 
