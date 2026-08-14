@@ -49,7 +49,8 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
         cd supabase-project
     fi
 
-    docker compose up -d
+    docker compose -f docker-compose.yml -f docker-compose.s3.yml up -d
+    
     cd ..
 
     ENV_VARS="$(cat supabase-project/.env | awk '!/^\s*#/' | awk '!/^\s*$/')"
