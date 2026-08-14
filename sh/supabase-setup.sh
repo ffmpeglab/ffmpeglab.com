@@ -21,6 +21,7 @@ echo -e "${BLUE}🔧 Configuring Supabase...${NC}"
 # Get credentials
 if [ "$SUPABASE_CHOICE" = "2" ]; then
     # Self-hosted
+    SUPABASE_FQDN=$(ipconfig getifaddr en0)
     
     echo -e "${BLUE}📦 Setting up self-hosted Supabase...${NC}"
 
@@ -44,6 +45,7 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
         cd supabase-project && cp .env.example .env
         sh utils/generate-keys.sh --update-env
         sh utils/add-new-auth-keys.sh
+        echo "SUPABASE_PUBLIC_URL=http://${SUPABASE_FQDN}:8000" >> $SERVER_DIR/.env;
         docker compose pull
     else 
         cd supabase-project
@@ -65,7 +67,6 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
     # set -o allexport
     # source supabase-project/.env.sh
     # set +o allexport
-    SUPABASE_FQDN=$(ipconfig getifaddr en0)
     SUPABASE_URL="http://${SUPABASE_FQDN}:8000"
     SUPABASE_ANON_KEY="$ANON_KEY"
     SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
