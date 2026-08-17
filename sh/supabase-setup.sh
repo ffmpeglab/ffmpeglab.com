@@ -45,7 +45,7 @@ if [ "$SUPABASE_CHOICE" = "2" ]; then
         # Switch to the project directory and create a .env from the example
         cd supabase-project && cp .env.example .env
         sh utils/generate-keys.sh --update-env
-        sh utils/add-new-auth-keys.sh
+        sh utils/add-new-auth-keys.sh --update-env
         sed -i '' '/^SUPABASE_PUBLIC_URL=/d' .env
         echo "SUPABASE_PUBLIC_URL=${SUPABASE_URL}" >> .env;
         docker compose pull
