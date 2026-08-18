@@ -17,6 +17,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+sleep 5
+
 echo -e "${GREEN}✅ Setup complete!${NC}"
 echo "================================================"
 echo -e "${GREEN}🔑 Your API Key: ${FFMPEGLAB_API_KEY}${NC}"

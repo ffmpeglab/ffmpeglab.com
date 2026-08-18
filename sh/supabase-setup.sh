@@ -91,7 +91,6 @@ else
 fi
 
 echo "export DATABASE_URL=${DATABASE_URL}" >> .env.sh;
-echo "export DB_MIGRATION_ENABLED=true" >> .env.sh;
 echo "export S3_BUCKET_ID=${S3_BUCKET}" >> .env.sh;
 echo "export S3_REGION=stub" >> .env.sh;
 echo "export S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_ID}" >> .env.sh;
@@ -106,7 +105,6 @@ echo "export DB_PORT=6543" >>  .env.sh;
 
 #SERVER .env
 echo "DATABASE_URL=${DATABASE_URL}" >> $SERVER_DIR/.env;
-echo "DB_MIGRATION_ENABLED=true" >> $SERVER_DIR/.env;
 echo "S3_BUCKET_ID=${S3_BUCKET}" >> $SERVER_DIR/.env;
 echo "S3_ACCESS_KEY=${S3_PROTOCOL_ACCESS_KEY_ID}" >> $SERVER_DIR/.env;
 echo "S3_SECRET_KEY=${S3_PROTOCOL_ACCESS_KEY_SECRET}" >> $SERVER_DIR/.env;
