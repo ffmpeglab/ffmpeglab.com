@@ -38,45 +38,25 @@
     var endpoint = root.getAttribute("data-endpoint") || "";
     var submitMode = (root.getAttribute("data-submit-mode") || "json").toLowerCase();
     var configuredRedirect = root.getAttribute("data-redirect-url") || "";
-    var forgotUrl = root.getAttribute("data-forgot-url") || "";
-    var signupUrl = root.getAttribute("data-signup-url") || "";
     var csrfToken = root.getAttribute("data-csrf-token") || "";
 
     var form = root.querySelector("[data-login-form]");
     var email = root.querySelector("[data-login-email]");
-    var password = root.querySelector("[data-login-password]");
-    var remember = root.querySelector("[data-login-remember]");
     var submit = root.querySelector("[data-login-submit]");
-    var toggle = root.querySelector("[data-login-toggle]");
     var emailError = root.querySelector("[data-login-email-error]");
-    var passwordError = root.querySelector("[data-login-password-error]");
-    var passwordError = root.querySelector("[data-login-password-error]");
     var serverError = root.querySelector("[data-login-error]");
     var formView = root.querySelector("[data-login-form-view]");
     var successView = root.querySelector("[data-login-success]");
-    var forgotLink = root.querySelector("[data-login-forgot]");
-    var signupLink = root.querySelector("[data-login-signup]");
-    var signupRow = root.querySelector("[data-login-signup-row]");
     var glass = root.querySelector("[data-login-glass]");
     var google = root.querySelector("[data-login-google]");
     var github = root.querySelector("[data-login-github]");
     var busy = false;
 
-    if (!form || !email || !password || !submit || !formView || !successView) return;
+    if (!form || !email || !submit || !formView || !successView) return;
 
-    setConfiguredLink(forgotLink, forgotUrl);
-    setConfiguredLink(signupLink, signupUrl, signupRow);
     animateLights(root);
     animateEntry(glass);
 
-    toggle.addEventListener("click", function () {
-      var showing = password.type === "text";
-      password.type = showing ? "password" : "text";
-      toggle.textContent = showing ? "SHOW" : "HIDE";
-      toggle.setAttribute("aria-label", showing ? "Show password" : "Hide password");
-      toggle.setAttribute("aria-pressed", showing ? "false" : "true");
-      password.focus();
-    });
 
     email.addEventListener("input", function () {
       hide(emailError);
@@ -118,11 +98,9 @@
       if (busy) return;
 
       var emailValue = email.value.trim();
-    //   var passwordValue = password.value;
       var valid = true;
 
       hide(emailError);
-      hide(passwordError);
       hide(serverError);
 
       if (!isValidEmail(emailValue)) {
@@ -130,14 +108,9 @@
         email.style.borderColor = "#c53030";
         valid = false;
       }
-    //   if (passwordValue.length < 8) {
-    //     show(passwordError);
-    //     password.style.borderColor = "#c53030";
-    //     valid = false;
-    //   }
       if (!valid) {
         shake(form);
-        (isValidEmail(emailValue) ? password : email).focus();
+        email.focus();
         return;
       }
       busy = true;
@@ -167,8 +140,8 @@
       submit.style.cursor = isLoading ? "wait" : "pointer";
       submit.textContent = isLoading ? "Signing in…" : "Sign in  →";
       email.disabled = isLoading;
-      password.disabled = isLoading;
-      if (remember) remember.disabled = isLoading;
+      google.disabled = isLoading
+      github.disabled = isLoading
     }
 
     function showSuccess(redirectUrl) {
