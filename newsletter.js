@@ -64,20 +64,11 @@
       setLoading(true);
       if (fullError) fullError.hidden = true;
 
-    //   const emailRedirectTo =
-    //   env.config.public_host +
-    //   (Platform.OS === 'web'
-    //     ? window.location.pathname
-    //     : makeRedirectUri({path: pathname}));
-    // console.info({emailRedirectTo});
         const {
         data: {session},
         error,
         } = await supabaseClient.auth.signInWithOtp({
         email: email,
-        options: {
-            // emailRedirectTo: emailRedirectTo,
-        },
         });
         console.info(session,error)
         setLoading(false);
