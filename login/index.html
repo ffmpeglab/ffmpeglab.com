@@ -1,9 +1,79 @@
 <!doctype html>
 <html lang="en">
   <head>
+
+  <!-- Primary meta -->
+  <meta name="description"
+    content="FFmpegLab is a power tool for FFmpeg specialists: edit the raw render script, build custom filter-graph effects, and run the whole pipeline offline. Open source, private, and self-hostable." />
+  <meta name="keywords"
+    content="FFmpeg video editor, filter_complex editor, xfade transitions, amix audio, offline video editor, private video editor, self-hosted video editor, open source video editor, WebAssembly video editing, OPFS" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#FC6D26" />
+  <meta name="color-scheme" content="light" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="canonical" href="https://ffmpeglab.com/" />
+
+  <!-- Icons & manifest -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:url" content="https://ffmpeglab.com/" />
+  <meta property="og:title" content="FFmpegLab — The FFmpeg-Native Video Editor" />
+  <meta property="og:description"
+    content="Video editing, down to the FFmpeg command. Edit the raw render script, build custom xfade/amix effects, and run it all offline — your footage never leaves your machine." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="FFmpegLab — the FFmpeg-native video editor" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FFmpegLab — The FFmpeg-Native Video Editor" />
+  <meta name="twitter:description"
+    content="Video editing, down to the FFmpeg command. Edit the raw render script, build custom xfade/amix effects, and run it all offline — your footage never leaves your machine." />
+  <meta name="twitter:image" content="https://ffmpeglab.com/og-image.png" />
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "FFmpegLab",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web, Windows, macOS, Linux",
+        "description": "Embedded ffmpeg runtime. Edit the raw render script, build custom filter-graph effects, arrange pipelines and templates. Open source, private, and self-hostable.",
+        "url": "https://ffmpeglab.com/",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "offers": [
+          { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" }
+        ],
+        "featureList": [
+          "Edit the raw FFmpeg render script and filter_complex graph",
+          "30+ xfade transitions plus custom filter-graph effects",
+          "Unlimited audio channels mixed with amix",
+          "Offline-first pipeline via OPFS + WebAssembly",
+          "End-to-end encrypted P2P sync",
+          "Self-hostable with Docker Compose"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "name": "FFmpegLab",
+        "url": "https://ffmpeglab.com/"
+      }
+    ]
+  }
+  </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>FFmpegLab Login Form Embed</title>
+    <title>FFmpegLab Login</title>
   </head>
   <script src="/theme.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
