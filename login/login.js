@@ -93,7 +93,7 @@
         // })
     });
     
-    form.addEventListener("submit", async function (event) {
+    submit.addEventListener("click", async function (event) {
       event.preventDefault();
       if (busy) return;
 
