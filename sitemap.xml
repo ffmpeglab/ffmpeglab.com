@@ -7,6 +7,18 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://ffmpeglab.com/login</loc>
+    <lastmod>2026-08-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://api.ffmpeglab.com/api</loc>
+    <lastmod>2026-08-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://ffmpeglab.com/articles/ffmpeg-xfade-transitions-guide.html</loc>
     <lastmod>2026-08-07</lastmod>
     <changefreq>monthly</changefreq>
