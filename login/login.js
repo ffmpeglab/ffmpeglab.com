@@ -71,7 +71,10 @@
       await supabaseClient.auth.signOut()
       } catch(err) {}
           const { error } = await supabaseClient.auth.signInWithOAuth({ 
-  provider: 'github' 
+  provider: 'github' ,
+  options: {
+    redirectTo:"https://webapp.ffmpeglab.com/webapp/editor?showEditorTemplates=true"
+  }
 });
         //   .signInWithOAuth({
         //     provider: 'github',
@@ -86,7 +89,10 @@
       } catch(err) {}
 
         const { error } = await supabaseClient.auth.signInWithOAuth({ 
-  provider: 'google' 
+  provider: 'google',
+  options: {
+    redirectTo:"https://webapp.ffmpeglab.com/webapp/editor?showEditorTemplates=true"
+  }
 });
         // .signInWithOAuth({
         // provider: 'google',
@@ -121,6 +127,9 @@
         error,
         } = await supabaseClient.auth.signInWithOtp({
         email: emailValue,
+  options: {
+    redirectTo:"https://webapp.ffmpeglab.com/webapp/editor?showEditorTemplates=true"
+  }
         });
         setLoading(false);
         if(error) {
