@@ -4,13 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FFmpegLab — The FFmpeg-Native Video Editor</title>
+  <title>FFmpegLab — The API-Native Media Engineering IDE</title>
 
   <!-- Primary meta -->
   <meta name="description"
-    content="FFmpegLab is a power tool for FFmpeg specialists: edit the raw render script, build custom filter-graph effects, and run the whole pipeline offline. Open source, private, and self-hostable." />
+    content="FFmpegLab is the first API-native IDE for media engineering. Query media catalogs with SQL, define filter graphs with YAML, orchestrate renders with Bash—backed by a collaborative workspace that scales from on device to cluster." />
   <meta name="keywords"
-    content="FFmpeg video editor, filter_complex editor, xfade transitions, amix audio, offline video editor, private video editor, self-hosted video editor, open source video editor, WebAssembly video editing, OPFS" />
+    content="SQL API, YAML API, Typescript SDK, FFmpeg, video processing, media engineering, Supabase, PostgreSQL, S3, Whisper AI, self-hosted, open source video editor" />
   <meta name="author" content="FFmpegLab" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="theme-color" content="#FC6D26" />
@@ -28,19 +28,19 @@
   <meta property="og:site_name" content="FFmpegLab" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:url" content="https://ffmpeglab.com/" />
-  <meta property="og:title" content="FFmpegLab — The FFmpeg-Native Video Editor" />
+  <meta property="og:title" content="FFmpegLab — The API-Native Media Engineering IDE" />
   <meta property="og:description"
-    content="Video editing, down to the FFmpeg command. Edit the raw render script, build custom xfade/amix effects, and run it all offline — your footage never leaves your machine." />
+    content="Orchestrate video pipelines natively—with SQL, YAML, and AI. Query your entire media catalog, define complex filter graphs, and automate renders. Open source, self-hostable, and built for teams." />
   <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="FFmpegLab — the FFmpeg-native video editor" />
+  <meta property="og:image:alt" content="FFmpegLab — the API-native media engineering IDE" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="FFmpegLab — The FFmpeg-Native Video Editor" />
+  <meta name="twitter:title" content="FFmpegLab — The API-Native Media Engineering IDE" />
   <meta name="twitter:description"
-    content="Video editing, down to the FFmpeg command. Edit the raw render script, build custom xfade/amix effects, and run it all offline — your footage never leaves your machine." />
+    content="Orchestrate video pipelines natively—with SQL, YAML, and AI. Query your entire media catalog, define complex filter graphs, and automate renders. Open source, self-hostable, and built for teams." />
   <meta name="twitter:image" content="https://ffmpeglab.com/og-image.png" />
   <!-- Structured data -->
   <link rel="stylesheet" href="index.css" />
@@ -53,19 +53,19 @@
         "name": "FFmpegLab",
         "applicationCategory": "MultimediaApplication",
         "operatingSystem": "Web, Windows, macOS, Linux",
-        "description": "Embedded ffmpeg runtime. Edit the raw render script, build custom filter-graph effects, arrange pipelines and templates. Open source, private, and self-hostable.",
+        "description": "API-native media engineering IDE. SQL metadata queries, YAML filter graphs, Bash orchestration. Open source, self-hostable, collaborative.",
         "url": "https://ffmpeglab.com/",
         "image": "https://ffmpeglab.com/og-image.png",
         "offers": [
           { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" }
         ],
         "featureList": [
-          "Edit the raw FFmpeg render script and filter_complex graph",
-          "30+ xfade transitions plus custom filter-graph effects",
-          "Unlimited audio channels mixed with amix",
-          "Offline-first pipeline via OPFS + WebAssembly",
-          "End-to-end encrypted P2P sync",
-          "Self-hostable with Docker Compose"
+          "Native SQL API for media catalog queries",
+          "Declarative YAML rendering pipelines",
+          "Typescript, SQL, and Bash SDKs",
+          "Collaborative timeline with live comments",
+          "Self-hostable with Docker Compose",
+          "Supabase + PostgreSQL + S3 integration"
         ]
       },
       {
@@ -93,11 +93,11 @@
       <span class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span
             class="lab">Lab</span></span></span>
       <nav>
-        <a href="#">Product</a>
+        <a href="https://github.com/ffmpeglab" target="_blank">Github</a>
         <a href="articles/ffmpeg-filter-complex-effects.html">Effects</a>
         <a href="articles/self-hosted-video-editor-docker.html">Self-Hosting</a>
         <a href="#guides">Guides</a>
-        <a href="https://api.ffmpeglab.com/api">API</a>
+        <a href="https://api.ffmpeglab.com/docs">API</a>
       </nav>
       <div class="header-actions">
         <a class="btn btn-primary sm" href="/login">Sign in</a>
@@ -111,17 +111,13 @@
       <div class="glow"></div>
       <div class="container grid">
         <div>
-          <h1 class="balance">Build multimedia rich apps, in a new way.</h1>
-          <p class="lede">FFmpegLab is an embedabble ffmpeg runtime. Edit the raw render script, build custom
-            filter-graph effects, and run the whole pipeline on any platform with scheduling, automatic scaling and
-            asset
-            management.</p>
+          <h1 class="balance">Orchestrate video pipelines natively—with SQL, YAML, and AI.</h1>
+          <p class="lede">FFmpegLab is the first API-native IDE for media engineering. Query your entire media catalog via SQL, define complex filter graphs with YAML, and orchestrate renders with Bash—all backed by a collaborative workspace that scales from your laptop to production clusters.</p>
           <div class="cta-row">
             <a class="btn btn-primary" href="/login">Start</a>
             <a class="btn btn-ghost" href="#docs">Read the docs</a>
           </div>
-          <p class="mono meta">open-source · xfade · amix · OPFS · WebAssembly · self-hostable · postgresql · supabase ·
-            s3 · ffmpeg · whisper ai</p>
+          <p class="mono meta">SQL API · YAML API · Typescript SDK · postgresql · supabase · s3 · whisper ai · ffmpeg · self-hostable · open-source</p>
         </div>
         <div class="editor-mock hero-mock">
           <div class="em-toolbar">
@@ -180,9 +176,8 @@
     <!-- ===== Features ===== -->
     <section class="features">
       <div class="container inner">
-        <h2 class="balance">Built for developers and platform engineers</h2>
-        <p class="sub">Real Timeline on top, and a Real Command underneath. <br /> API to integrate, YML to orchestrate. <br> Switch between them
-          whenever you want.</p>
+        <h2 class="balance">Three native interfaces. One powerful engine.</h2>
+        <p class="sub">Write SQL to query frame-level metadata. Define rendering topologies in YAML. Trigger batch jobs via Bash. The timeline and the command are just two sides of the same API-first coin.</p>
         <div class="feature-rows">
 
           <!-- Feature 1 -->
@@ -193,23 +188,21 @@
                   <polyline points="4 17 10 11 4 5" />
                   <line x1="12" x2="20" y1="19" y2="19" />
                 </svg></span>
-              <h3>Edit the raw render script</h3>
-              <p class="body">FFmpegLab never hides the engine. Drop into the actual FFmpeg rendering script, chain
-                filters by hand, and keep full control over every render — no proprietary black box between you and the
-                output.</p>
+              <h3>Edit the script—or generate it via YAML</h3>
+              <p class="body">No black boxes. Drop directly into the raw <code>filter_complex</code> graph, or define your entire pipeline declaratively with our YAML API. Every render is reproducible, versionable, and ready for automation.</p>
               <ul class="bullets">
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">
                     <path d="M20 6 9 17l-5-5" />
-                  </svg><span>Direct access to the FFmpeg command and filter_complex graph</span></li>
+                  </svg><span>Direct access to the FFmpeg command and filter graph</span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">
                     <path d="M20 6 9 17l-5-5" />
-                  </svg><span>Live preview as you tune parameters</span></li>
+                  </svg><span>Live previews with instant parameter tuning</span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">
                     <path d="M20 6 9 17l-5-5" />
-                  </svg><span>Reproducible, scriptable renders you can version</span></li>
+                  </svg><span>Declarative YAML API for pipeline-as-code</span></li>
               </ul>
             </div>
             <div class="visual">
@@ -254,22 +247,21 @@
                   <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
                   <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
                 </svg></span>
-              <h3>Build custom effects from filter graphs</h3>
-              <p class="body">Start from 30+ built-in xfade transitions, then compose your own. Every effect is a real
-                FFmpeg filter graph you can fork, tweak, and reuse across projects.</p>
+              <h3>Build, fork, and share custom filter effects</h3>
+              <p class="body">Start with 30+ built-in xfade transitions, then compose your own using pure FFmpeg filter graphs. Save any effect as a reusable YAML template and share it instantly across your entire team or organization.</p>
               <ul class="bullets">
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">
                     <path d="M20 6 9 17l-5-5" />
-                  </svg><span>30+ xfade transitions, tuned with a duration slider</span></li>
+                  </svg><span>30+ xfade transitions with precision duration control</span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">
                     <path d="M20 6 9 17l-5-5" />
-                  </svg><span>Unlimited audio channels mixed with amix</span></li>
+                  </svg><span>Unlimited audio layers mixed via <code>amix</code></span></li>
                 <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">
                     <path d="M20 6 9 17l-5-5" />
-                  </svg><span>Time, padding, crop, and color-filter effects out of the box</span></li>
+                  </svg><span>YAML-based effect library for team-wide reuse</span></li>
               </ul>
             </div>
             <div class="visual">
@@ -315,11 +307,10 @@
       <div class="container inner">
         <div class="head">
           <div>
-            <h2 class="balance">Edit the timeline together. Keep every comment on the cut.</h2>
+            <h2 class="balance">Ship high-quality video, faster—with your whole team.</h2>
           </div>
           <div>
-            <p class="sub">Invite teammates into the same project, leave live comments at exact moments, and see
-              timeline changes as they happen — without exporting another review draft.</p>
+            <p class="sub">Invite your entire team into the same project. Leave timestamped comments, see timeline changes in real-time, and review cuts without endless export loops. Built for velocity.</p>
             <a class="learn" href="articles/collaborative-video-editor-live-comments.html">How collaborative video
               editing works →</a>
           </div>
@@ -404,12 +395,11 @@
           <div style="gap:20px;display: flex;flex-direction: column; padding-bottom: 20px;">
             <!-- <div class="head" style="padding-bottom: 20px;"> -->
             <div>
-              <h2 class="balance">Embed FFmpeg into your applications using the FFmpegLab YML, SQL & SDKs</h2>
+              <h2 class="balance">Embed FFmpeg into your stack with YAML, SQL, and native SDKs</h2>
             </div>
             <!-- </div> -->
             <p class="sub">
-              FFmpegLab is open source and developer-first. Choose from a wide selection of available Software
-              Development Kits or use a direct SQL approach to build around your data and AI built into Supabase.</p>
+              FFmpegLab is fully open source and API-first. Pick the interface that fits your workflow: Typescript SDK for frontend apps, raw SQL for Supabase triggers, or YAML for pipeline-as-code. Connect your AI agents directly.</p>
             <div class="cta-row">
               <a class="btn btn-ghost" href="https://www.npmjs.com/package/ffmpeglab-sdk">Typescript</a>
               <a class="btn btn-ghost" href="/articles/render-videos-using-sql-ffmpeglab.html">SQL</a>
@@ -486,9 +476,8 @@
               <circle cx="6" cy="18" r="3" />
               <path d="M18 9a9 9 0 0 1-9 9" />
             </svg></span>
-          <h2 class="balance">Run it on your own infrastructure</h2>
-          <p>Bring your own backend with a Docker Compose setup and own the
-            entire editing and rendering pipeline — storage, rendering, and sync — end to end.</p>
+          <h2 class="balance">Run it on your own infrastructure—or in the cloud</h2>
+          <p>Own your entire media pipeline end-to-end. Deploy with Docker Compose or Kubernetes, bring your own PostgreSQL, S3 storage, and render runners. Scale horizontally, automate with CI/CD, and keep full control of your data plane.</p>
           <div class="cta-row">
             <a class="btn btn-ghost" href="https://github.com/ffmpeglab/server">View on GitHub</a>
             <a class="btn btn-ghost" href="/articles/self-hosted-video-editor-docker.html">Self-hosting GUI</a>
@@ -1153,7 +1142,7 @@
     <section class="closing">
       <div class="container inner">
         <h2 class="balance">Ship faster than ever.</h2>
-        <p>Open Source & Developer First</p>
+        <p>Open Source · API-First · Built for Scale</p>
         <div class="cta-row">
           <a class="btn btn-white" href="https://platform.ffmpeglab.com/platform/login/redirect">
             <img style="width: 250px;" alt="login with supabase" src="connect-supabase-dark.png"/>
@@ -1170,15 +1159,15 @@
       <div>
         <span class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span
               class="lab">Lab</span></span></span>
-        <p class="blurb">The FFmpeg-native video editor. Offline-first, private, and open source.</p>
+        <p class="blurb">The API-native media engineering IDE. SQL, YAML, and FFmpeg—all in one workspace.</p>
       </div>
       <div>
-        <div class="colhead">Product</div>
+        <div class="colhead">Social</div>
         <ul>
-          <li><a href="#">Editor</a></li>
-          <li><a href="#">Effects</a></li>
-          <li><a href="#">Self-hosting</a></li>
-          <li><a href="#">Pricing</a></li>
+          <li><a href="https://github.com/ffmpeglab">Github</a></li>
+          <li><a href="https://www.linkedin.com/company/ffmpeglab">Linkedin</a></li>
+          <li><a href="https://www.youtube.com/@ffmpeglab">Youtube</a></li>
+          <li><a href="https://x.com/ffmpeglab">X</a></li>
         </ul>
       </div>
       <div>
@@ -1193,10 +1182,9 @@
       <div>
         <div class="colhead">Company</div>
         <ul>
-          <li><a href="#">About</a></li>
-          <li><a href="#">Privacy</a></li>
-          <li><a href="#">Terms</a></li>
-          <li><a href="#">Support</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/privacy/terms.html">Terms of Service</a></li>
+          <li><a href="https://github.com/ffmpeglab/server/issues/new">Support</a></li>
         </ul>
       </div>
     </div>
