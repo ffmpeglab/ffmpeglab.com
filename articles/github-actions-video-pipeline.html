@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitOps for Video – Version &amp; Trigger FFmpegLab Pipelines with GitHub</title>
+  <meta name="description" content="Store FFmpegLab YAML pipelines in GitHub, review filter graph changes in pull requests, and auto-render videos with GitHub Actions on every merge." />
+  <meta name="keywords" content="github actions video pipeline, gitops video, ffmpeg ci cd, yaml pipeline versioning, ffmpeglab github, pull request media review, automated video rendering" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/github-actions-video-pipeline.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/github-actions-video-pipeline.html" />
+  <meta property="og:title" content="GitOps for Video – Version &amp; Trigger FFmpegLab Pipelines with GitHub" />
+  <meta property="og:description" content="Store FFmpegLab YAML pipelines in GitHub, review changes in PRs, and auto-render videos with GitHub Actions." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+<script src="/newsletter.js" defer></script>
+<script src="/theme.js" defer></script>
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "GitOps for Video – Version & Trigger FFmpegLab Pipelines with GitHub",
+      "description": "Store FFmpegLab YAML pipelines in GitHub, review filter graph changes in pull requests, and auto-render videos with GitHub Actions.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-08-10",
+      "dateModified": "2026-08-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/github-actions-video-pipeline.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does GitHub trigger a video render?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A GitHub Actions workflow watches the pipelines/ directory. When a push to main modifies any YAML pipeline file, the workflow calls the FFmpegLab API with the updated pipeline definition, which queues the render on your runners."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I review video edits in a pull request?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Because every project is stored as YAML and SQL, filter graph changes appear as readable diffs. Teammates can comment, suggest edits, and approve before anything renders."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I roll back a bad render?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use git revert on the offending commit and push. The workflow re-triggers with the previous pipeline definition, regenerating the output exactly as it was."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to store media files in the repository?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Pipelines reference media by URL or storage path. Only the small YAML definitions live in Git — keeping the repo lightweight while outputs go to zero-egress storage."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I validate pipelines before merging?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Add a CI job that runs the FFmpegLab transpiler against changed YAML files. If the pipeline is invalid, the check fails and the pull request cannot merge."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .code-block {
+      background: #0d0d1a;
+      border-radius: 6px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+      overflow-x: auto;
+    }
+    .code-block .sql-kw { color: #fbbf24; }
+    .code-block .sql-str { color: #34d399; }
+    .code-block .sql-comment { color: #6b7280; }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow { color: #fbbf24; margin: 0 0.5rem; }
+    .step-box {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #fbbf24;
+    }
+    .step-box .step-num { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+    .step-box .step-title { color: #fff; font-weight: 600; font-size: 1.05rem; }
+    .step-box .step-desc { color: #a1a1aa; font-size: 0.9rem; margin-top: 0.3rem; }
+    .code-window {
+      background: #0d0d1a;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border: 1px solid #2d2d3d;
+      overflow: hidden;
+    }
+    .code-window .titlebar {
+      background: #1a1a2e;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #2d2d3d;
+    }
+    .code-window .titlebar .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 0.4rem; }
+    .code-window .titlebar .dot.r { background: #ff5f56; }
+    .code-window .titlebar .dot.y { background: #ffbd2e; }
+    .code-window .titlebar .dot.g { background: #27c93f; }
+    .code-window .fname { margin-left: 0.8rem; font-size: 0.8rem; color: #a1a1aa; }
+    .code-window pre { margin: 0; padding: 1rem; font-size: 0.8rem; line-height: 1.6; color: #e2e8f0; overflow-x: auto; }
+    .code-window .mono { font-family: "JetBrains Mono", "Fira Code", monospace; }
+    .code-window .el { color: #fbbf24; }
+    .code-window .ef { color: #34d399; }
+    .code-window .c { color: #6b7280; }
+    .code-window .em-code { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ultimate-video-onboarding-pipeline-sql-triggers-supabase.html">Pipelines</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="/login">Sign In</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / GitOps for Video</div>
+      <span class="eyebrow">FFmpegLab Guide</span>
+      <h1>GitOps for Video – Version &amp; Trigger FFmpegLab Pipelines with GitHub</h1>
+      <p class="dek">Store every pipeline as code, review edits in pull requests, and let GitHub Actions render videos automatically on every merge.</p>
+      <div class="article-meta">Workflow tutorial · ~12 min read · Updated August 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Video Edits Live Nowhere</a></li>
+        <li><a href="#architecture">Architecture Overview</a></li>
+        <li><a href="#repo-layout">Repository Layout</a></li>
+        <li><a href="#pipeline-yaml">The Pipeline YAML</a></li>
+        <li><a href="#workflow">The GitHub Actions Workflow</a></li>
+        <li><a href="#pr-review">Reviewing Renders in Pull Requests</a></li>
+        <li><a href="#validation">Validating Pipelines in CI</a></li>
+        <li><a href="#rollback">Rolling Back a Bad Render</a></li>
+        <li><a href="#secrets">Secrets &amp; Security</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>Ask any video team where their edit lives and you'll get a shrug: a project file on someone's laptop, an export buried in a shared drive, a timeline nobody can diff. Application teams solved this years ago with Git — every change reviewed, versioned, and reproducible. With FFmpegLab, <strong>video pipelines get the same treatment</strong>.</p>
+
+    <p>This guide shows you how to run your entire media operation as <strong>GitOps</strong>: YAML pipelines committed to a repo, filter graph changes reviewed in pull requests, and GitHub Actions triggering renders on merge.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>Pipelines as code</strong> — every project is a small YAML file in Git, not a binary project file.</li>
+        <li><strong>Readable diffs</strong> — changing a transition duration shows up as a one-line diff in a PR.</li>
+        <li><strong>Render on merge</strong> — a GitHub Action calls the FFmpegLab API when pipeline files change.</li>
+        <li><strong>Instant rollback</strong> — <code>git revert</code> restores the previous output exactly.</li>
+        <li><strong>CI validation</strong> — broken filter graphs fail the build before they ever hit a runner.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Video Edits Live Nowhere</h2>
+
+    <p>Traditional NLE workflows have no source of truth. The "current version" of a video is whatever is open in someone's editor. Changes aren't reviewable, history doesn't exist, and reverting means hoping someone kept a backup copy of the project file.</p>
+
+    <p>What if instead:</p>
+
+    <ul>
+      <li>The <strong>entire edit</strong> were a text file you could read, diff, and grep?</li>
+      <li>Every change went through a <strong>pull request</strong> with comments and approvals?</li>
+      <li>Merging automatically <strong>re-rendered the final video</strong>?</li>
+      <li>Any previous version could be restored with <strong>one command</strong>?</li>
+    </ul>
+
+    <p>That's exactly what FFmpegLab's YAML + SQL interfaces enable — and GitHub is the natural home for them.</p>
+
+    <h2 id="architecture">Architecture Overview</h2>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">Edit pipeline.yml</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">git push / Pull Request</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">CI Validation</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Merge to main</span>
+      <br/>
+      <span style="color:#34d399;">GitHub Actions</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">FFmpegLab API</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">Render Runners</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Zero-Egress Storage</span>
+    </div>
+
+    <p>The flow has four moving parts:</p>
+
+    <ul>
+      <li><strong>Your repository</strong> — holds only small YAML pipeline definitions. Media stays out of Git, referenced by URL or storage path.</li>
+      <li><strong>GitHub Actions</strong> — two jobs: one validates changed pipelines on every PR, one triggers renders on merge to <code>main</code>.</li>
+      <li><strong>FFmpegLab server</strong> — receives the pipeline via its REST API and queues the render.</li>
+      <li><strong>Render runners</strong> — execute the FFmpeg commands and write outputs to your storage bucket.</li>
+    </ul>
+
+    <h2 id="repo-layout">Repository Layout</h2>
+
+    <p>A minimal GitOps repo looks like this:</p>
+
+    <div class="code-block">
+      ffmpeglab-pipelines/<br/>
+      ├── .github/workflows/<br/>
+      │&nbsp;&nbsp;&nbsp;├── validate.yml&nbsp;&nbsp;<span class="sql-comment"># CI check on PRs</span><br/>
+      │&nbsp;&nbsp;&nbsp;└── render.yml&nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-comment"># render trigger on merge</span><br/>
+      ├── pipelines/<br/>
+      │&nbsp;&nbsp;&nbsp;├── trailer.yml<br/>
+      │&nbsp;&nbsp;&nbsp;├── intro.yml<br/>
+      │&nbsp;&nbsp;&nbsp;└── podcast-audio.yml<br/>
+      └── README.md
+    </div>
+
+    <p>Note what's <em>not</em> here: no media files. A typical pipeline YAML is under 2 KB, so the repo stays fast to clone and trivially reviewable. Media is referenced by URL (<code>https://cdn.example.com/footage.mp4</code>) or by a storage path that the runner resolves at render time.</p>
+
+    <h2 id="pipeline-yaml">The Pipeline YAML</h2>
+
+    <p>Here's a simple example — a trailer with a Ken Burns intro, a crossfade transition, and a music bed. This is the file your team will edit, diff, and review:</p>
+
+    <div class="code-window">
+      <div class="titlebar">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+        <span class="mono fname">pipelines/trailer.yml</span>
+      </div>
+      <pre class="mono em-code"><span class="el">project</span>:
+  <span class="el">id</span>: <span class="ef">"trailer"</span>
+  <span class="el">title</span>: <span class="ef">"Product Trailer"</span>
+  <span class="el">editor</span>:
+    <span class="el">code</span>: <span class="ef">"-i MEDIA1−iMEDIA_1 -iMEDIA1​−iMEDIA_2 -filter_complex \"[0:v]zoompan=z='min(zoom+0.0015,1.5)':d=125[v0];[v0][1:v]xfade=transition=fade:duration=1:offset=4[v]\" -map \"[v]\" -movflags +faststart -y $OUTPUT_PATH"</span>
+    <span class="el">selectedCode</span>: <span class="ef">"custom"</span>
+
+<span class="el">layers</span>:
+  - <span class="el">id</span>: <span class="ef">"layer1"</span>
+    <span class="el">media</span>:
+      - <span class="el">id</span>: <span class="ef">"media1"</span>
+        <span class="el">url</span>: <span class="ef">"https://cdn.example.com/footage/intro.mp4"</span>
+        <span class="el">filename</span>: <span class="ef">"intro.mp4"</span>
+        <span class="el">encoding</span>: {}
+      - <span class="el">id</span>: <span class="ef">"media2"</span>
+        <span class="el">url</span>: <span class="ef">"https://cdn.example.com/footage/demo.mp4"</span>
+        <span class="el">filename</span>: <span class="ef">"demo.mp4"</span>
+        <span class="el">encoding</span>: {}
+
+<span class="el">output</span>:
+  <span class="el">path</span>: <span class="ef">"storage://renders/trailer.mp4"</span></pre>
+    </div>
+
+    <p>Now imagine a teammate wants a slower zoom. Their pull request diff is literally:</p>
+
+    <div class="code-block">
+      <span class="sql-comment">--- a/pipelines/trailer.yml</span><br/>
+      <span class="sql-comment">+++ b/pipelines/trailer.yml</span><br/>
+      @@ -4,7 +4,7 @@<br/>
+      -<span class="sql-str">&nbsp;&nbsp;code: "...zoompan=z='min(zoom+0.0015,1.5)':d=125..."</span><br/>
+      +<span class="sql-str">&nbsp;&nbsp;code: "...zoompan=z='min(zoom+0.0010,1.5)':d=180..."</span>
+    </div>
+
+    <p>One line. Reviewable, commentable, revertible. That's the whole point.</p>
+
+    <h2 id="workflow">The GitHub Actions Workflow</h2>
+
+    <p>Create <code>.github/workflows/render.yml</code>. The critical detail is the <code>paths</code> filter — renders only trigger when pipeline files actually change, not on every commit:</p>
+
+    <div class="code-window">
+      <div class="titlebar">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+        <span class="mono fname">.github/workflows/render.yml</span>
+      </div>
+      <pre class="mono em-code"><span class="el">name</span>: <span class="ef">Render on merge</span>
+<span class="el">on</span>:
+  <span class="el">push</span>:
+    <span class="el">branches</span>: [main]
+    <span class="el">paths</span>: [<span class="ef">'pipelines/**'</span>]   <span class="c"># only re-render when YAML changes</span>
+
+<span class="el">jobs</span>:
+  <span class="el">render</span>:
+    <span class="el">runs-on</span>: ubuntu-latest
+    <span class="el">steps</span>:
+      - <span class="el">uses</span>: <span class="ef">actions/checkout@v4</span>
+
+      - <span class="el">name</span>: <span class="ef">Detect changed pipelines</span>
+        <span class="el">id</span>: <span class="ef">changed</span>
+        <span class="el">run</span>: |
+          FILES=(gitdiff−−name−only(git diff --name-only(gitdiff−−name−only{{ github.event.before }} ${{ github.sha }} -- 'pipelines/*.yml' | tr '\n' ' ')
+          echo "files=FILES">>"FILES" >> "FILES">>"GITHUB_OUTPUT"
+
+      - <span class="el">name</span>: <span class="ef">Trigger FFmpegLab renders</span>
+        <span class="el">run</span>: |
+          for f in ${{ steps.changed.outputs.files }}; do
+            echo "Rendering $f ..."
+            curl -sS -X POST https://api.ffmpeglab.com/renders \
+              -H "Authorization: Bearer ${{ secrets.FFMPEGLAB_API_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d @"$f" | jq -r '.id'
+          done
+
+      - <span class="el">name</span>: <span class="ef">Wait for completion</span>
+        <span class="el">run</span>: |
+          <span class="c"># Poll the render status until it finishes (or times out)</span>
+          RENDER_ID=$(curl -sS https://api.ffmpeglab.com/renders/latest \
+            -H "Authorization: Bearer ${{ secrets.FFMPEGLAB_API_KEY }}" | jq -r '.id')
+          for i in $(seq 1 60); do
+            STATUS=(curl−sShttps://api.ffmpeglab.com/renders/(curl -sS https://api.ffmpeglab.com/renders/(curl−sShttps://api.ffmpeglab.com/renders/RENDER_ID \
+              -H "Authorization: Bearer ${{ secrets.FFMPEGLAB_API_KEY }}" | jq -r '.status')
+            [ "$STATUS" = "done" ] && exit 0
+            [ "$STATUS" = "error" ] && exit 1
+            sleep 10
+          done
+          echo "Render timed out"; exit 1</pre>
+    </div>
+
+    <p>With this in place, the loop is closed: <strong>edit YAML → push → merge → video appears in storage</strong>. No editor opened, no export button pressed.</p>
+
+    <h2 id="pr-review">Reviewing Renders in Pull Requests</h2>
+
+    <p>Because pipelines are plain YAML, GitHub's diff view becomes your media review tool:</p>
+
+    <ul>
+      <li><strong>Filter graph changes</strong> show as readable diffs — durations, scales, transitions, overlays.</li>
+      <li><strong>Line comments</strong> let reviewers point at the exact flag they want changed ("make this crossfade 2s").</li>
+      <li><strong>Suggestions</strong> can be applied with one click, just like code.</li>
+      <li><strong>Branch protection</strong> ensures no pipeline reaches <code>main</code> without approval.</li>
+    </ul>
+
+    <p>For visual confirmation, add a preview bot: a CI job that renders a low-res proxy of the changed pipeline and posts the result URL as a PR comment. Reviewers watch the draft before approving the real render.</p>
+
+    <h2 id="validation">Validating Pipelines in CI</h2>
+
+    <p>Add a second workflow that runs on every pull request. It uses the FFmpegLab transpiler to prove each changed YAML parses and produces valid SQL/migration output — catching typos and malformed filter graphs before merge:</p>
+
+    <div class="code-window">
+      <div class="titlebar">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+        <span class="mono fname">.github/workflows/validate.yml</span>
+      </div>
+      <pre class="mono em-code"><span class="el">name</span>: <span class="ef">Validate pipelines</span>
+<span class="el">on</span>:
+  <span class="el">pull_request</span>:
+    <span class="el">paths</span>: [<span class="ef">'pipelines/**'</span>]
+
+<span class="el">jobs</span>:
+  <span class="el">validate</span>:
+    <span class="el">runs-on</span>: ubuntu-latest
+    <span class="el">steps</span>:
+      - <span class="el">uses</span>: <span class="ef">actions/checkout@v4</span>
+
+      - <span class="el">uses</span>: <span class="ef">denoland/setup-deno@v2</span>
+        <span class="el">with</span>:
+          <span class="el">deno-version</span>: <span class="ef">v1.x</span>
+
+      - <span class="el">name</span>: <span class="ef">Transpile all pipelines</span>
+        <span class="el">run</span>: |
+          curl -O https://raw.githubusercontent.com/ffmpeglab/server/main/sdk/yaml/transpiler.ts
+          mkdir -p /tmp/out
+          for f in pipelines/*.yml; do
+            deno run --allow-read --allow-write transpiler.ts "$f" /tmp/out || exit 1
+          done
+          echo "✅ All pipelines are valid"</pre>
+    </div>
+
+    <p>If any YAML is broken, this job fails red, the PR can't merge, and no runner time is wasted on a doomed render.</p>
+
+    <h2 id="rollback">Rolling Back a Bad Render</h2>
+
+    <p>This is where GitOps quietly beats every traditional workflow. If a merge produces a bad video:</p>
+
+    <div class="code-block">
+      <span class="sql-comment"># Revert the bad commit</span><br/>
+      git revert &lt;bad-commit-sha&gt;<br/>
+      git push origin main
+    </div>
+
+    <p>The push matches the <code>paths</code> filter, the workflow fires, and the previous pipeline definition is re-rendered. The output returns to its prior state — deterministically, because the input was identical. No backups to hunt for, no "which version was final?" archaeology.</p>
+
+    <h2 id="secrets">Secrets &amp; Security</h2>
+
+    <div class="step-box">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Store the API key as a repository secret</div>
+      <div class="step-desc">In your repo: Settings → Secrets and variables → Actions → New repository secret. Name it <code>FFMPEGLAB_API_KEY</code>.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Scope the key to rendering only</div>
+      <div class="step-desc">Issue a dedicated API key on your FFmpegLab server limited to the <code>renders</code> endpoints. Never reuse an admin key in CI.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Protect main with required checks</div>
+      <div class="step-desc">Enable branch protection requiring both the <code>validate</code> check and at least one approval. This makes "no unreviewed pipeline reaches production" an enforced rule, not a convention.</div>
+    </div>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How does GitHub trigger a video render?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">A GitHub Actions workflow watches the pipelines/ directory. When a push to main modifies any YAML pipeline file, the workflow calls the FFmpegLab API with the updated pipeline definition, which queues the render on your runners.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I review video edits in a pull request?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Because every project is stored as YAML and SQL, filter graph changes appear as readable diffs. Teammates can comment, suggest edits, and approve before anything renders.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I roll back a bad render?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Use git revert on the offending commit and push. The workflow re-triggers with the previous pipeline definition, regenerating the output exactly as it was.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Do I need to store media files in the repository?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">No. Pipelines reference media by URL or storage path. Only the small YAML definitions live in Git — keeping the repo lightweight while outputs go to zero-egress storage.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I validate pipelines before merging?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. Add a CI job that runs the FFmpegLab transpiler against changed YAML files. If the pipeline is invalid, the check fails and the pull request cannot merge.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>You now have a complete <strong>GitOps loop for video</strong>:</p>
+
+    <ul>
+      <li><strong>Pipelines as YAML</strong> — small, readable, greppable files in Git</li>
+      <li><strong>PR-based review</strong> — diffs, comments, suggestions, and enforced approvals</li>
+      <li><strong>CI validation</strong> — broken pipelines fail before merge</li>
+      <li><strong>Render-on-merge</strong> — GitHub Actions calls the FFmpegLab API automatically</li>
+      <li><strong>Deterministic rollback</strong> — <code>git revert</code> restores any previous output</li>
+      <li><strong>Full audit history</strong> — every render traces back to a commit, an author, and a review</li>
+    </ul>
+
+    <p>Your media pipeline stops being "whatever is on the editing machine" and becomes what it should have been all along: <strong>versioned infrastructure</strong>.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="agent-first-setup-ffmpeglab-server.html">Agent-First Setup Guide – FFmpegLab Server</a></li>
+        <li><a href="ultimate-video-onboarding-pipeline-sql-triggers-supabase.html">Ultimate Video Onboarding Pipeline – YAML &amp; SQL Triggers</a></li>
+        <li><a href="render-videos-using-sql-ffmpeglab.html">Render Videos Using SQL</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>
