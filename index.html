@@ -386,6 +386,90 @@
         </div>
       </div>
     </section>
+ <!-- ===== Zero Egress Storage ===== -->
+    <section id="storage"
+      style="position:relative;overflow:hidden;padding:96px 24px;background:#211b3a;color:#ffffff;font-family:'Kanit',Arial,Helvetica,sans-serif;">
+      <div aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:-140px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(252,109,38,0.28);filter:blur(90px);">
+      </div>
+      <div aria-hidden="true"
+        style="pointer-events:none;position:absolute;right:-120px;bottom:-140px;width:380px;height:380px;border-radius:50%;background:rgba(116,78,197,0.35);filter:blur(90px);">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+        <div style="text-align:center;max-width:760px;margin:0 auto;">
+          <span
+            style="display:inline-block;padding:9px 16px;border:1px solid rgba(252,109,38,0.5);border-radius:999px;background:rgba(252,109,38,0.14);color:#fc6d26;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;">✦&nbsp;
+            Zero Egress Storage</span>
+          <h2 style="margin:22px 0 0 0;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;">
+            Store your media.
+            <span style="color:#fc6d26;">Never pay to move it.</span>
+          </h2>
+          <p style="margin:20px auto 0 auto;max-width:640px;color:#b8b0cc;font-size:18px;line-height:1.7;">
+            Every render, every download, every byte served to your users—<strong style="color:#fff;">$0 in egress fees. Forever.</strong> No surprise bills at the end of the month. No penalties for going viral.
+          </p>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:56px;align-items:stretch;justify-content:center;">
+
+          <!-- Free tier card -->
+          <div
+            style="flex:1 1 320px;max-width:400px;padding:36px 32px;border:1px solid rgba(255,255,255,0.14);border-radius:24px;background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);display:flex;flex-direction:column;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#b8b0cc;">Starter</div>
+            <div style="margin-top:14px;display:flex;align-items:baseline;gap:8px;">
+              <span style="font-size:64px;font-weight:800;line-height:1;color:#fff;">€0</span>
+              <span style="font-size:15px;color:#b8b0cc;">/ forever</span>
+            </div>
+            <div style="margin-top:10px;font-size:44px;font-weight:800;color:#fc6d26;">50 GB</div>
+            <ul style="list-style:none;margin:26px 0 0 0;padding:0;font-size:15px;line-height:2.1;color:#d5cfe2;">
+              <li>✓&nbsp; Full S3-compatible API</li>
+              <li>✓&nbsp; <strong style="color:#fc6d26;">Zero egress cost</strong> — always</li>
+              <li>✓&nbsp; Directly wired into your projects &amp; renders</li>
+              <li>✓&nbsp; No credit card required</li>
+            </ul>
+            <div style="margin-top:auto;padding-top:28px;">
+              <a href="/login"
+                style="display:block;text-align:center;padding:14px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.25);color:#fff;text-decoration:none;font-weight:700;font-size:15px;">Claim your 50 GB →</a>
+            </div>
+          </div>
+
+          <!-- Pro tier card (highlighted) -->
+          <div
+            style="flex:1 1 340px;max-width:430px;padding:36px 32px;border-radius:24px;background:linear-gradient(160deg,#fc6d26,#e04f0f);box-shadow:0 32px 80px -30px rgba(252,109,38,0.55);display:flex;flex-direction:column;position:relative;">
+            <span
+              style="position:absolute;top:-13px;right:24px;padding:6px 14px;border-radius:999px;background:#211b3a;color:#ffd9c4;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">Best value</span>
+            <div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.85);">Pro Storage</div>
+            <div style="margin-top:14px;display:flex;align-items:baseline;gap:8px;">
+              <span style="font-size:64px;font-weight:800;line-height:1;color:#fff;">€4</span>
+              <span style="font-size:15px;color:rgba(255,255,255,0.85);">/ month</span>
+            </div>
+            <div style="margin-top:10px;font-size:44px;font-weight:800;color:#fff;">1 TB</div>
+            <ul style="list-style:none;margin:26px 0 0 0;padding:0;font-size:15px;line-height:2.1;color:rgba(255,255,255,0.95);">
+              <li>✓&nbsp; Full S3-compatible API</li>
+              <li>✓&nbsp; <strong>Zero egress cost</strong> — serve unlimited traffic</li>
+              <li>✓&nbsp; Perfect for rendered output delivery &amp; archives</li>
+              <li>✓&nbsp; Works with any S3 client, SDK, or rclone</li>
+            </ul>
+            <div style="margin-top:auto;padding-top:28px;">
+              <a href="/login"
+                style="display:block;text-align:center;padding:14px 20px;border-radius:12px;background:#211b3a;color:#fff;text-decoration:none;font-weight:700;font-size:15px;box-shadow:0 10px 24px rgba(33,27,58,0.35);">Get 1 TB for €3/mo →</a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Comparison strip -->
+        <div
+          style="margin-top:48px;padding:28px 32px;border:1px solid rgba(255,255,255,0.12);border-radius:20px;background:rgba(255,255,255,0.04);text-align:center;">
+          <p style="margin:0;color:#b8b0cc;font-size:15px;line-height:1.8;">
+            Serving 10 TB of rendered video per month elsewhere could cost
+            <strong style="color:#ff8a8a;text-decoration:line-through;">~$900+</strong> in egress alone.
+            On FFmpegLab it costs <strong style="color:#fc6d26;">€0. Not a cent.</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+   
 
     <!-- ===== SDK ===== -->
     <section class="collab" id="docs" style="overflow: hidden;">
@@ -462,6 +546,88 @@
           </div>
 
           <script src="/examples.js"></script>
+        </div>
+      </div>
+    </section>
+         <!-- ===== GitHub Integration ===== -->
+    <section id="github"
+      style="position:relative;overflow:hidden;padding:96px 24px;background:#f7f5fa;color:#211b3a;font-family:'Kanit',Arial,Helvetica,sans-serif;">
+      <div aria-hidden="true"
+        style="pointer-events:none;position:absolute;right:-140px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(116,78,197,0.18);filter:blur(90px);">
+      </div>
+      <div aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:-120px;bottom:-140px;width:380px;height:380px;border-radius:50%;background:rgba(252,109,38,0.16);filter:blur(90px);">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+        <div style="text-align:center;max-width:760px;margin:0 auto;">
+          <span
+            style="display:inline-block;padding:9px 16px;border:1px solid rgba(33,27,58,0.15);border-radius:999px;background:rgba(255,255,255,0.7);color:#211b3a;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;">✦&nbsp;
+            GitOps for Video</span>
+          <h2 style="margin:22px 0 0 0;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;color:var(--ink)">
+            Your pipelines live in
+            <span style="color:#fc6d26;">GitHub.</span><br />
+            Push a commit, render a video.
+          </h2>
+          <p style="margin:20px auto 0 auto;max-width:640px;color:#5e566f;font-size:18px;line-height:1.7;">
+            Store every project, filter graph, and YAML pipeline as code in your repository. Version it, review it in pull requests, and let GitHub Actions trigger renders automatically on merge.
+          </p>
+        </div>
+
+        <!-- Workflow steps -->
+        <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:56px;justify-content:center;">
+
+          <div style="flex:1 1 260px;max-width:340px;padding:32px 28px;border:1px solid rgba(33,27,58,0.08);border-radius:20px;background:rgba(255,255,255,0.8);box-shadow:0 20px 50px -30px rgba(33,27,58,0.25);">
+            <div style="width:44px;height:44px;border-radius:12px;background:#211b3a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;">1</div>
+            <h3 style="margin:18px 0 10px 0;font-size:19px;font-weight:700;">Commit your pipeline</h3>
+            <p style="margin:0;color:#5e566f;font-size:15px;line-height:1.7;">Every FFmpegLab project syncs to a repo as YAML + SQL. Branch, fork, and review media pipelines exactly like application code.</p>
+          </div>
+
+          <div style="flex:1 1 260px;max-width:340px;padding:32px 28px;border:1px solid rgba(33,27,58,0.08);border-radius:20px;background:rgba(255,255,255,0.8);box-shadow:0 20px 50px -30px rgba(33,27,58,0.25);">
+            <div style="width:44px;height:44px;border-radius:12px;background:#fc6d26;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;">2</div>
+            <h3 style="margin:18px 0 10px 0;font-size:19px;font-weight:700;">Review in PRs</h3>
+            <p style="margin:0;color:#5e566f;font-size:15px;line-height:1.7;">Filter graph changes show up as readable diffs. Teammates comment, suggest edits, and approve before anything renders.</p>
+          </div>
+
+          <div style="flex:1 1 260px;max-width:340px;padding:32px 28px;border:1px solid rgba(33,27,58,0.08);border-radius:20px;background:rgba(255,255,255,0.8);box-shadow:0 20px 50px -30px rgba(33,27,58,0.25);">
+            <div style="width:44px;height:44px;border-radius:12px;background:#744ec5;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;">3</div>
+            <h3 style="margin:18px 0 10px 0;font-size:19px;font-weight:700;">Merge → auto-render</h3>
+            <p style="margin:0;color:#5e566f;font-size:15px;line-height:1.7;">A GitHub Action calls the FFmpegLab API on merge. Renders run on your runners and output lands in zero-egress storage.</p>
+          </div>
+
+        </div>
+
+        <!-- Code window -->
+        <div class="code-window" style="max-width:900px;margin:56px auto 0 auto;">
+          <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="mono fname active">.github/workflows/render.yml</span>
+          </div>
+          <pre class="mono em-code"><span class="el">name</span>: <span class="ef">Render on merge</span>
+<span class="el">on</span>:
+  <span class="el">push</span>:
+    <span class="el">branches</span>: [main]
+    <span class="el">paths</span>: [<span class="ef">'pipelines/**'</span>]   <span class="el"># only re-render when YAML changes</span>
+
+<span class="el">jobs</span>:
+  <span class="el">render</span>:
+    <span class="el">runs-on</span>: ubuntu-latest
+    <span class="el">steps</span>:
+      - <span class="el">uses</span>: <span class="ef">actions/checkout@v4</span>
+      - <span class="el">name</span>: <span class="ef">Trigger FFmpegLab render</span>
+        <span class="el">run</span>: |
+          curl -X POST https://api.ffmpeglab.com/renders \
+            -H "Authorization: Bearer ${{ secrets.FFMPEGLAB_API_KEY }}" \
+            -F "pipeline=@pipelines/trailer.yml" \
+            -F "output=storage://renders/trailer.mp4"</pre>
+        </div>
+
+        <p style="text-align:center;margin:24px auto 0 auto;max-width:640px;color:#867e92;font-size:14px;line-height:1.7;">
+          Change one line of YAML — a transition duration, an overlay position — push, and the finished video is regenerated. Full audit history, instant rollback via <code>git revert</code>, and CI checks that validate your filter graphs before they ever hit a runner.
+        </p>
+
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:36px;flex-wrap:wrap;">
+          <a href="/articles/github-actions-video-pipeline.html" class="btn btn-primary">Read the GitHub guide →</a>
+          <a href="https://github.com/ffmpeglab" target="_blank" class="btn btn-ghost">Example repos on GitHub</a>
         </div>
       </div>
     </section>
@@ -1067,6 +1233,34 @@
         </div>
       </div>
     </section>
+    <!-- ===== Pexels Integration ===== -->
+     <section id="pexels"
+      style="position:relative;overflow:hidden;padding:96px 0 0 0;background:#f7f5fa;color:#211b3a;font-family:'Kanit',Arial,Helvetica,sans-serif;">
+      <div aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:50%;top:-160px;transform:translateX(-50%);width:600px;height:400px;border-radius:50%;background:rgba(116,78,197,0.16);filter:blur(100px);">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;padding:0 24px;text-align:center;">
+        <span
+          style="display:inline-block;padding:9px 16px;border:1px solid rgba(33,27,58,0.15);border-radius:999px;background:rgba(255,255,255,0.7);color:#211b3a;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;">✦&nbsp;
+          Stock Media Built-in</span>
+        <h2 style="margin:22px 0 0 0;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;color:var(--orange)">
+          Millions of free videos &amp; photos,<br />
+          <span style="color:#744ec5;">one search away</span>
+        </h2>
+        <p style="margin:20px auto 0 auto;max-width:640px;color:#5e566f;font-size:18px;line-height:1.7;">
+          FFmpegLab integrates directly with the Pexels API. Search stock footage and images from inside the editor, drop them onto your timeline, and start editing — no downloads, no uploads, no licensing headaches.
+        </p>
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:32px;flex-wrap:wrap;">
+          <a href="/login" class="btn btn-primary">Find your content →</a>
+          <a href="https://www.pexels.com" target="_blank" class="btn btn-ghost">Pexels.com</a>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin:28px auto 0 auto;max-width:640px;padding:0 24px 72px 24px;color:#867e92;font-size:14px;line-height:1.7;">
+        All media is free to use under the <a href="https://www.pexels.com/license/" target="_blank" style="color:#05af88;font-weight:600;">Pexels license</a>. Photos courtesy of Pexels creators.
+      </p>
+    </section>
 
     <section id="newsletter" data-ffmpeglab-newsletter data-endpoint="/_ploy/form-submit"
       data-form-name="ffmpeglab-newsletter" data-source="embedded-newsletter"
@@ -1202,6 +1396,7 @@
       </div>
     </div>
   </footer>
+  
 </body>
 
 </html>
