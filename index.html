@@ -488,6 +488,7 @@
             <strong style="color:#ff8a8a;">~$900+</strong> in egress alone.
             On FFmpegLab it costs <strong style="color:#fc6d26;">€0. Not a cent.</strong>
           </p>
+          <a class="btn btn-ghost" href="https://api.ffmpeglab.com/api#/Files/FilesController_s3">Get your S3 Configuration</a>
         </div>
       </div>
     </section>
@@ -618,6 +619,281 @@
           </div>
 
         </div>
+<!-- ===== Git Widget ===== -->
+<section id="git-widget" class="gitw-section">
+  <div class="container inner">
+    <span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+        <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+      </svg></span>
+    <h2 class="balance" style="color: var(--ink);">Every render starts as <span style="color:var(--orange)">a commit.</span></h2>
+    <p class="sub">Your pipeline history, live in the workspace. Revert a bad cut, diff a filter change, or roll back
+      to last week's version—git semantics all the way down</p>
+
+    <div class="gitw">
+      <!-- titlebar -->
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="mono fname active">git log --graph --oneline</span>
+        <span class="gitw-branch pill">⎇ main</span>
+      </div>
+
+      <!-- branch rail -->
+      <div class="gitw-rail">
+        <span class="gitw-line l-main"></span>
+        <span class="gitw-line l-feat"></span>
+        <span class="gitw-dot" style="--r:0"></span>   <!-- c1 main -->
+        <span class="gitw-dot feat" style="--r:1"></span><!-- c1 feat -->
+        <span class="gitw-dot" style="--r:2"></span>   <!-- merge -->
+        <span class="gitw-dot" style="--r:3"></span>
+        <span class="gitw-tag mono" style="--r:3">v1.4 · rendered</span>
+      </div>
+
+      <!-- commit list -->
+      <ul class="gitw-log mono">
+        <li><span class="hash">f3ac91e</span><span class="msg">fix: xfade offset misaligned on 30fps clips</span><span
+            class="who">MK</span><span class="status pass">rendered</span></li>
+        <li><span class="hash">b71d204</span><span class="msg">pipeline.yml: bump zoompan to 150 frames</span><span
+            class="who">DP</span><span class="status pass">rendered</span></li>
+        <li class="merge-row"><span class="hash">9ce01aa</span><span class="msg">Merge branch 'feat/audio-duck'</span><span
+            class="who">CI</span><span class="status run">rendering…</span></li>
+        <li><span class="hash">2ea77c4</span><span class="msg">feat: sidechaincompress for voiceover ducking</span><span
+            class="who">DP</span><span class="status pass">rendered</span></li>
+        <li class="diff-row"><span class="hash">7710fd3</span><span class="msg">effects/wipeleft.yml</span>
+          <span class="diff mono"><ins>+ duration=0.75</ins><del>- duration=0.5</del></span>
+        </li>
+      </ul>
+
+      <!-- footer actions -->
+      <div class="gitw-foot">
+        <span class="pill ok mono">✓ filter graph validated</span>
+        <span class="pill mono">3 ahead · 0 behind origin/main</span>
+        <!-- <button class="btn btn-primary sm gitw-btn">Render from HEAD →</button> -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* uses tokens already defined in index.css */
+  .gitw-section {
+    background: #fff;
+  }
+
+  .gitw-section .inner {
+    padding-block: 6rem;
+  }
+
+  .gitw-section h2 {
+    margin-top: 1.25rem;
+    max-width: 46rem;
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .gitw-section .sub {
+    margin-top: 1rem;
+    max-width: 40rem;
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .gitw {
+    margin-top: 2.5rem;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid #2C2741;
+    background: #15121F;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+    color: #D6D2E6;
+  }
+
+  /* branch rail */
+  .gitw-rail {
+    position: relative;
+    height: 1.6rem;
+    border-bottom: 1px solid #2C2741;
+    background: #17141F;
+  }
+
+  .gitw-line {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    height: 2px;
+    transform: translateY(-50%);
+  }
+
+  .l-main {
+    background: var(--orange);
+  }
+
+  .l-feat {
+    top: 26%;
+    bottom: auto;
+    height: 1px;
+    background: #744ec5;
+    opacity: 0.8;
+  }
+
+  .gitw-dot {
+    position: absolute;
+    left: calc(18% * (var(--r) + 1));
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background: var(--orange);
+    border: 2px solid #15121F;
+    transform: translate(-50%, -50%);
+  }
+
+  .gitw-dot.feat {
+    background: #744ec5;
+    top: 26%;
+  }
+
+  .gitw-tag {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.62rem;
+    color: #8FCF9B;
+  }
+
+  /* commit list */
+  .gitw-log {
+    list-style: none;
+    padding: 0.5rem 0;
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+
+  .gitw-log li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.45rem 1.25rem;
+  }
+
+  .gitw-log li:hover {
+    background: rgba(252, 109, 38, 0.06);
+  }
+
+  .merge-row {
+    border-left: 2px solid var(--orange);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .hash {
+    color: var(--orange);
+    flex-shrink: 0;
+  }
+
+  .msg {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .who {
+    color: #6F6A87;
+    font-size: 0.68rem;
+    flex-shrink: 0;
+  }
+
+  .status {
+    flex-shrink: 0;
+    font-size: 0.62rem;
+    padding: 0.12rem 0.55rem;
+    border-radius: 9999px;
+    border: 1px solid;
+  }
+
+  .pass {
+    color: #8FCF9B;
+    border-color: #2E4A36;
+    background: rgba(143, 207, 155, 0.08);
+  }
+
+  .run {
+    color: #FCA46B;
+    border-color: #4A3325;
+    background: rgba(252, 164, 107, 0.08);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  .diff-row {
+    flex-wrap: wrap;
+  }
+
+  .diff ins {
+    color: #8FCF9B;
+    text-decoration: none;
+  }
+
+  .diff del {
+    color: #E07A7A;
+  }
+
+  /* footer */
+  .gitw-foot {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid #2C2741;
+    background: #100D19;
+  }
+
+  .pill {
+    font-size: 0.64rem;
+    padding: 0.28rem 0.65rem;
+    border-radius: 9999px;
+    border: 1px solid #322C49;
+    background: #221E33;
+    color: #A9A4C2;
+  }
+
+  .pill.ok {
+    color: #8FCF9B;
+    border-color: #2E4A36;
+  }
+
+  .gitw-branch {
+    margin-left: auto;
+  }
+
+  .gitw-btn {
+    margin-left: auto;
+  }
+
+  @media (min-width: 640px) {
+    .diff-row {
+      padding-left: 3rem;
+    }
+  }
+</style>
 
         <!-- Code window -->
         <div class="code-window" style="max-width:900px;margin:56px auto 0 auto;">

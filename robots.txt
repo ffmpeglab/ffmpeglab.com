@@ -14,4 +14,4 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
-Sitemap: https://ffmpeglab.com/sitemap.xml
+Sitemap: https://www.ffmpeglab.com/sitemap.xml
