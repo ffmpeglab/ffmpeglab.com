@@ -28,6 +28,8 @@ PGPASSWORD="$DB_PASSWORD" psql "$DATABASE_URL" -a -f ./init.sql
 # Generate API key
 API_KEY_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6")
 API_KEY="${API_KEY_SECRET}"
+export API_KEY_HASH=$(node -e "console.log(require('node:crypto').hash('sha512', '${API_KEY_SECRET}'))")
+echo $API_KEY_HASH
 
 echo -e "${BLUE}💾 Inserting user and API key...${NC}"
 PGPASSWORD="$DB_PASSWORD" psql "$DATABASE_URL" <<EOF
@@ -35,7 +37,7 @@ INSERT INTO public.api_key (id, title, apikey, user_id, data, date)
 VALUES (
   gen_random_uuid(),
   'Admin API Key',
-  '${API_KEY}',
+  '${API_KEY_HASH}',
   gen_random_uuid(),
   '{"permissions": ["renders:*", "files:*", "pipelines:*"]}',
   CURRENT_DATE
