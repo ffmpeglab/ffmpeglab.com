@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Muxer Flags: MP4, MOV, MKV, WebM, Image2 & Segment Options — FFmpegLab</title>
+  <meta name="description" content="Master container-specific muxer flags. Learn MP4 `brand`, `use_editlist`, `write_tmcd`, `empty_moov`, DASH/fragmentation, MKV cues, Image2 sequences, and the Segment muxer." />
+  <meta name="keywords" content="ffmpeg movflags, ffmpeg brand, ffmpeg use_editlist, ffmpeg write_tmcd, ffmpeg empty_moov, ffmpeg dash, ffmpeg fragmented mp4, ffmpeg image2, ffmpeg segment muxer" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-advanced-muxer-flags.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-advanced-muxer-flags.html" />
+  <meta property="og:title" content="Advanced Muxer Flags: MP4, MOV, MKV, WebM, Image2 & Segment Options" />
+  <meta property="og:description" content="Master MP4 `brand`, `use_editlist`, `write_tmcd`, `empty_moov`, DASH fragmentation, MKV cues, Image2 sequences, and the Segment muxer." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+<script src="/theme.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Advanced Muxer Flags: MP4, MOV, MKV, WebM, Image2 & Segment Options",
+        "description": "Master container-specific muxer flags. Learn MP4 `brand`, `use_editlist`, `write_tmcd`, `empty_moov`, DASH/fragmentation, MKV cues, Image2 sequences, and the Segment muxer.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-advanced-muxer-flags.html",
+        "datePublished": "2026-09-08",
+        "dateModified": "2026-09-08"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Advanced Muxer Flags" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="/login">Sign In</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Advanced Muxer Flags</div>
+      <span class="eyebrow">FFmpeg Deep Dive</span>
+      <h1>Muxer flags: MP4 brands, edit lists, timecodes, DASH, MKV cues & image sequences</h1>
+      <p class="dek">Remuxing is simple. <em>Controlling</em> the muxer is an art. Learn how to set the MP4 brand, fix editing problems with `use_editlist`, write timecode tracks, fragment for DASH, optimize MKV cues, and generate image sequences.</p>
+      <div class="article-meta">Advanced FFmpeg · ~10 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>The <a href="ffmpeg-formats-complete-guide.html">Complete Formats Guide</a> gave you the "what"—this guide gives you the "how" at the deepest level. Every container has private muxer flags. For MP4/MOV, they're bundled under <code>-movflags</code>; for MKV/WebM, they're separate options; and for image/splitting, there are dedicated muxers like <code>image2</code> and <code>segment</code>.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>`-movflags`</strong> controls MP4/MOV writing (faststart, brand, editlist, timecode, DASH).</li>
+        <li><strong>`-brand`</strong> sets the `major_brand` (e.g., `mp42`, `isom`) for better compatibility.</li>
+        <li><strong>`use_editlist=0`</strong> can fix playback timing issues in MP4 files.</li>
+        <li><strong>`+frag_keyframe` + `+empty_moov`</strong> creates fragmented MP4 for DASH/HLS.</li>
+        <li><strong>MKV</strong> offers `reserve_index_space`, `cues_to_front`, and `cluster_size_limit`.</li>
+        <li><strong>`image2`</strong> muxer exports frame sequences; <strong>`segment`</strong> muxer splits files.</li>
+      </ul>
+    </div>
+
+    <hr />
+
+    <h2>MP4 / MOV – mastering `-movflags`</h2>
+    <p>The <code>-movflags</code> option takes a colon‑separated or plus‑separated list of flags. These control the structure of your MP4/MOV file.</p>
+
+    <h3>1. `faststart` (web streaming)</h3>
+    <p>We covered this in the basics, but let's reinforce it: it moves the 'moov' atom to the beginning of the file.</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mp4 -c copy -movflags +faststart output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>2. Setting the brand (`-brand` and `-compat_brand`) </h3>
+    <p>The <strong>brand</strong> (or `major_brand`) tells players what standard the file conforms to. Common brands:</p>
+    <ul>
+      <li><strong>`isom`</strong> – ISO base media file format (most compatible).</li>
+      <li><strong>`mp42`</strong> – MP4 v2 (better for modern players).</li>
+      <li><strong>`avc1`</strong> – H.264 with AVC structure (often required for web).</li>
+      <li><strong>`hev1`</strong> – H.265/HEVC.</li>
+      <li><strong>`M4A`</strong> – Audio‑only MP4 (for iTunes/Apple).</li>
+    </ul>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c copy -brand mp42 -compat_brand isom,avc1 output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>3. Edit lists (`use_editlist`, `write_colr`, `write_tmcd`)</h3>
+    <ul>
+      <li><strong>`use_editlist=0`</strong> – Disables the edit list. Edit lists tell players to skip frames (e.g., for trimming). Some players ignore them, causing sync issues. Set this to <strong>0</strong> if your video starts at a wrong time in QuickTime/VLC.</li>
+      <li><strong>`write_colr=1`</strong> – Writes colour information (matrix, transfer, primaries) to the MP4 header. Essential for HDR content.</li>
+      <li><strong>`write_tmcd=1`</strong> – Writes a timecode track (SMPTE TC). Required for professional editing workflows.</li>
+    </ul>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c copy \
+  -movflags use_editlist=0+write_colr=1+write_tmcd=1 \
+  -brand mp42 output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>4. Fragmented MP4 for DASH / HLS</h3>
+    <p>Adaptive streaming requires fragmented MP4 (where the file is split into tiny chunks). Use these flags together:</p>
+    <ul>
+      <li><strong>`+frag_keyframe`</strong> – starts a new fragment at each keyframe.</li>
+      <li><strong>`+empty_moov`</strong> – writes a minimal 'moov' atom at the start (the rest of the metadata is in the fragments).</li>
+      <li><strong>`+separate_moof`</strong> – separates the movie fragment and its index.</li>
+      <li><strong>`+default_base_moof`</strong> – uses a default base offset for fragments.</li>
+    </ul>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Fragmented MP4 for DASH/HLS
+ffmpeg -i input.mov -c copy -movflags +frag_keyframe+empty_moov+default_base_moof output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>For DASH manifest generation, you'll also use <code>-f dash</code> separately.</p>
+
+    <hr />
+
+    <h2>MKV / WebM – Matroska muxer options</h2>
+    <p>The <code>matroska</code> muxer (used for both `.mkv` and `.webm`) offers several tuning options for large files and streaming.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Optimise MKV for fast seeking
+ffmpeg -i input.mov -c copy -reserve_index_space 1M -cues_to_front 1 output.mkv</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <ul>
+      <li><strong>`-reserve_index_space`</strong> – Reserves space at the start of the file for the index (cues). Makes seeking faster. Use <code>1M</code> (1 megabyte) or <code>512K</code>.</li>
+      <li><strong>`-cues_to_front`</strong> – Moves the cue index to the front of the file. Essential for streaming and fast seeking.</li>
+      <li><strong>`-cluster_size_limit`</strong> – Max size of a cluster in bytes (default ~5MB). Smaller clusters = better seeking but larger file overhead.</li>
+      <li><strong>`-default_mode`</strong> – Controls default track flags (can be used to set which audio/subtitle track plays by default).</li>
+    </ul>
+    <p>For WebM, the same options apply, but you may also use <code>-dash 1</code> to write a WebM file compatible with DASH.</p>
+
+    <hr />
+
+    <h2>Image sequences – the `image2` muxer</h2>
+    <p>Exporting a video as a sequence of images (or importing one) is a common task. The <code>image2</code> muxer handles this.</p>
+
+    <h3>Exporting frames to PNG/JPEG</h3>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Export every 10th frame as JPEG
+ffmpeg -i input.mov -vf "fps=1" -frame_pts 1 -start_number 0 -update 0 output_%05d.jpg
+
+# Export all frames as PNG with a custom range
+ffmpeg -i input.mov -frames:v 100 -start_number 100 image_%04d.png</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <ul>
+      <li><strong>`-start_number`</strong> – The number for the first filename.</li>
+      <li><strong>`-frames:v`</strong> – Total number of frames to write.</li>
+      <li><strong>`-update`</strong> – If set to 1, updates the same file (useful for thumbnails).</li>
+      <li><strong>`-frame_pts`</strong> – Uses the presentation timestamp for the filename.</li>
+    </ul>
+
+    <h3>Importing an image sequence</h3>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -framerate 24 -i frame_%04d.png -c:v libx264 -crf 18 output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h2>The Segment muxer – splitting files</h2>
+    <p>We touched on this in the trimming guide, but let's cover the full options.</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mp4 -c copy -f segment \
+  -segment_time 600 -segment_list list.csv \
+  -segment_format mp4 -reset_timestamps 1 \
+  part_%03d.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <ul>
+      <li><strong>`-segment_time`</strong> – Duration of each segment in seconds.</li>
+      <li><strong>`-segment_list`</strong> – Writes a file containing the list of segment names (useful for HLS playlists).</li>
+      <li><strong>`-segment_format`</strong> – Forces a specific container format for the segments (e.g., `mp4`, `mpegts`).</li>
+      <li><strong>`-reset_timestamps`</strong> – Resets timestamps to 0 at the start of each segment. Essential for playlists.</li>
+      <li><strong>`-break_non_keyframes`</strong> – Forces a segment break at non‑keyframes (can cause technical issues, use with caution).</li>
+    </ul>
+
+    <hr />
+
+    <h2>Muxer flags cheat sheet</h2>
+    <table>
+      <thead>
+        <tr><th>Container</th><th>Flag / Option</th><th>Use case</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>MP4</td><td><code>-movflags +faststart</code></td><td>Web streaming (move moov to front)</td></tr>
+        <tr><td>MP4</td><td><code>-brand mp42 -compat_brand isom,avc1</code></td><td>Better player compatibility</td></tr>
+        <tr><td>MP4</td><td><code>-movflags use_editlist=0</code></td><td>Fix start‑time issues in QuickTime</td></tr>
+        <tr><td>MP4</td><td><code>-movflags +frag_keyframe+empty_moov</code></td><td>Fragmented MP4 for DASH/HLS</td></tr>
+        <tr><td>MKV</td><td><code>-reserve_index_space 1M -cues_to_front 1</code></td><td>Fast seeking in large MKV files</td></tr>
+        <tr><td>Image2</td><td><code>-start_number 0 -frames:v 50</code></td><td>Export frame range</td></tr>
+        <tr><td>Segment</td><td><code>-segment_time 600 -reset_timestamps 1</code></td><td>Split into 10‑minute chunks</td></tr>
+      </tbody>
+    </table>
+
+    <p>Combine these advanced muxer flags with the <a href="ffmpeg-codec-private-options.html">Advanced Codec Options</a> to build truly professional, broadcast‑ready files without re‑encoding.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-formats-complete-guide.html"><span class="k">Formats</span><span class="t">Complete formats guide</span><span class="d">Foundational container choices.</span></a>
+        <a class="related-card" href="ffmpeg-codec-private-options.html"><span class="k">Codecs</span><span class="t">Advanced codec tuning</span><span class="d">`refs`, `b-adapt`, `psy-rd`.</span></a>
+        <a class="related-card" href="ffmpeg-tool-suite-guide.html"><span class="k">Tools</span><span class="t">FFmpeg tool suite explained</span><span class="d">Syntax, specifiers, ffprobe.</span></a>
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Trim</span><span class="t">Trim &amp; cut video</span><span class="d">Lossless cuts with -ss.</span></a>
+      </div>
+    </div>
+  </section>
+
+<section
+  id="newsletter"
+  data-ffmpeglab-newsletter
+  data-endpoint="/_ploy/form-submit"
+  data-form-name="ffmpeglab-newsletter"
+  data-source="embedded-newsletter"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+>
+  <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="amber" aria-hidden="true" style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;"></div>
+
+  <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+    <div
+      data-newsletter-glass
+      style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);"
+    >
+      <div style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+        <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+          <div style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">✦&nbsp; Fresh from the render queue</div>
+          <h2 style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+          <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+          <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp; Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise</div>
+        </div>
+
+        <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+          <div data-newsletter-success hidden style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+            <span style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+            <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You&rsquo;re on the list.</h3>
+            <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is headed your way.</p>
+          </div>
+
+          <form data-newsletter-form style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+            <div style="display:table;width:100%;table-layout:fixed;">
+              <div style="display:table-cell;vertical-align:middle;">
+                <label for="newsletter-embed-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+                <input
+                  id="newsletter-embed-email"
+                  data-newsletter-email
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;"
+                />
+              </div>
+              <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                <button data-newsletter-submit type="submit" style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp; →</button>
+              </div>
+            </div>
+            <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+              <span>One useful email at a time.</span>
+              <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went wrong. Try again.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Master muxer flags on a real timeline — offline.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

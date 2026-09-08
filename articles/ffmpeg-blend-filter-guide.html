@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blend FFmpeg Filter – 30+ Blend Modes for Creative Compositing</title>
+  <meta name="description" content="Master the FFmpeg blend filter. Learn 30+ blend modes including multiply, screen, overlay, difference, and more. Create cinematic effects, glitch art, and motion graphics." />
+  <meta name="keywords" content="ffmpeg blend, ffmpeg blend modes, ffmpeg overlay, ffmpeg compositing, ffmpeg multiply, ffmpeg screen blend, ffmpeg difference blend, ffmpeg glitch" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-blend-filter-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-blend-filter-guide.html" />
+  <meta property="og:title" content="Blend FFmpeg Filter – 30+ Blend Modes for Creative Compositing" />
+  <meta property="og:description" content="Master the FFmpeg blend filter. Learn 30+ blend modes including multiply, screen, overlay, difference, and more. Create cinematic effects, glitch art, and motion graphics." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+ <script src="/newsletter.js" defer></script>
+<script src="/theme.js" defer></script>
+  <!-- JSON-LD Article Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Blend FFmpeg Filter – 30+ Blend Modes for Creative Compositing",
+      "description": "Master the FFmpeg blend filter. Learn 30+ blend modes including multiply, screen, overlay, difference, and more. Create cinematic effects, glitch art, and motion graphics.",
+      "image": "https://ffmpeglab.com/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "FFmpegLab"
+      },
+      "datePublished": "2026-07-18",
+      "dateModified": "2026-07-18",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://ffmpeglab.com/articles/ffmpeg-blend-filter-guide.html"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FFmpegLab",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://ffmpeglab.com/favicon.svg"
+        }
+      }
+    }
+  </script>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the blend filter in FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The blend filter is one of FFmpeg's most versatile compositing tools. It takes two video inputs and blends them together using one of 30+ blend modes — just like Photoshop layers but for video. This includes modes like multiply, screen, overlay, difference, and many more."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I use the blend filter in FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Basic syntax: ffmpeg -i input1.mp4 -i input2.mp4 -filter_complex '[0:v][1:v]blend=all_mode=screen[out]' -map '[out]' output.mp4. This applies the screen blend mode to combine the two videos. You can also blend individual components (R, G, B, A) separately."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the most useful blend modes in FFmpeg?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Screen — brightens and blends; Multiply — darkens and creates shadows; Overlay — combines multiply and screen for contrast; Difference — creates glitch/invert effects; Addition — brightens and increases exposure; Exclusion — creates unique color effects."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use expressions with the blend filter?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The blend filter supports expressions for dynamic blending. For example, blend=all_expr='if(eq(mod(X,50),0),A,B)' creates a checkerboard pattern. This opens up endless possibilities for animated and dynamic effects."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What's the difference between blend and overlay?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "overlay places one video on top of another with optional transparency — it's simpler and doesn't blend pixel values. blend combines pixel values using a blend mode — multiply, screen, difference, etc. Use overlay for watermarks and compositing; use blend for creative effects and color mixing."
+          }
+        }
+      ]
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <style>
+    .blend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+    .blend-item {
+      background: #1e1e2e;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+      text-align: center;
+    }
+    .blend-item .name {
+      color: #fff;
+      font-weight: 500;
+    }
+    .blend-item .cat {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+    .diagram {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #a1a1aa;
+      border: 1px solid #2d2d3d;
+    }
+    .diagram .arrow {
+      color: #fbbf24;
+      margin: 0 0.5rem;
+    }
+    .diagram .highlight {
+      color: #34d399;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pros-cons ul {
+      margin: 0.5rem 0;
+      padding-left: 1.25rem;
+    }
+    .pros-cons ul li {
+      margin-bottom: 0.3rem;
+    }
+    @media (max-width: 640px) {
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+      .blend-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="/login">Sign In</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Blend Filter</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>Blend FFmpeg Filter – 30+ Blend Modes for Creative Compositing</h1>
+      <p class="dek">Photoshop-style blending for video — multiply, screen, overlay, difference, and more. Master the <code>blend</code> filter for cinematic effects and motion graphics.</p>
+      <div class="article-meta">FFmpeg tutorial · ~10 min read · Updated July 2026</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+
+    <nav class="toc" aria-label="Table of Contents">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#the-gap">The Gap: Photoshop-Style Blending for Video</a></li>
+        <li><a href="#the-symptom">The Symptom: "I Just Want to Mix These Videos Like Photoshop Layers"</a></li>
+        <li><a href="#core-concepts">Core Concepts: What Is the Blend Filter?</a></li>
+        <li><a href="#syntax">Blend Filter Syntax &amp; Parameters</a></li>
+        <li><a href="#blend-modes">All 30+ Blend Modes</a></li>
+        <li><a href="#examples">Practical Examples: From Basic to Creative</a></li>
+        <li><a href="#expressions">Advanced: Dynamic Blending with Expressions</a></li>
+        <li><a href="#comparison">blend vs. overlay – Which to Use?</a></li>
+        <li><a href="#debugging">Troubleshooting Common Issues</a></li>
+        <li><a href="#faq">Frequently Asked Questions</a></li>
+      </ul>
+    </nav>
+
+    <p>In Photoshop, you can layer images and choose from dozens of blend modes — multiply, screen, overlay, difference, and more. These modes determine how pixels from one layer combine with pixels from the layers below, enabling everything from subtle colour corrections to dramatic visual effects.</p>
+
+    <p>FFmpeg's <strong><code>blend</code></strong> filter brings this same power to video. It takes two video streams and blends them together using one of 30+ blend modes, with component-level control, dynamic expressions, and GPU acceleration via Vulkan.</p>
+
+    <p>Whether you're creating glitch art, cinematic overlays, colour grading effects, or motion graphics, <code>blend</code> is one of FFmpeg's most versatile creative tools.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong><code>blend</code></strong> combines two video streams using 30+ blend modes.</li>
+        <li><strong>Modes include</strong> multiply, screen, overlay, difference, addition, exclusion, and many more.</li>
+        <li><strong>Component‑level control</strong> — blend R, G, B, and A channels independently.</li>
+        <li><strong>Expressions</strong> allow dynamic blending (checkerboards, glitch, displacement).</li>
+        <li><strong>Vulkan acceleration</strong> available with <code>blend_vulkan</code> for faster processing.</li>
+        <li><strong>Works with any pixel format</strong> — no format restrictions like <code>xstack</code>.</li>
+      </ul>
+    </div>
+
+    <h2 id="the-gap">The Gap: Photoshop-Style Blending for Video</h2>
+
+    <p>FFmpeg users have long used the <code>overlay</code> filter to composite videos — placing one video on top of another with optional transparency. But <code>overlay</code> doesn't blend pixel values; it just layers them. If you want to <strong>combine</strong> pixels — multiply them, add them, or apply a photoshop‑style blend — <code>overlay</code> won't help.</p>
+
+    <p>That's where <code>blend</code> comes in. It offers the full spectrum of Photoshop blend modes, but unlike Photoshop, it works <strong>frame by frame on video</strong>.</p>
+
+    <div class="diagram">
+      <span style="color:#fbbf24;">Input A</span>
+      <span class="arrow">+</span>
+      <span style="color:#fbbf24;">Input B</span>
+      <span class="arrow">→</span>
+      <span style="color:#34d399;">blend (mode)</span>
+      <span class="arrow">→</span>
+      <span style="color:#fbbf24;">Result</span>
+      <br/>
+      <span style="color:#6b7280; font-size:0.8rem;">(Multiply, Screen, Overlay, Difference, Addition, Exclusion, etc.)</span>
+    </div>
+
+    <h2 id="the-symptom">The Symptom: "I Just Want to Mix These Videos Like Photoshop Layers"</h2>
+
+    <p>You've got two videos. You want to overlay them with a blend mode — maybe <strong>screen</strong> for a light effect, or <strong>multiply</strong> for a dark cinematic look, or <strong>difference</strong> for a glitch effect. You know how to do this in Photoshop, but FFmpeg seems to only have <code>overlay</code>.</p>
+
+    <p>That's the gap <code>blend</code> fills.</p>
+
+    <h2 id="core-concepts">Core Concepts: What Is the Blend Filter?</h2>
+
+    <p>The <code>blend</code> filter <em>"blends two video frames"</em> using a specified blend mode. It takes two input streams and produces one output stream.</p>
+
+    <p><strong>Key characteristics:</strong></p>
+    <ul>
+      <li><strong>30+ blend modes</strong> — from standard Photoshop modes to unique FFmpeg modes.</li>
+      <li><strong>Component‑level control</strong> — you can blend R, G, B, and A channels separately.</li>
+      <li><strong>Expressions</strong> — use mathematical expressions for dynamic, custom blending.</li>
+      <li><strong>Vulkan acceleration</strong> — <code>blend_vulkan</code> for GPU‑accelerated processing.</li>
+      <li><strong>Any pixel format</strong> — works with all formats, unlike <code>xstack</code>.</li>
+    </ul>
+
+    <p>The filter has been part of FFmpeg for years and is well‑tested in production.</p>
+
+    <h2 id="syntax">Blend Filter Syntax &amp; Parameters</h2>
+
+    <p>The basic syntax for <code>blend</code> is:</p>
+
+    <pre><code>[input0][input1]blend=all_mode=MODE[out]</code></pre>
+
+    <p><strong>Parameters:</strong></p>
+
+    <table>
+      <thead>
+        <tr><th>Parameter</th><th>Description</th><th>Default</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong><code>all_mode</code></strong></td><td>Blend mode for all components</td><td><em>None (required)</em></td></tr>
+        <tr><td><strong><code>all_expr</code></strong></td><td>Expression for all components</td><td><em>None</em></td></tr>
+        <tr><td><strong><code>c0_mode</code></strong> / <strong><code>c1_mode</code></strong> / <strong><code>c2_mode</code></strong> / <strong><code>c3_mode</code></strong></td><td>Blend mode for each component (R, G, B, A)</td><td><em>None</em></td></tr>
+        <tr><td><strong><code>c0_expr</code></strong> / <strong><code>c1_expr</code></strong> / <strong><code>c2_expr</code></strong> / <strong><code>c3_expr</code></strong></td><td>Expression for each component</td><td><em>None</em></td></tr>
+        <tr><td><strong><code>repeat</code></strong></td><td>Repeat blending (experimental)</td><td>0</td></tr>
+        <tr><td><strong><code>shortest</code></strong></td><td>Stop when the shortest input ends</td><td>0</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Important:</strong> You must specify either a mode or an expression, but not both for the same component.</p>
+
+    <p>As the FFmpeg source notes: <em>"Both parameters can be set to 'all' to apply the same mode or expression to all components"</em>.</p>
+
+    <h2 id="blend-modes">All 30+ Blend Modes</h2>
+
+    <p>Here are the available blend modes, grouped by category:</p>
+
+    <div class="blend-grid">
+      <div class="blend-item"><span class="name">addition</span><br/><span class="cat">Lighten</span></div>
+      <div class="blend-item"><span class="name">and</span><br/><span class="cat">Logic</span></div>
+      <div class="blend-item"><span class="name">average</span><br/><span class="cat">Math</span></div>
+      <div class="blend-item"><span class="name">bleach</span><br/><span class="cat">Creative</span></div>
+      <div class="blend-item"><span class="name">burn</span><br/><span class="cat">Darken</span></div>
+      <div class="blend-item"><span class="name">darken</span><br/><span class="cat">Darken</span></div>
+      <div class="blend-item"><span class="name">difference</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">divide</span><br/><span class="cat">Math</span></div>
+      <div class="blend-item"><span class="name">dodge</span><br/><span class="cat">Lighten</span></div>
+      <div class="blend-item"><span class="name">exclusion</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">freeze</span><br/><span class="cat">Creative</span></div>
+      <div class="blend-item"><span class="name">glow</span><br/><span class="cat">Lighten</span></div>
+      <div class="blend-item"><span class="name">hardlight</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">hardmix</span><br/><span class="cat">Creative</span></div>
+      <div class="blend-item"><span class="name">heat</span><br/><span class="cat">Creative</span></div>
+      <div class="blend-item"><span class="name">lighten</span><br/><span class="cat">Lighten</span></div>
+      <div class="blend-item"><span class="name">linear</span><br/><span class="cat">Math</span></div>
+      <div class="blend-item"><span class="name">multiply</span><br/><span class="cat">Darken</span></div>
+      <div class="blend-item"><span class="name">negation</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">normal</span><br/><span class="cat">Math</span></div>
+      <div class="blend-item"><span class="name">or</span><br/><span class="cat">Logic</span></div>
+      <div class="blend-item"><span class="name">overlay</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">phoenix</span><br/><span class="cat">Creative</span></div>
+      <div class="blend-item"><span class="name">pinlight</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">reflect</span><br/><span class="cat">Lighten</span></div>
+      <div class="blend-item"><span class="name">screen</span><br/><span class="cat">Lighten</span></div>
+      <div class="blend-item"><span class="name">softlight</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">subtract</span><br/><span class="cat">Math</span></div>
+      <div class="blend-item"><span class="name">vividlight</span><br/><span class="cat">Contrast</span></div>
+      <div class="blend-item"><span class="name">xor</span><br/><span class="cat">Logic</span></div>
+    </div>
+
+    <p><strong>Most commonly used modes:</strong></p>
+    <ul>
+      <li><strong><code>multiply</code></strong> — Darkens; used for shadows and cinematic grading.</li>
+      <li><strong><code>screen</code></strong> — Brightens; used for lens flares and overlays.</li>
+      <li><strong><code>overlay</code></strong> — Combines multiply and screen for high contrast.</li>
+      <li><strong><code>difference</code></strong> — Inverts colours; used for glitch effects and alignment.</li>
+      <li><strong><code>addition</code></strong> — Adds pixel values; used for exposure blending.</li>
+      <li><strong><code>exclusion</code></strong> — Similar to difference but less intense.</li>
+      <li><strong><code>softlight</code></strong> — Gentle contrast; used for subtle colour grading.</li>
+    </ul>
+
+    <h2 id="examples">Practical Examples: From Basic to Creative</h2>
+
+    <h3>Example 1: Multiply Blend – Cinematic Darkening</h3>
+
+    <p>Using <code>multiply</code> to darken a video with a colour overlay.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Multiply blend — darken a video with a colour overlay
+ffmpeg -i video.mp4 -f lavfi -i color=0.1:0.05:0.2:1.0:1920x1080 \
+-filter_complex "[0:v][1:v]blend=all_mode=multiply[out]" \
+-map "[out]" -c:v libx264 -crf 18 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Explanation:</strong></p>
+    <ul>
+      <li><code>-f lavfi -i color=...</code> — generates a solid colour video.</li>
+      <li><code>blend=all_mode=multiply</code> — blends the video and colour using multiply.</li>
+    </ul>
+
+    <h3>Example 2: Screen Blend – Lens Flare / Light Overlay</h3>
+
+    <p>Using <code>screen</code> to add a light overlay (or lens flare effect).</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Screen blend — add a lens flare overlay
+ffmpeg -i video.mp4 -i lensflare.mp4 \
+-filter_complex "[0:v][1:v]blend=all_mode=screen[out]" \
+-map "[out]" -c:v libx264 -crf 18 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Explanation:</strong></p>
+    <ul>
+      <li><code>screen</code> mode brightens the video where the overlay is bright.</li>
+      <li>Perfect for adding lens flares, light leaks, or sparkles.</li>
+    </ul>
+
+    <h3>Example 3: Difference Blend – Glitch Effect</h3>
+
+    <p>Using <code>difference</code> to create a glitch or invert effect.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Difference blend — glitch effect
+ffmpeg -i video.mp4 -i video.mp4 \
+-filter_complex "[0:v][1:v]blend=all_mode=difference[out]" \
+-map "[out]" -c:v libx264 -crf 18 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p><strong>Explanation:</strong></p>
+    <ul>
+      <li><code>difference</code> blends a video with itself (or a shifted version) to create glitch effects.</li>
+      <li>Add a delay or offset for datamosh‑style glitch art.</li>
+    </ul>
+
+    <h3>Example 4: Component-Level Blending</h3>
+
+    <p>Blend R, G, and B channels separately for creative colour effects.</p>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Channel‑specific blending — red channel multiply, green channel screen, blue channel normal
+ffmpeg -i video.mp4 -i overlay.mp4 \
+-filter_complex "[0:v][1:v]blend=c0_mode=multiply:c1_mode=screen:c2_mode=normal[out]" \
+-map "[out]" -c:v libx264 -crf 18 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This creates a unique colour effect by applying different blend modes to each channel.</p>
+
+    <h2 id="expressions">Advanced: Dynamic Blending with Expressions</h2>
+
+    <p>The <code>blend</code> filter supports expressions for dynamic, custom blending. You can use variables like <code>X</code> (column), <code>Y</code> (row), <code>W</code> (width), <code>H</code> (height), and <code>T</code> (time in seconds).</p>
+
+    <h3>Example: Checkerboard Pattern</h3>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Checkerboard blend pattern
+ffmpeg -i video1.mp4 -i video2.mp4 \
+-filter_complex "[0:v][1:v]blend=all_expr='if(eq(mod(X,100),50),A,B)'[out]" \
+-map "[out]" -c:v libx264 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This creates a checkerboard pattern using pixels from the two videos.</p>
+
+    <h3>Example: Animated Glitch (Time‑Based)</h3>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Time‑based glitch (drops to difference every 2 seconds)
+ffmpeg -i video.mp4 -i video.mp4 \
+-filter_complex "[0:v][1:v]blend=all_expr='if(eq(mod(T,4),2),A-B,A+B)'[out]" \
+-map "[out]" -c:v libx264 -crf 18 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This switches between normal blending and difference blending every 2 seconds.</p>
+
+    <h3>Example: Chroma Key with Difference</h3>
+
+    <div class="editor-mock">
+      <div class="em-toolbar">
+        <span class="em-back"></span><span class="em-spacer"></span>
+        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span><span class="em-icon"></span>
+      </div>
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+      </div>
+      <div class="em-body">
+        <pre class="em-code"># Chroma key with difference blending
+ffmpeg -i video.mp4 -i green_screen.mp4 \
+-filter_complex "[1:v]format=rgba,colorchannelmixer=aa=0.5[fg];[0:v][fg]blend=all_expr='if(gte(A,0.5),A,B)'[out]" \
+-map "[out]" -c:v libx264 output.mp4</pre>
+        <div class="em-preview">
+          <div class="em-screen"><span class="em-play">▶</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
+        </div>
+      </div>
+      <div class="em-timeline">
+        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <p>This uses the difference between frames for chroma key‑style removal.</p>
+
+    <h2 id="comparison">blend vs. overlay – Which to Use?</h2>
+
+    <div class="pros-cons">
+      <div style="background: #1e1e2e; border-radius: 8px; padding: 1.25rem; border: 1px solid #34d399;">
+        <h4 style="color: #34d399; margin-top: 0;">✅ blend</h4>
+        <ul style="color: #a1a1aa; font-size: 0.9rem;">
+          <li><strong>Blends pixel values</strong> — multiply, screen, overlay, etc.</li>
+          <li><strong>30+ modes</strong> — Photoshop‑style compositing</li>
+          <li><strong>Component‑level control</strong> — R, G, B, A</li>
+          <li><strong>Expressions</strong> — dynamic, custom blending</li>
+          <li><strong>Vulkan acceleration</strong> — fast GPU processing</li>
+        </ul>
+      </div>
+      <div style="background: #1e1e2e; border-radius: 8px; padding: 1.25rem; border: 1px solid #fbbf24;">
+        <h4 style="color: #fbbf24; margin-top: 0;">✅ overlay</h4>
+        <ul style="color: #a1a1aa; font-size: 0.9rem;">
+          <li><strong>Simple compositing</strong> — place one video on top of another</li>
+          <li><strong>Transparency</strong> — uses alpha channel</li>
+          <li><strong>Positioning</strong> — x, y coordinates</li>
+          <li><strong>Well‑known</strong> — many examples online</li>
+          <li><strong>Better for watermarks</strong> — logos, text overlays</li>
+        </ul>
+      </div>
+    </div>
+
+    <p><strong>Recommendation:</strong> Use <code>blend</code> for creative effects, color grading, and pixel‑level compositing. Use <code>overlay</code> for simple compositing with transparency.</p>
+
+    <h2 id="debugging">Troubleshooting Common Issues</h2>
+
+    <table>
+      <thead>
+        <tr><th>Issue</th><th>Likely Cause</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>"No blend mode specified"</strong></td>
+          <td>Missing <code>all_mode</code> or component mode</td>
+          <td>Specify at least one mode (e.g., <code>all_mode=multiply</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>Incorrect colours</strong></td>
+          <td>Inputs have different pixel formats or colour spaces</td>
+          <td>Use <code>format=yuv420p</code> or <code>format=rgba</code> on both inputs</td>
+        </tr>
+        <tr>
+          <td><strong>No effect</strong></td>
+          <td>Modes like <code>normal</code> produce no visible blending</td>
+          <td>Choose a visible mode like <code>multiply</code>, <code>screen</code>, or <code>difference</code></td>
+        </tr>
+        <tr>
+          <td><strong>Expression errors</strong></td>
+          <td>Invalid expression syntax</td>
+          <td>Test expressions with <code>ffmpeg -f lavfi -i nullsrc -vf "..."</code></td>
+        </tr>
+        <tr>
+          <td><strong>Performance issues</strong></td>
+          <td>Large resolution or complex expressions</td>
+          <td>Use <code>blend_vulkan</code> for GPU acceleration</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="faq">Frequently Asked Questions (FAQ)</h2>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What is the blend filter in FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">The <code>blend</code> filter is one of FFmpeg's most versatile compositing tools. It takes two video inputs and blends them together using one of 30+ blend modes — just like Photoshop layers but for video. This includes modes like multiply, screen, overlay, difference, and many more.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">How do I use the blend filter in FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Basic syntax: <code>ffmpeg -i input1.mp4 -i input2.mp4 -filter_complex '[0:v][1:v]blend=all_mode=screen[out]' -map '[out]' output.mp4</code>. This applies the screen blend mode to combine the two videos. You can also blend individual components (R, G, B, A) separately.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What are the most useful blend modes in FFmpeg?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><strong>Screen</strong> — brightens and blends; <strong>Multiply</strong> — darkens and creates shadows; <strong>Overlay</strong> — combines multiply and screen for contrast; <strong>Difference</strong> — creates glitch/invert effects; <strong>Addition</strong> — brightens and increases exposure; <strong>Exclusion</strong> — creates unique color effects.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Can I use expressions with the blend filter?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. The <code>blend</code> filter supports expressions for dynamic blending. For example, <code>blend=all_expr='if(eq(mod(X,50),0),A,B)'</code> creates a checkerboard pattern. This opens up endless possibilities for animated and dynamic effects.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">What's the difference between blend and overlay?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text"><code>overlay</code> places one video on top of another with optional transparency — it's simpler and doesn't blend pixel values. <code>blend</code> combines pixel values using a blend mode — multiply, screen, difference, etc. Use <code>overlay</code> for watermarks and compositing; use <code>blend</code> for creative effects and color mixing.</p>
+      </div>
+    </div>
+
+    <div itemscope="" itemprop="mainEntity" itemtype="https://schema.org/Question">
+      <h3 itemprop="name">Does FFmpeg support GPU‑accelerated blending?</h3>
+      <div itemscope="" itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+        <p itemprop="text">Yes. FFmpeg provides <code>blend_vulkan</code> for GPU‑accelerated blending with Vulkan. This can significantly speed up processing, especially for high‑resolution video and complex blend operations.</p>
+      </div>
+    </div>
+
+    <h2>Final Word</h2>
+
+    <p>The <code>blend</code> filter is one of FFmpeg's most powerful creative tools. With 30+ blend modes, component‑level control, and dynamic expressions, it brings Photoshop‑style compositing to video — frame by frame.</p>
+
+    <p>Whether you're creating cinematic colour grades, glitch art, lens flares, or complex motion graphics, <code>blend</code> gives you the control you need.</p>
+
+    <p><strong>Key takeaways for your workflow:</strong></p>
+    <ul>
+      <li>Use <code>multiply</code> for dark, cinematic looks</li>
+      <li>Use <code>screen</code> for light effects and overlays</li>
+      <li>Use <code>difference</code> for glitch and invert effects</li>
+      <li>Use component‑level blending for creative colour effects</li>
+      <li>Use expressions for dynamic, time‑based blending</li>
+    </ul>
+
+    <p>Next time you need to blend two videos, reach for <code>blend</code>. Your creative options are limitless.</p>
+
+    <!-- Related Articles (Internal Links) -->
+    <aside class="related-articles" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0;">
+      <h3>More FFmpeg guides from FFmpegLab</h3>
+      <ul style="list-style: none; padding: 0; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <li><a href="ffmpeg-filter-complex-effects.html">filter_complex Effects, by Example</a></li>
+        <li><a href="ffmpeg-xfade-transitions-guide.html">FFmpeg xfade transitions guide</a></li>
+        <li><a href="ffmpeg-mask-overlay-compositing.html">Mask Overlay &amp; Advanced Compositing</a></li>
+        <li><a href="ffmpeg-gui-libraries-comparison.html">FFmpeg GUI Libraries Compared</a></li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: 2rem;">
+    <p>&copy; 2026 FFmpegLab. All guides and tools are provided for educational purposes.</p>
+  </footer>
+
+</body>
+</html>

@@ -26,7 +26,13 @@
   </url>
   <url>
     <loc>https://api.ffmpeglab.com/api</loc>
-    <lastmod>2026-08-23</lastmod>
+    <lastmod>2026-09-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://api.ffmpeglab.com/api-yaml</loc>
+    <lastmod>2026-09-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -374,6 +380,24 @@
   </url>
   <url>
     <loc>https://www.ffmpeglab.com/articles/ffmpeg-tool-suite-guide.html</loc>
+    <lastmod>2026-09-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ffmpeglab.com/articles/ffmpeg-codec-private-options.html</loc>
+    <lastmod>2026-09-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ffmpeglab.com/articles/ffmpeg-advanced-muxer-flags.html</loc>
+    <lastmod>2026-09-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.ffmpeglab.com/articles/ffmpeg-blend-filter-guide.html</loc>
     <lastmod>2026-09-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
