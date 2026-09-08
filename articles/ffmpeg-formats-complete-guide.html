@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complete FFmpeg Formats Guide: MP4, MKV, WebM, MOV, AVI, TS & more — FFmpegLab</title>
+  <meta name="description" content="The ultimate guide to FFmpeg container formats. Learn when to use MP4 vs MKV, WebM vs MOV, how to remux losslessly, container-specific options like -movflags faststart, and how to choose the right format for streaming, compatibility, or archiving." />
+  <meta name="keywords" content="ffmpeg formats, ffmpeg containers, ffmpeg muxers, ffmpeg demuxers, MP4, MKV, WebM, MOV, AVI, MPEG-TS, FLV, GIF, remux ffmpeg, -c copy, -movflags faststart" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-formats-complete-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-formats-complete-guide.html" />
+  <meta property="og:title" content="Complete FFmpeg Formats Guide: MP4, MKV, WebM, MOV, AVI, TS & more" />
+  <meta property="og:description" content="The ultimate guide to FFmpeg container formats. Learn when to use MP4 vs MKV, WebM vs MOV, how to remux losslessly, and how to choose the right format for any use case." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+<script src="/theme.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Complete FFmpeg Formats Guide: MP4, MKV, WebM, MOV, AVI, TS & more",
+        "description": "The ultimate guide to FFmpeg container formats. Learn when to use MP4 vs MKV, WebM vs MOV, how to remux losslessly, container-specific options, and how to choose the right format.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-formats-complete-guide.html",
+        "datePublished": "2026-09-08",
+        "dateModified": "2026-09-08"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Formats Guide" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="/login">Sign In</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Formats</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>The complete FFmpeg formats guide</h1>
+      <p class="dek">Containers explained: MP4, MKV, WebM, MOV, AVI, MPEG‑TS, FLV, GIF, and audio-only containers like M4A and FLAC. Learn how to remux without re-encoding, use `faststart` for web streaming, and pick the perfect format for your project.</p>
+      <div class="article-meta">FFmpeg tutorial · ~12 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>A <strong>container format</strong> (or <em>muxer</em>) is the "box" that holds your video, audio, and subtitle streams together. It does <strong>not</strong> determine quality — the codec does. Choosing the right container is about <strong>compatibility, features, and metadata</strong>.</p>
+
+    <p>Before we dive in, here's the most important command you'll use: <strong>remuxing</strong>. This changes the container <em>without</em> re‑encoding (instant, lossless).</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mkv -c copy output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>MP4</strong> – universal standard. Use <code>-movflags +faststart</code> for web streaming.</li>
+        <li><strong>MKV</strong> – open, flexible, supports any codec. Perfect for archiving.</li>
+        <li><strong>WebM</strong> – royalty‑free, web‑optimised. Use VP9/AV1 + Opus.</li>
+        <li><strong>MOV</strong> – Apple's QuickTime. Great for editing.</li>
+        <li><strong>MPEG‑TS (.ts)</strong> – built for broadcast and live streaming.</li>
+        <li><strong>Remux</strong> with <code>-c copy</code> to change containers instantly, without quality loss.</li>
+      </ul>
+    </div>
+
+    <h2>List &amp; probe available formats</h2>
+    <p>FFmpeg supports dozens of containers. List them all with:</p>
+    <ul>
+      <li><strong><code>ffmpeg -formats</code></strong> – shows all supported formats (E=encoding, D=decoding).</li>
+      <li><strong><code>ffmpeg -muxers</code></strong> – only output formats.</li>
+      <li><strong><code>ffmpeg -demuxers</code></strong> – only input formats.</li>
+    </ul>
+    <p>To inspect what's inside a file, use <code>ffprobe</code>:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffprobe -hide_banner video.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h2>Video containers</h2>
+
+    <h3>MP4 (MPEG‑4 Part 14) – the universal standard</h3>
+    <p>MP4 is the <strong>most compatible</strong> container in the world. It plays everywhere: browsers, phones, TVs, and video platforms. It works best with H.264/H.265 video and AAC audio. For web delivery, always enable <strong>faststart</strong> to move the metadata ('moov atom') to the front — this allows the video to start playing before it's fully downloaded.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Standard MP4
+ffmpeg -i input.mov -c:v libx264 -crf 23 -c:a aac -b:a 128k output.mp4
+
+# Web‑optimised (faststart)
+ffmpeg -i input.mov -c:v libx264 -crf 23 -c:a aac -movflags +faststart output.mp4
+
+# Fragmented MP4 for DASH / HLS
+ffmpeg -i input.mov -c copy -movflags +frag_keyframe+empty_moov output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>MP4 variants</h4>
+    <ul>
+      <li><strong>.m4a</strong> – audio‑only MP4 (AAC/ALAC).</li>
+      <li><strong>.m4v</strong> – video MP4 (often used for Apple devices).</li>
+      <li><strong>.3gp</strong> – MP4 variant for mobile (older phones).</li>
+    </ul>
+
+    <hr />
+
+    <h3>MOV – QuickTime (Apple ecosystem)</h3>
+    <p>MOV is Apple's container. It's identical to MP4 under the hood, but it supports more codecs (like ProRes, DNxHD, uncompressed PCM) and is the standard for editing and post‑production. Use MOV when you're working in Final Cut, Premiere, or DaVinci Resolve.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># ProRes in MOV (editing master)
+ffmpeg -i input.mp4 -c:v prores -profile:v 3 -c:a pcm_s16le output.mov</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>Note: MOV files often have large file sizes. They're meant for editing, not distribution.</p>
+
+    <hr />
+
+    <h3>MKV (Matroska) – the open, flexible powerhouse</h3>
+    <p>MKV is an open‑source container that supports <strong>virtually any codec</strong>. It handles unlimited video/audio/subtitle tracks, chapters, attachments (fonts), and complex metadata. It's the top choice for archiving, anime, and home media servers (Plex, Jellyfin).</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Create MKV with multiple audio tracks and subtitles
+ffmpeg -i video.mp4 -i audio_eng.flac -i audio_fre.flac -i subs.srt \
+  -map 0:v -map 1:a -map 2:a -map 3:s \
+  -c:v copy -c:a flac -c:s copy -metadata title="My Movie" output.mkv</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>MKV options</h4>
+    <ul>
+      <li>Use <code>-map</code> to select which streams go into the MKV.</li>
+      <li><code>-metadata</code> lets you set title, language, etc.</li>
+      <li>For chapters, create a <code>chapters.txt</code> file and use <code>-i chapters.txt -map_metadata 1</code>.</li>
+    </ul>
+
+    <hr />
+
+    <h3>WebM – royalty‑free web video</h3>
+    <p>WebM is the open, royalty‑free container designed specifically for the web. It <strong>only</strong> supports VP8/VP9/AV1 video and Vorbis/Opus audio. It's the standard for YouTube, Wikipedia, and modern browsers. Use WebM when you want the best web performance without patent worries.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># VP9 + Opus WebM
+ffmpeg -i input.mov -c:v libvpx-vp9 -crf 30 -b:v 0 -c:a libopus -b:a 96k output.webm</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>AVI – the legacy veteran</h3>
+    <p>AVI (Audio Video Interleave) was introduced by Microsoft in 1992. It's old, has a 2GB/4GB file size limit (unless using OpenDML), and doesn't support modern features well. That said, it's still used in some legacy systems and industrial equipment. Use it <strong>only</strong> when you have to.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># AVI with MJPEG video and PCM audio (widely compatible)
+ffmpeg -i input.mov -c:v mjpeg -q:v 5 -c:a pcm_s16le output.avi</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>MPEG‑TS (Transport Stream) – broadcast &amp; streaming</h3>
+    <p>MPEG‑TS (.ts) is the container used for <strong>broadcast television, Blu‑ray, and live streaming</strong> (RTP, HLS). It's designed to be resilient to packet loss — if a piece of data is corrupted, the stream can recover. Use it for live events, satellite/cable distribution, and when you need to stream to legacy set‑top boxes.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c copy -f mpegts output.ts</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>FLV – Flash Video (legacy)</h3>
+    <p>FLV was the backbone of web video in the Flash era. It's still used in some legacy streaming servers and devices. Unless you're maintaining a very old system, you can skip FLV in favour of MP4 or WebM.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mp4 -c copy -f flv output.flv</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>GIF – animated images</h3>
+    <p>GIF is a palette‑based image format that supports animation. FFmpeg can create GIFs, but they are <strong>large and limited to 256 colours</strong>. For modern web animations, use WebP or MP4. If you must create a GIF, use a high‑quality palette.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># High‑quality GIF with custom palette
+ffmpeg -i input.mp4 -vf "fps=10,scale=480:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" output.gif</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h2>Audio‑only containers</h2>
+
+    <h3>MP3</h3>
+    <p>The most compatible audio format. Use it for podcasts, music distribution, and legacy devices.</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:a libmp3lame -b:a 192k output.mp3</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>M4A (AAC / ALAC)</h3>
+    <p>The audio‑only version of MP4. Use AAC for compressed, high‑quality audio, or ALAC for lossless.</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># AAC in M4A
+ffmpeg -i input.mov -c:a aac -b:a 128k output.m4a
+
+# ALAC lossless in M4A
+ffmpeg -i input.mov -c:a alac output.m4a</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>OGG (Vorbis / Opus)</h3>
+    <p>OGG is the open container for Vorbis and Opus audio. It's free, efficient, and widely used in open‑source projects and games.</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:a libopus -b:a 96k output.ogg</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>FLAC</h3>
+    <p>Free Lossless Audio Codec. Perfect for archiving music and high‑fidelity audio. File sizes are large but quality is perfect.</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:a flac -compression_level 8 output.flac</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h2>Container comparison table</h2>
+
+    <table>
+      <thead>
+        <tr><th>Container</th><th>Extension</th><th>Best video codecs</th><th>Best audio codecs</th><th>Subtitle support</th><th>Best for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>MP4</td><td>.mp4, .m4v, .m4a</td><td>H.264, H.265</td><td>AAC, MP3, ALAC</td><td>Limited (TTXT, VobSub)</td><td>Universal compatibility, web</td></tr>
+        <tr><td>MOV</td><td>.mov</td><td>ProRes, DNxHD, H.264</td><td>PCM, AAC</td><td>Limited</td><td>Editing, post‑production</td></tr>
+        <tr><td>MKV</td><td>.mkv</td><td>Any (H.264, H.265, VP9, AV1)</td><td>Any (AAC, MP3, FLAC, Opus)</td><td>Excellent (ASS, SRT, PGS)</td><td>Archiving, media servers, fansubbing</td></tr>
+        <tr><td>WebM</td><td>.webm</td><td>VP8, VP9, AV1</td><td>Vorbis, Opus</td><td>Native (WebVTT)</td><td>Royalty‑free web video</td></tr>
+        <tr><td>AVI</td><td>.avi</td><td>MJPEG, MPEG‑4</td><td>PCM, MP3</td><td>Poor</td><td>Legacy / industrial systems</td></tr>
+        <tr><td>MPEG‑TS</td><td>.ts</td><td>H.264, H.265</td><td>AAC, MP2</td><td>Limited</td><td>Broadcast, live streaming, HLS</td></tr>
+        <tr><td>FLV</td><td>.flv</td><td>H.264, VP6</td><td>MP3, AAC</td><td>No</td><td>Legacy Flash applications</td></tr>
+      </tbody>
+    </table>
+
+    <hr />
+
+    <h2>Container‑specific quirks &amp; best practices</h2>
+
+    <h3>1. The "moov atom" in MP4</h3>
+    <p>The <em>moov atom</em> is the metadata index in an MP4 file. If it's at the <strong>end</strong>, the player must download the entire file before starting playback. Use <code>-movflags +faststart</code> to move it to the <strong>front</strong>.</p>
+
+    <h3>2. Fragmented MP4 for adaptive streaming</h3>
+    <p>For HLS and DASH, you need fragmented MP4 (<code>-movflags +frag_keyframe+empty_moov</code>). This allows the file to be split into small chunks.</p>
+
+    <h3>3. MKV and audio gap handling</h3>
+    <p>MKV is very tolerant of bad audio sync. Use <code>-async 1</code> if you encounter sync issues when remuxing.</p>
+
+    <h3>4. AVI file size limits</h3>
+    <p>Standard AVI has a 2GB limit. Use <code>-fs</code> to set a file size limit, or use the OpenDML extension (<code>-f avi -flags +bitexact</code>).</p>
+
+    <h3>5. WebM mandates VP9/AV1 and Opus/Vorbis</h3>
+    <p>You cannot put H.264 or AAC into a WebM file. FFmpeg will error if you try. Use VP9/AV1 + Opus for WebM.</p>
+
+    <hr />
+
+    <h2>How to choose the right container</h2>
+
+    <ul>
+      <li><strong>Delivering to clients / universal playback</strong> → <strong>MP4</strong> (H.264 + AAC, faststart).</li>
+      <li><strong>Archiving a complete movie</strong> → <strong>MKV</strong> (lossless video + multiple audio/subtitle tracks).</li>
+      <li><strong>Web streaming (modern browsers)</strong> → <strong>WebM</strong> (VP9/AV1 + Opus) or <strong>MP4</strong> (H.265 + AAC).</li>
+      <li><strong>Editing in Premiere/Resolve</strong> → <strong>MOV</strong> (ProRes + PCM).</li>
+      <li><strong>Live broadcast / satellite</strong> → <strong>MPEG‑TS</strong> (.ts).</li>
+      <li><strong>Audio‑only podcast</strong> → <strong>MP3</strong> (compatible) or <strong>M4A</strong> (better quality).</li>
+      <li><strong>Lossless audio archive</strong> → <strong>FLAC</strong>.</li>
+    </ul>
+
+    <p>Want to see how formats interact with codec choices? Check out our <a href="ffmpeg-codecs-complete-guide.html">Complete Codecs Guide</a>. For practical compression, see the <a href="ffmpeg-compress-video-reduce-file-size.html">compression guide</a>.</p>
+
+    <p>Ready to remux and convert on a visual timeline? <a href="../index.html">FFmpegLab</a> lets you switch containers, apply <code>faststart</code>, and generate the exact command — all <a href="offline-private-video-editor.html">offline in your browser</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-codecs-complete-guide.html"><span class="k">Codecs</span><span class="t">Complete codecs guide</span><span class="d">H.264, H.265, VP9, AV1, AAC.</span></a>
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce file size</span><span class="d">CRF, two‑pass, H.265.</span></a>
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, GIF.</span></a>
+        <a class="related-card" href="ffmpeg-metadata.html"><span class="k">Metadata</span><span class="t">Edit video metadata</span><span class="d">Title, artist, comments.</span></a>
+      </div>
+    </div>
+  </section>
+
+<section
+  id="newsletter"
+  data-ffmpeglab-newsletter
+  data-endpoint="/_ploy/form-submit"
+  data-form-name="ffmpeglab-newsletter"
+  data-source="embedded-newsletter"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+>
+  <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="amber" aria-hidden="true" style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;"></div>
+
+  <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+    <div
+      data-newsletter-glass
+      style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);"
+    >
+      <div style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+        <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+          <div style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">✦&nbsp; Fresh from the render queue</div>
+          <h2 style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+          <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+          <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp; Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise</div>
+        </div>
+
+        <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+          <div data-newsletter-success hidden style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+            <span style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+            <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You&rsquo;re on the list.</h3>
+            <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is headed your way.</p>
+          </div>
+
+          <form data-newsletter-form style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+            <div style="display:table;width:100%;table-layout:fixed;">
+              <div style="display:table-cell;vertical-align:middle;">
+                <label for="newsletter-embed-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+                <input
+                  id="newsletter-embed-email"
+                  data-newsletter-email
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;"
+                />
+              </div>
+              <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                <button data-newsletter-submit type="submit" style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp; →</button>
+              </div>
+            </div>
+            <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+              <span>One useful email at a time.</span>
+              <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went wrong. Try again.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Remux and convert on a real timeline — offline.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

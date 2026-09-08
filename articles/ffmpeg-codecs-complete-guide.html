@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complete FFmpeg Codecs Guide: H.264, H.265, VP9, AV1, AAC & more — FFmpegLab</title>
+  <meta name="description" content="The complete FFmpeg codecs guide. Covers every major video and audio codec: H.264 (libx264), H.265/HEVC (libx265), VP9, AV1, AAC, MP3, lossless codecs, hardware acceleration, and how to choose the right codec for any use case." />
+  <meta name="keywords" content="ffmpeg codecs, ffmpeg encoders, ffmpeg decoders, H.264, H.265, HEVC, VP9, AV1, libx264, libx265, libvpx-vp9, libaom-av1, AAC, MP3, codec comparison, ffmpeg -codecs" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-codecs-complete-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-codecs-complete-guide.html" />
+  <meta property="og:title" content="Complete FFmpeg Codecs Guide: H.264, H.265, VP9, AV1, AAC & more" />
+  <meta property="og:description" content="The complete guide to FFmpeg codecs. Learn how to encode with libx264, libx265, VP9, AV1, AAC, MP3, and hardware-accelerated encoders. Includes comparison tables and best practices." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+<script src="/theme.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Complete FFmpeg Codecs Guide: H.264, H.265, VP9, AV1, AAC & more",
+        "description": "The complete guide to FFmpeg codecs. Covers every major video and audio codec: H.264 (libx264), H.265/HEVC (libx265), VP9, AV1, AAC, MP3, lossless codecs, hardware acceleration, and how to choose the right codec for any use case.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-codecs-complete-guide.html",
+        "datePublished": "2026-09-08",
+        "dateModified": "2026-09-08"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Codecs Guide" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="/login">Sign In</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Codecs</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>The complete FFmpeg codecs guide</h1>
+      <p class="dek">Every video and audio codec you need to know: H.264, H.265, VP9, AV1, AAC, MP3, lossless codecs, hardware acceleration, and how to pick the right one for your project. With practical commands and comparison tables.</p>
+      <div class="article-meta">FFmpeg tutorial · ~15 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>FFmpeg supports over 100 video codecs and dozens of audio codecs[reference:0]. But only a fraction of those are worth a deeper dive. This guide covers the ones you'll actually use — from the universal compatibility of H.264 to the bleeding‑edge compression of AV1.</p>
+
+    <p>Before we dive in, a quick note on how FFmpeg names codecs:</p>
+    <ul>
+      <li><strong>Encoders</strong> are specified with <code>-c:v</code> (video) or <code>-c:a</code> (audio).</li>
+      <li>List all available codecs: <code>ffmpeg -codecs</code></li>
+      <li>List all encoders: <code>ffmpeg -encoders</code></li>
+      <li>List all decoders: <code>ffmpeg -decoders</code>[reference:1]</li>
+    </ul>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li><strong>H.264 (libx264)</strong> – the universal standard. Best for compatibility.</li>
+        <li><strong>H.265 / HEVC (libx265)</strong> – ~50% better compression than H.264. Great for 4K.</li>
+        <li><strong>VP9 (libvpx-vp9)</strong> – royalty‑free, web‑friendly. Comparable to H.265.</li>
+        <li><strong>AV1 (libaom-av1 / libsvtav1)</strong> – the future. ~30% better than VP9, ~50% better than H.264[reference:2].</li>
+        <li><strong>AAC (aac)</strong> – the default audio codec. High quality at low bitrates.</li>
+        <li><strong>Hardware encoders</strong> (QSV, NVENC, VAAPI) – fast but lower quality per bit.</li>
+      </ul>
+    </div>
+
+    <h2>Video codecs</h2>
+
+    <h3>H.264 / AVC – libx264</h3>
+    <p>H.264 is the most widely used video codec in the world. It's supported by every browser, every phone, every smart TV, and every video platform. If you need maximum compatibility, this is your codec.</p>
+    <p>FFmpeg uses the <strong>libx264</strong> encoder. It's an external library, so your FFmpeg build needs <code>--enable-libx264</code>[reference:3].</p>
+
+    <h4>Basic H.264 encode</h4>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:v libx264 -preset medium -crf 23 -c:a aac output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>libx264 options</h4>
+    <ul>
+      <li><strong><code>-preset</code></strong> – speed vs. compression. Values: <code>ultrafast</code>, <code>superfast</code>, <code>veryfast</code>, <code>faster</code>, <code>fast</code>, <code>medium</code> (default), <code>slow</code>, <code>slower</code>, <code>veryslow</code>, <code>placebo</code>. Slower = better compression.</li>
+      <li><strong><code>-crf</code></strong> – Constant Rate Factor. Quality scale from 0 (lossless) to 51 (worst). Default is 23. 18–28 is the practical range. Lower = better quality.</li>
+      <li><strong><code>-tune</code></strong> – optimise for specific content: <code>film</code>, <code>animation</code>, <code>grain</code>, <code>stillimage</code>, <code>fastdecode</code>, <code>zerolatency</code>.</li>
+      <li><strong><code>-profile:v</code></strong> – H.264 profile: <code>baseline</code>, <code>main</code>, <code>high</code> (default), <code>high10</code>, etc.</li>
+    </ul>
+
+    <p>For advanced tuning, use <code>-x264-params</code> with a colon‑separated list of key=value pairs[reference:4]:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:v libx264 -x264-params "keyint=250:min-keyint=25:bframes=3" output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>H.265 / HEVC – libx265</h3>
+    <p>H.265 (High Efficiency Video Coding) delivers roughly <strong>50% better compression</strong> than H.264 at the same visual quality[reference:5]. That means half the file size for the same quality, or better quality at the same file size. It's the go‑to codec for 4K, 8K, and HDR content.</p>
+    <p>FFmpeg uses the <strong>libx265</strong> encoder. Enable with <code>--enable-libx265</code> at build time[reference:6].</p>
+
+    <h4>Basic H.265 encode</h4>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:v libx265 -preset medium -crf 24 -c:a aac output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>libx265 options</h4>
+    <ul>
+      <li><strong><code>-preset</code></strong> – same speed/quality trade‑off as x264: <code>ultrafast</code> through <code>veryslow</code>.</li>
+      <li><strong><code>-crf</code></strong> – Constant Rate Factor. Default is 24. Range 0–51. For H.265, CRF 24 is roughly equivalent to H.264 CRF 23.</li>
+      <li><strong><code>-tune</code></strong> – <code>psnr</code>, <code>ssim</code>, <code>grain</code>, <code>zerolatency</code>, <code>fastdecode</code>.</li>
+      <li><strong><code>-x265-params</code></strong> – pass raw x265 options[reference:7].</li>
+    </ul>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:v libx265 -x265-params "crf=26:psy-rd=1" output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>VP9 – libvpx-vp9</h3>
+    <p>VP9 is Google's royalty‑free, open‑source codec. It's the standard for WebM and is widely supported in browsers (Chrome, Firefox, Edge)[reference:8]. In terms of compression, VP9 is roughly comparable to H.265, but it's completely free to use with no licensing fees.</p>
+    <p>FFmpeg uses the <strong>libvpx-vp9</strong> encoder. Enable with <code>--enable-libvpx</code>.</p>
+
+    <h4>Basic VP9 encode</h4>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:v libvpx-vp9 -crf 30 -b:v 0 -c:a libopus output.webm</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>VP9 options</h4>
+    <ul>
+      <li><strong><code>-crf</code></strong> – Constant Rate Factor. 0–63, where lower is better. 30 is a good starting point.</li>
+      <li><strong><code>-b:v 0</code></strong> – disables target bitrate, enabling CRF mode.</li>
+      <li><strong><code>-row-mt 1</code></strong> – enables row‑based multi‑threading (much faster).</li>
+      <li><strong><code>-speed</code></strong> – 0–5 (0 = slowest/best, 5 = fastest/worst).</li>
+    </ul>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:v libvpx-vp9 -crf 30 -b:v 0 -speed 2 -row-mt 1 -c:a libopus output.webm</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>AV1 – libaom-av1 / libsvtav1</h3>
+    <p>AV1 is the next‑generation, royalty‑free codec from the Alliance for Open Media. It typically delivers <strong>~30% better compression than VP9 and ~50% better than H.264</strong>[reference:9]. It's the future of web video — already supported in Chrome, Firefox, and Edge.</p>
+    <p>FFmpeg offers two main AV1 encoders:</p>
+    <ul>
+      <li><strong>libaom-av1</strong> – the reference encoder. Slow but highest quality.</li>
+      <li><strong>libsvtav1</strong> – the Scalable Video Technology encoder from Intel. Much faster, with good quality. Recommended for most use cases.</li>
+    </ul>
+
+    <h4>Basic AV1 encode (libsvtav1)</h4>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:v libsvtav1 -crf 30 -preset 8 -g 240 -c:a libopus output.mkv</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>AV1 options</h4>
+    <ul>
+      <li><strong><code>-crf</code></strong> – 0–63. 30 is a good starting point.</li>
+      <li><strong><code>-preset</code></strong> – for libsvtav1: 0–13 (0 = slowest/best, 13 = fastest). 8 is a good balance.</li>
+      <li><strong><code>-g</code></strong> – GOP size (keyframe interval). 240 is typical for 24/30fps content.</li>
+    </ul>
+
+    <hr />
+
+    <h3>Lossless &amp; near‑lossless video codecs</h3>
+    <p>Sometimes you need pixel‑perfect quality — for archiving, intermediate masters, or when you'll be doing further processing.</p>
+
+    <ul>
+      <li><strong>FFV1</strong> – FFmpeg's own lossless intra‑only video codec[reference:10]. Efficient and well‑supported. Use <code>-c:v ffv1</code>.</li>
+      <li><strong>Ut Video</strong> – lossless codec family. <code>utvideo</code>.</li>
+      <li><strong>H.264 lossless</strong> – set <code>-crf 0</code> with libx264.</li>
+      <li><strong>H.265 lossless</strong> – set <code>-crf 0</code> with libx265.</li>
+      <li><strong>ProRes</strong> – Apple's intermediate codec. <code>-c:v prores -profile:v 0</code> (proxy) through 3 (4444).</li>
+      <li><strong>DNxHD / DNxHR</strong> – Avid's intermediate codecs. <code>-c:v dnxhd</code>.</li>
+    </ul>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># FFV1 lossless
+ffmpeg -i input.mov -c:v ffv1 -level 3 -coder 1 -context 1 output.mkv
+
+# ProRes 422 HQ
+ffmpeg -i input.mov -c:v prores -profile:v 3 -vendor apl0 output.mov
+
+# H.264 lossless
+ffmpeg -i input.mov -c:v libx264 -crf 0 -preset slower output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h2>Audio codecs</h2>
+
+    <h3>AAC – aac</h3>
+    <p>AAC (Advanced Audio Coding) is the default audio codec for MP4 and the most widely used audio format in video. FFmpeg's native <strong>aac</strong> encoder is now the recommended choice — its quality is on par with or better than libfdk_aac at 128 kbps[reference:11].</p>
+
+    <h4>Basic AAC encode</h4>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:a aac -b:a 128k output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>AAC options</h4>
+    <ul>
+      <li><strong><code>-b:a</code></strong> – target bitrate. 128k is the sweet spot. 96k for web, 192k+ for high quality[reference:12].</li>
+      <li><strong><code>-q:a</code></strong> – VBR quality. 0–9 (higher = better). Use instead of <code>-b:a</code> for variable bitrate[reference:13].</li>
+      <li><strong><code>-cutoff</code></strong> – low‑pass filter cutoff frequency. Default is dynamically adjusted[reference:14].</li>
+      <li><strong><code>-aac_coder</code></strong> – coding method: <code>twoloop</code> (default, best quality), <code>anmr</code> (experimental), <code>fast</code> (fastest)[reference:15].</li>
+    </ul>
+
+    <hr />
+
+    <h3>MP3 – libmp3lame</h3>
+    <p>MP3 is still the most compatible audio format. Use it when you need maximum playback compatibility — old devices, MP3 players, etc. FFmpeg uses the <strong>libmp3lame</strong> encoder[reference:16].</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:a libmp3lame -b:a 192k output.mp3</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>Opus – libopus</h3>
+    <p>Opus is the most modern and efficient audio codec. It's royalty‑free, open, and delivers superior quality at low bitrates. It's the standard for WebM and is widely supported in browsers.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mov -c:a libopus -b:a 96k output.webm</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h3>Lossless audio codecs</h3>
+    <ul>
+      <li><strong>FLAC</strong> – <code>-c:a flac</code>. Free Lossless Audio Codec. Great for archiving.</li>
+      <li><strong>ALAC</strong> – <code>-c:a alac</code>. Apple Lossless. Good for Apple ecosystem.</li>
+      <li><strong>WAV / PCM</strong> – <code>-c:a pcm_s16le</code>. Uncompressed, huge files.</li>
+    </ul>
+
+    <hr />
+
+    <h2>Hardware‑accelerated encoders</h2>
+    <p>If you have a modern GPU, you can offload encoding to hardware. This is <strong>much faster</strong> than software encoding, but quality per bit is usually lower. Use hardware encoding for live streaming, quick previews, or when speed is more important than file size.</p>
+
+    <table>
+      <thead>
+        <tr><th>Hardware</th><th>H.264 encoder</th><th>H.265 encoder</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Intel QSV</td><td><code>h264_qsv</code></td><td><code>hevc_qsv</code></td><td>Built into Intel GPUs</td></tr>
+        <tr><td>NVIDIA NVENC</td><td><code>h264_nvenc</code></td><td><code>hevc_nvenc</code></td><td>NVIDIA GPUs</td></tr>
+        <tr><td>AMD AMF</td><td><code>h264_amf</code></td><td><code>hevc_amf</code></td><td>AMD GPUs</td></tr>
+        <tr><td>VAAPI (Linux)</td><td><code>h264_vaapi</code></td><td><code>hevc_vaapi</code></td><td>Generic Linux GPU acceleration</td></tr>
+        <tr><td>Apple VideoToolbox</td><td><code>h264_videotoolbox</code></td><td><code>hevc_videotoolbox</code></td><td>macOS / iOS</td></tr>
+      </tbody>
+    </table>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># NVIDIA NVENC H.264
+ffmpeg -i input.mov -c:v h264_nvenc -preset p4 -tune hq -cq 23 -c:a aac output.mp4
+
+# Intel QSV H.265
+ffmpeg -i input.mov -c:v hevc_qsv -global_quality 24 -c:a aac output.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <hr />
+
+    <h2>Codec comparison table</h2>
+
+    <table>
+      <thead>
+        <tr><th>Codec</th><th>FFmpeg encoder</th><th>Compression</th><th>Speed</th><th>Royalty‑free</th><th>Best for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>H.264</td><td><code>libx264</code></td><td>Good</td><td>Fast</td><td>No</td><td>Universal compatibility</td></tr>
+        <tr><td>H.265 / HEVC</td><td><code>libx265</code></td><td>Excellent (~50% better than H.264)</td><td>Slow</td><td>No</td><td>4K, HDR, streaming</td></tr>
+        <tr><td>VP9</td><td><code>libvpx-vp9</code></td><td>Excellent</td><td>Slow</td><td>Yes</td><td>Web (WebM)</td></tr>
+        <tr><td>AV1</td><td><code>libsvtav1</code></td><td>Best (~50% better than H.264)</td><td>Very slow</td><td>Yes</td><td>Future‑proof web video</td></tr>
+        <tr><td>FFV1</td><td><code>ffv1</code></td><td>Lossless</td><td>Medium</td><td>Yes</td><td>Archiving, masters</td></tr>
+        <tr><td>ProRes</td><td><code>prores</code></td><td>Near‑lossless</td><td>Fast</td><td>Yes</td><td>Editing, post‑production</td></tr>
+      </tbody>
+    </table>
+
+    <hr />
+
+    <h2>How to choose the right codec</h2>
+
+    <ul>
+      <li><strong>For maximum compatibility</strong> – H.264 (libx264) + AAC. This plays everywhere.</li>
+      <li><strong>For smallest file size at high quality</strong> – H.265 (libx265) or AV1 (libsvtav1). AV1 is better but slower.</li>
+      <li><strong>For web delivery</strong> – H.264 for MP4 fallback, VP9 or AV1 in WebM for modern browsers[reference:17].</li>
+      <li><strong>For editing / post‑production</strong> – ProRes, DNxHD, or FFV1.</li>
+      <li><strong>For live streaming</strong> – hardware encoder (NVENC, QSV) for low latency.</li>
+      <li><strong>For archiving</strong> – FFV1 (video) + FLAC (audio).</li>
+    </ul>
+
+    <p>Want to combine codec choices with other operations? Check out our guides on <a href="ffmpeg-compress-video-reduce-file-size.html">compression</a>, <a href="ffmpeg-convert-video-format.html">format conversion</a>, and <a href="ffmpeg-filter-complex-effects.html">filter complex effects</a>.</p>
+
+    <p>Ready to put this into practice? <a href="../index.html">FFmpegLab</a> gives you a visual timeline where you can pick your codec, set quality presets, and generate the exact command — all <a href="offline-private-video-editor.html">entirely offline</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-compress-video-reduce-file-size.html"><span class="k">Compress</span><span class="t">Compress &amp; reduce file size</span><span class="d">CRF, H.265, two‑pass.</span></a>
+        <a class="related-card" href="ffmpeg-convert-video-format.html"><span class="k">Convert</span><span class="t">Convert video formats</span><span class="d">MP4, WebM, MOV, GIF.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">Complex filter effects</span><span class="d">Chaining filters like a pro.</span></a>
+        <a class="related-card" href="ffmpeg-xfade-transitions-guide.html"><span class="k">Transitions</span><span class="t">xfade transitions guide</span><span class="d">Blend between clips smoothly.</span></a>
+      </div>
+    </div>
+  </section>
+
+<section
+  id="newsletter"
+  data-ffmpeglab-newsletter
+  data-endpoint="/_ploy/form-submit"
+  data-form-name="ffmpeglab-newsletter"
+  data-source="embedded-newsletter"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+>
+  <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="amber" aria-hidden="true" style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;"></div>
+
+  <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+    <div
+      data-newsletter-glass
+      style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);"
+    >
+      <div style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+        <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+          <div style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">✦&nbsp; Fresh from the render queue</div>
+          <h2 style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+          <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+          <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp; Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise</div>
+        </div>
+
+        <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+          <div data-newsletter-success hidden style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+            <span style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+            <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You&rsquo;re on the list.</h3>
+            <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is headed your way.</p>
+          </div>
+
+          <form data-newsletter-form style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+            <div style="display:table;width:100%;table-layout:fixed;">
+              <div style="display:table-cell;vertical-align:middle;">
+                <label for="newsletter-embed-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+                <input
+                  id="newsletter-embed-email"
+                  data-newsletter-email
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;"
+                />
+              </div>
+              <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                <button data-newsletter-submit type="submit" style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp; →</button>
+              </div>
+            </div>
+            <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+              <span>One useful email at a time.</span>
+              <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went wrong. Try again.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Choose the right codec on a real timeline — offline.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The FFmpeg Tool Suite: ffmpeg, ffprobe, ffplay & Stream Specifiers Explained — FFmpegLab</title>
+  <meta name="description" content="Master the core FFmpeg tools. Learn the ffmpeg command syntax, stream specifiers (-c:a:1, -map 0:v:2), inspecting media with ffprobe, debugging with ffplay, and why argument order matters." />
+  <meta name="keywords" content="ffmpeg syntax, ffmpeg stream specifiers, ffprobe, ffplay, ffmpeg tools, ffmpeg options, -map, -ss before -i, ffprobe json, ffplay shortcuts" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/ffmpeg-tool-suite-guide.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/ffmpeg-tool-suite-guide.html" />
+  <meta property="og:title" content="The FFmpeg Tool Suite: ffmpeg, ffprobe, ffplay & Stream Specifiers Explained" />
+  <meta property="og:description" content="Master the core FFmpeg tools: command syntax, stream specifiers, ffprobe, and ffplay. Learn why argument order matters and how to target specific streams." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+<script src="/theme.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "The FFmpeg Tool Suite: ffmpeg, ffprobe, ffplay & Stream Specifiers Explained",
+        "description": "Master the core FFmpeg tools. Learn the ffmpeg command syntax, stream specifiers (-c:a:1, -map 0:v:2), inspecting media with ffprobe, and debugging with ffplay.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/ffmpeg-tool-suite-guide.html",
+        "datePublished": "2026-09-08",
+        "dateModified": "2026-09-08"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ffmpeglab.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://ffmpeglab.com/articles/" },
+          { "@type": "ListItem", "position": 3, "name": "Tool Suite Guide" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="/login">Sign In</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / FFmpeg Tool Suite</div>
+      <span class="eyebrow">FFmpeg Guide</span>
+      <h1>FFmpeg, ffprobe &amp; ffplay: the complete toolkit explained</h1>
+      <p class="dek">Stop copy‑pasting blindly. Understand how the `ffmpeg` command is structured, how stream specifiers let you target individual tracks, how to inspect files with `ffprobe`, and how to preview filters with `ffplay`.</p>
+      <div class="article-meta">FFmpeg tutorial · ~14 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>FFmpeg is not one program — it's a <strong>suite</strong> of tools. The three you'll use daily are:</p>
+    <ul>
+      <li><strong>`ffmpeg`</strong> – the conversion and processing engine.</li>
+      <li><strong>`ffprobe`</strong> – the media inspector.</li>
+      <li><strong>`ffplay`</strong> – the lightweight media player and filter debugger.</li>
+    </ul>
+    <p>Under the hood, they all share the same libraries (<em>libavcodec</em>, <em>libavformat</em>, <em>libavfilter</em>). Once you understand the <strong>command syntax</strong> and <strong>stream specifiers</strong>, you unlock the full power of FFmpeg.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li>ffmpeg syntax: <code>ffmpeg [global] [input] [filters] [output]</code> — <strong>order matters</strong>.</li>
+        <li><strong>Stream specifiers</strong> (e.g., <code>:a:1</code>, <code>:v:0</code>) let you target specific streams for codec, bitrate, or mapping.</li>
+        <li>Putting <code>-ss</code> <em>before</em> <code>-i</code> makes seeking fast; putting it <em>after</em> makes it frame‑accurate.</li>
+        <li><code>ffprobe -show_format -show_streams -of json</code> is the ultimate scriptable inspection tool.</li>
+        <li><code>ffplay</code> can preview complex filter graphs without writing a file.</li>
+      </ul>
+    </div>
+
+    <hr />
+
+    <h2>Part 1: The `ffmpeg` command syntax</h2>
+    <p>The general structure of every <code>ffmpeg</code> command is:</p>
+    <pre><code>ffmpeg [global options] [input options] -i input [filter options] [output options] output</code></pre>
+    <p>But the most important rule is: <strong>order is not arbitrary</strong>. Options are applied at the moment they are parsed. Let's break it down.</p>
+
+    <h3>Input options vs. output options</h3>
+    <ul>
+      <li><strong>Before <code>-i</code></strong> → applies to that specific input file (e.g., <code>-ss 00:10</code> before <code>-i</code> seeks in the input).</li>
+      <li><strong>After <code>-i</code></strong> → applies to the output file (e.g., <code>-c:v libx264</code> sets the output encoder).</li>
+      <li><strong>Global</strong> → applies to the whole command (e.g., <code>-y</code> to overwrite, <code>-loglevel</code>).</li>
+    </ul>
+
+    <h4>Example: the crucial `-ss` position</h4>
+    <p>This is the most common pitfall for beginners.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Fast seek (input option) — starts at keyframe, instant
+ffmpeg -ss 00:10 -i input.mp4 -t 5 -c copy clip.mp4
+
+# Frame‑accurate seek (output option) — decodes from start, slow but precise
+ffmpeg -i input.mp4 -ss 00:10 -t 5 -c:v libx264 clip.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <p>When <code>-ss</code> is <strong>before <code>-i</code></strong>, FFmpeg uses <em>fast seeking</em>. It jumps to the nearest keyframe (instant, no decoding). When <code>-ss</code> is <strong>after <code>-i</code></strong>, FFmpeg decodes everything from the start until it reaches the timestamp (slow, but frame‑accurate). Use the first one for lossless <code>-c copy</code> cuts; use the second only when you need exact frame precision and are re‑encoding.</p>
+
+    <h3>Common global and output options</h3>
+    <ul>
+      <li><code>-y</code> – overwrite output file without asking.</li>
+      <li><code>-n</code> – never overwrite output file.</li>
+      <li><code>-loglevel error</code> – only show errors (cleaner output).</li>
+      <li><code>-hide_banner</code> – hide the compilation banner.</li>
+      <li><code>-stats</code> – show encoding progress (enabled by default).</li>
+      <li><code>-map 0</code> – copy all streams from the first input.</li>
+      <li><code>-map 0:v:0</code> – copy only the first video stream.</li>
+      <li><code>-c copy</code> – copy all streams without re‑encoding (stream copy).</li>
+      <li><code>-c:v libx264</code> – set video codec.</li>
+      <li><code>-c:a aac</code> – set audio codec.</li>
+      <li><code>-b:v 2M</code> – set video bitrate to 2 Mbps.</li>
+      <li><code>-f mp4</code> – force the output container format.</li>
+    </ul>
+
+    <hr />
+
+    <h2>Part 2: Stream specifiers — the superpower you've been missing</h2>
+    <p>A <strong>stream specifier</strong> is a suffix you attach to an option (e.g., <code>-c</code>, <code>-b</code>, <code>-map</code>) to tell FFmpeg <em>which specific streams</em> you want to target.</p>
+    <p>The syntax is <code>option:stream_specifier</code>.</p>
+
+    <h3>Basic stream specifier syntax</h3>
+    <table>
+      <thead>
+        <tr><th>Specifier</th><th>Meaning</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>:v</code></td><td>All video streams</td><td><code>-c:v libx264</code></td></tr>
+        <tr><td><code>:a</code></td><td>All audio streams</td><td><code>-b:a 128k</code></td></tr>
+        <tr><td><code>:s</code></td><td>All subtitle streams</td><td><code>-c:s copy</code></td></tr>
+        <tr><td><code>:d</code></td><td>All data streams</td><td><code>-map 0:d</code></td></tr>
+        <tr><td><code>:v:0</code></td><td>First video stream (index 0)</td><td><code>-c:v:0 libx264</code></td></tr>
+        <tr><td><code>:a:1</code></td><td>Second audio stream (index 1)</td><td><code>-c:a:1 aac</code></td></tr>
+        <tr><td><code>:s:2</code></td><td>Third subtitle stream</td><td><code>-c:s:2 mov_text</code></td></tr>
+        <tr><td><code>:v:0,a:0</code></td><td>Video 0 and Audio 0 (combined)</td><td><code>-map 0:v:0 -map 0:a:0</code></td></tr>
+        <tr><td><code>:m:language:eng</code></td><td>Streams with English language tag</td><td><code>-c:m:language:eng copy</code></td></tr>
+      </tbody>
+    </table>
+
+    <h4>Practical stream specifier examples</h4>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Re‑encode video to H.265, but copy audio & subtitles as‑is
+ffmpeg -i input.mkv -c:v libx265 -crf 24 -c:a copy -c:s copy output.mkv
+
+# Set a lower bitrate for the second audio stream only
+ffmpeg -i input.mkv -c:a:0 copy -b:a:1 96k -c:a:2 copy output.mkv
+
+# Map only the first video and the second audio from input 0
+ffmpeg -i input.mkv -map 0:v:0 -map 0:a:1 -c copy output.mp4
+
+# Copy all video streams, but only English subtitles
+ffmpeg -i input.mkv -c:v copy -c:s:m:language:eng copy output.mkv</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <p>To see which streams are available in a file (and their indexes), use:</p>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">ffmpeg -i input.mkv</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+    <p>This prints a detailed list of streams with their indices. For example: <code>Stream #0:0[0x1](eng): Video: h264 ...</code> means <code>:v:0</code> or <code>:a:0</code> depending on the type.</p>
+
+    <hr />
+
+    <h2>Part 3: ffprobe — the media inspector</h2>
+    <p><code>ffprobe</code> is the Swiss Army knife for inspecting media files. It reads the container, streams, packets, and frames without decoding the video, making it incredibly fast.</p>
+
+    <h3>Basic ffprobe usage</h3>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Show all streams, metadata, and format info
+ffprobe input.mp4
+
+# Show only the container format
+ffprobe -show_format input.mp4
+
+# Show only the streams (video/audio/subtitle)
+ffprobe -show_streams input.mp4
+
+# Show frame-by-frame information (can be huge)
+ffprobe -show_frames input.mp4
+
+# Show only video streams
+ffprobe -select_streams v -show_streams input.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>Output formats for scripting</h3>
+    <p><code>ffprobe</code> shines when you need to parse its output programmatically. Use <code>-of</code> (or <code>-print_format</code>) to choose the output format.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># JSON output (excellent for Python/Node.js)
+ffprobe -v quiet -print_format json -show_format -show_streams input.mp4
+
+# XML output
+ffprobe -v quiet -print_format xml -show_format input.mp4
+
+# CSV output (for spreadsheets)
+ffprobe -v quiet -of csv -select_streams v -show_entries stream=codec_name,width,height input.mp4
+
+# Compact, human‑friendly
+ffprobe -v quiet -of default=noprint_wrappers=1 -show_entries format=format_name,duration input.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h4>Common ffprobe tasks</h4>
+    <ul>
+      <li><strong>Get duration</strong>: <code>ffprobe -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 input.mp4</code></li>
+      <li><strong>Get resolution</strong>: <code>ffprobe -v quiet -select_streams v:0 -show_entries stream=width,height -of csv=p=0 input.mp4</code></li>
+      <li><strong>Get codec details</strong>: <code>ffprobe -v quiet -select_streams v:0 -show_entries stream=codec_name,profile,level -of default=noprint_wrappers=1 input.mp4</code></li>
+      <li><strong>Get bitrate</strong>: <code>ffprobe -v quiet -show_entries format=bit_rate -of default=noprint_wrappers=1:nokey=1 input.mp4</code></li>
+    </ul>
+
+    <p>Use <code>ffprobe</code> when you need to build automated workflows — it's the foundation of FFmpegLab's media analysis.</p>
+
+    <hr />
+
+    <h2>Part 4: ffplay — the interactive player and filter debugger</h2>
+    <p><code>ffplay</code> is a simple media player built on top of FFmpeg. It's not meant to replace VLC or MPC‑HC. Instead, it's a <strong>debugging and prototyping tool</strong> for filters, seeking, and raw stream analysis.</p>
+
+    <h3>Basic playback</h3>
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Play a video with sound
+ffplay input.mp4
+
+# Play only audio
+ffplay -nodisp input.mp3
+
+# Play at half speed
+ffplay -vf "setpts=2.0*PTS" input.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>Previewing filters in real‑time</h3>
+    <p>This is where <code>ffplay</code> truly shines. Instead of encoding a file to test a complex filter chain, you can preview it instantly.</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">Generated Code</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code"># Test a scale + crop + fade filter live
+ffplay -vf "scale=640:-1,crop=640:360,format=gray,fade=t=in:st=0:d=2" input.mp4
+
+# Test audio filters (speed up audio)
+ffplay -af "atempo=2.0" input.mp4</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <h3>ffplay keyboard shortcuts</h3>
+    <table>
+      <thead>
+        <tr><th>Key</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><kbd>f</kbd></td><td>Toggle fullscreen</td></tr>
+        <tr><td><kbd>s</kbd></td><td>Step frame‑by‑frame (pause first)</td></tr>
+        <tr><td><kbd>Space</kbd></td><td>Pause / resume</td></tr>
+        <tr><td><kbd>Left / Right</kbd></td><td>Seek backward / forward 10 seconds</td></tr>
+        <tr><td><kbd>Down / Up</kbd></td><td>Seek backward / forward 1 minute</td></tr>
+        <tr><td><kbd>m</kbd></td><td>Mute / unmute</td></tr>
+        <tr><td><kbd>q</kbd> or <kbd>ESC</kbd></td><td>Quit</td></tr>
+      </tbody>
+    </table>
+
+    <p><code>ffplay</code> is also useful for testing stream selection and raw YUV/PCM data. For example, to play the raw video stream without audio: <code>ffplay -vn -nodisp input.mp4</code> (audio only).</p>
+
+    <hr />
+
+    <h2>Cheat sheet: quick reference</h2>
+
+    <table>
+      <thead>
+        <tr><th>Task</th><th>Command</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Remux MP4 → MKV (lossless)</td><td><code>ffmpeg -i input.mp4 -c copy output.mkv</code></td></tr>
+        <tr><td>Encode H.265 with CRF 24</td><td><code>ffmpeg -i input.mov -c:v libx265 -crf 24 -c:a aac output.mp4</code></td></tr>
+        <tr><td>Copy only first video + second audio</td><td><code>ffmpeg -i input.mkv -map 0:v:0 -map 0:a:1 -c copy output.mkv</code></td></tr>
+        <tr><td>Fast lossless cut from 1:05 to 1:35</td><td><code>ffmpeg -ss 00:01:05 -i input.mp4 -to 00:01:35 -c copy clip.mp4</code></td></tr>
+        <tr><td>Frame‑accurate cut (re‑encode)</td><td><code>ffmpeg -i input.mp4 -ss 00:01:05 -to 00:01:35 -c:v libx264 -crf 18 clip.mp4</code></td></tr>
+        <tr><td>Inspect file in JSON</td><td><code>ffprobe -v quiet -print_format json -show_format -show_streams input.mp4</code></td></tr>
+        <tr><td>Preview grayscale + fade with ffplay</td><td><code>ffplay -vf "format=gray,fade=t=out:st=5:d=3" input.mp4</code></td></tr>
+      </tbody>
+    </table>
+
+    <hr />
+
+    <h2>Putting it all together</h2>
+    <p>Once you understand the <strong>syntax</strong>, the <strong>stream specifiers</strong>, and the <strong>positioning of options</strong>, you stop guessing. You know exactly why a command works—or why it fails.</p>
+
+    <p>These fundamentals power every tutorial on this site. Pair this knowledge with our <a href="ffmpeg-codecs-complete-guide.html">Complete Codecs Guide</a> to choose the right encoder, and the <a href="ffmpeg-formats-complete-guide.html">Complete Formats Guide</a> to pick the right container.</p>
+
+    <p>Ready to put this into practice with a visual interface? <a href="../index.html">FFmpegLab</a> gives you a timeline and property panels that generate these exact commands for you — while running <a href="offline-private-video-editor.html">entirely offline</a>.</p>
+  </main>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="ffmpeg-codecs-complete-guide.html"><span class="k">Codecs</span><span class="t">Complete codecs guide</span><span class="d">H.264, H.265, VP9, AV1.</span></a>
+        <a class="related-card" href="ffmpeg-formats-complete-guide.html"><span class="k">Formats</span><span class="t">Complete formats guide</span><span class="d">MP4, MKV, WebM, MOV, AVI.</span></a>
+        <a class="related-card" href="ffmpeg-trim-cut-video.html"><span class="k">Trim</span><span class="t">Trim &amp; cut video</span><span class="d">Lossless cuts with -ss.</span></a>
+        <a class="related-card" href="ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">Complex filter effects</span><span class="d">Chaining filters like a pro.</span></a>
+      </div>
+    </div>
+  </section>
+
+<section
+  id="newsletter"
+  data-ffmpeglab-newsletter
+  data-endpoint="/_ploy/form-submit"
+  data-form-name="ffmpeglab-newsletter"
+  data-source="embedded-newsletter"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+>
+  <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
+  <div data-liquid-light="amber" aria-hidden="true" style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;"></div>
+
+  <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+    <div
+      data-newsletter-glass
+      style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);"
+    >
+      <div style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+        <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+          <div style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">✦&nbsp; Fresh from the render queue</div>
+          <h2 style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+          <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+          <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp; Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise</div>
+        </div>
+
+        <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+          <div data-newsletter-success hidden style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+            <span style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+            <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You&rsquo;re on the list.</h3>
+            <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is headed your way.</p>
+          </div>
+
+          <form data-newsletter-form style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+            <div style="display:table;width:100%;table-layout:fixed;">
+              <div style="display:table-cell;vertical-align:middle;">
+                <label for="newsletter-embed-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email address</label>
+                <input
+                  id="newsletter-embed-email"
+                  data-newsletter-email
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;"
+                />
+              </div>
+              <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                <button data-newsletter-submit type="submit" style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp; →</button>
+              </div>
+            </div>
+            <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+              <span>One useful email at a time.</span>
+              <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went wrong. Try again.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Master the toolkit on a real timeline — offline.</h2>
+      <p>Free in your browser — nothing to install, nothing uploaded.</p>
+      <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/Editor">Start editing free</a></div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>
