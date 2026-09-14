@@ -14,7 +14,7 @@
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="FFmpegLab" />
   <meta property="og:url" content="https://www.ffmpeglab.com/articles/ffmpeglab-s3-storage-api-keys-guide.html" />
-  <meta property="og:title" content="FFmpegLab S3 Storage: API Keys &amp; User Namespace Setup Guide" />
+  <meta property="og:title" content="FFmpegLab S3 Storage: Free 50GB, Zero Egress Cost Storage API Keys & User Namespace Setup Guide" />
   <meta property="og:description" content="Generate an API key, call the storage config endpoint, and access your personal user namespace inside FFmpegLab's shared S3-compatible bucket." />
   <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -29,8 +29,8 @@
     "@graph": [
       {
         "@type": "Article",
-        "headline": "FFmpegLab S3 Storage: API Keys & User Namespace Setup Guide",
-        "description": "How to sign in to FFmpegLab, generate an API key under Settings → API Keys, call the storage config endpoint, and access your personal user namespace inside a shared S3-compatible bucket.",
+        "headline": "FFmpegLab S3 Storage: Free 50GB, Zero Egress Cost Storage API Keys & User Namespace Setup Guide",
+        "description": "How to get free 50gb zero egreess storage generate an API key under Settings → API Keys, call the storage config endpoint, and access your personal user namespace inside a shared S3-compatible bucket.",
         "image": "https://ffmpeglab.com/og-image.png",
         "author": { "@type": "Organization", "name": "FFmpegLab" },
         "publisher": { "@type": "Organization", "name": "FFmpegLab" },
@@ -80,6 +80,22 @@
           {
             "@type": "Question",
             "name": "Where do I find my FFmpegLab API key?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sign in, open Settings, then go to the API Keys tab. Create a new key, give it a name, and copy the secret value — it is usually only shown once."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Free 50GB Storage",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sign in to ffmpeglab.com, open Settings, then go to the Media tab. Start Uploading & Sharing Files."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Zero Egress Cost S3 Storage",
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Sign in, open Settings, then go to the API Keys tab. Create a new key, give it a name, and copy the secret value — it is usually only shown once."
@@ -148,7 +164,7 @@
   </div>
 
   <main class="container prose">
-    <p>FFmpegLab doesn't just render video — it gives you a <strong>S3-compatible object store</strong> attached to your account. Every project you render, every source file you upload, and every output you export can live in a bucket you control, addressed with the same API shape you already know from AWS S3, Cloudflare R2 or MinIO.</p>
+    <p>FFmpegLab doesn't just render video — it gives you a free 50gb <strong>S3 object store</strong> attached to your account. Every project you render, every source file you upload, and every output you export can live in a bucket you control, addressed with the same API shape you already know from AWS S3, Cloudflare R2 or MinIO.</p>
 
     <p>That means you never have to build a bespoke upload path. You generate one API key, ask the storage endpoint for your configuration, and hand that configuration to whatever tool you already trust. This guide walks through the whole flow end to end.</p>
 
