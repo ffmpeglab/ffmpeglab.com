@@ -56,9 +56,6 @@
         "description": "API-native media engineering IDE. SQL metadata queries, YAML filter graphs, Bash orchestration. Open source, self-hostable, collaborative.",
         "url": "https://ffmpeglab.com/",
         "image": "https://ffmpeglab.com/og-image.png",
-        "offers": [
-          { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" }
-        ],
         "featureList": [
           "Native SQL API for media catalog queries",
           "Declarative YAML rendering pipelines",
@@ -201,85 +198,6 @@
       </div>
     </section>
    
-
-    <!-- ===== SDK ===== -->
-    <section class="collab" id="docs" style="overflow: hidden;">
-      <div class="container inner">
-        <div class="inner-sdk-container">
-
-          <div style="gap:20px;display: flex;flex-direction: column; padding-bottom: 20px;">
-            <!-- <div class="head" style="padding-bottom: 20px;"> -->
-            <div>
-              <h2 class="balance">Embed FFmpeg into your stack with SDKs or Event Driven S3 Integration</h2>
-            </div>
-            <!-- </div> -->
-            <p class="sub">
-              FFmpegLab is fully open source and API-first. Pick the interface that fits your workflow: Typescript SDK for frontend apps, raw SQL for Supabase triggers, or YAML for pipeline-as-code. Connect your AI agents directly.</p>
-            <div class="cta-row">
-              <a class="btn btn-ghost" href="https://www.npmjs.com/package/ffmpeglab-sdk">Typescript</a>
-              <a class="btn btn-ghost" href="/articles/render-videos-using-sql-ffmpeglab.html">SQL</a>
-            </div>
-            <div class="cta-row">
-              <a class="btn btn-ghost" href="https://github.com/ffmpeglab/server/tree/main/sdk/yaml">YML</a>
-              <a class="btn btn-ghost" href="https://github.com/ffmpeglab/server/blob/main/example.sh">CURL</a>
-            </div>
-          </div>
-
-          <div class="code-window" id="fflab-render-code-window" style="max-width: 900px;">
-            <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-              <span class="mono fname active">render.ts</span>
-              <span class="mono fname">render.sql</span>
-              <span class="mono fname">render.yml</span>
-              <span class="mono fname">render.sh</span>
-            </div>
-            <pre class="mono em-code" style="overflow: hidden;">
-<span class="ek">import</span> <span class="ef">*</span> <span class="ek">as</span> ffmpeglab <span class="ek">from</span> <span class="ef">'ffmpeglab-sdk'</span>;
-
-<span class="en">const</span> <span class="ef">mediaUrl</span> = <span class="ef">'https://www.ffmpeglab.com/media/zoompan.mp4'</span>
-<span class="en">const</span> <span class="ef">clientConfig</span> = <span class="ef">new</span> ffmpeglab.<span class="ek">Configuration</span>({
-  accessToken: <span class="ef">'API_KEY'</span>,
-  basePath: <span class="ef">'https://api.ffmpeglab.com'</span>,
-});
-
-<span class="en">const</span> <span class="ef">client</span> = <span class="ef">new</span> ffmpeglab.<span class="ek">RendersApi</span>(clientConfig);
-
-<span class="ef">client</span>.<span class="ek">rendersControllerCreate</span>(<span class="ef">{</span>renderDto:{
-  project: { 
-      id: <span class="ef">'myproject'</span>,
-      title: <span class="ef">'myproject'</span>,
-      editor: <span class="ef">{</span>
-        code: <span class="ef">'-i $MEDIA_1 -movflags +faststart -y $OUTPUT_PATH'</span>,
-        selectedCode: <span class="ef">'custom'</span>
-      <span class="ef">}</span>
-  },
-  layers: [
-    <span class="ef">{</span>
-      id: <span class="ef">'layer1'</span>,
-      media: [
-        <span class="ef">{</span>
-          id: <span class="ef">'media1'</span>,
-          url: mediaUrl,
-          folderId: <span class="ef">"myfolder"</span>,
-          filename: <span class="ef">"zoompan.mp4"</span>,
-          encoding: <span class="ef">{}</span>
-        <span class="ef">}</span>
-      ],
-      "editor":{}
-    <span class="ef">}</span>
-  ]
-}<span class="ef">}</span>)
-.<span class="ek">then</span><span class="en">(</span><span class="ek">(</span><span class="en">render</span><span class="ek">)</span>=><span class="ef">client</span>.<span class="ek">rendersControllerRunRender(</span>{
-  runDto:<span class="ef">{</span>
-    id:render.id
-  <span class="ef">}
-</span>}<span class="ek">)</span><span class="en">)</span>
-          </pre>
-          </div>
-
-          <script src="/examples.js"></script>
-        </div>
-      </div>
-    </section>
          <!-- ===== GitHub Integration ===== -->
     <section id="github"
       style="position:relative;overflow:hidden;padding:96px 24px;background:#f7f5fa;color:#211b3a;font-family:'Kanit',Arial,Helvetica,sans-serif;">
@@ -336,44 +254,8 @@
         </div>
         <div class="code-window">
           <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
-              class="mono fname">docker-compose.yml</span></div>
-          <pre class="mono em-code"><span class="el">services</span>:
-  <span class="el">ffmpeglab</span>:
-    <span class="el">image</span>: <span class="ef">ffmpeglab/ide</span>
-    <span class="el">ports</span>: ["8080:8080"]
-    <span class="el">environment</span>:
-      - <span class="ef">FFMPEGLAB_HOST=http://localhost:8080/webapp/</span>
-      - <span class="ef">FFMPEGLAB_API=http://localhost:3000</span>
-      - <span class="ef">EVOLU_DB_HOST=http://localhost:4000</span>
-      - <span class="ef">EVOLU_DB_NAME=ffmpeglab</span>
-      - <span class="ef">PUBLIC_HOST=https://localhost:8080/</span>
-      - <span class="ef">PEXELS_API_HOST=https://pexels.starpy.me/</span>
-      - <span class="ef">SUPABASE_HOST=https://office.starpy.me</span>
-      - <span class="ef">SUPABASE_ANON_KEY=123456789qwerty</span>
-  <span class="el">api</span>:
-    <span class="el">restart</span>: <span class="ef">unless-stopped</span>
-    <span class="el">image</span>: <span class="ef">ffmpeglab/server</span>
-    <span class="el">ports</span>:
-      - "3000:3000"
-    <span class="el">environment</span>:
-      - <span class="ef">DB_HOST=${DB_HOST}</span>
-      - <span class="ef">DB_USER=${DB_USER}</span>
-      - <span class="ef">DB_PORT=${DB_PORT}</span>
-      - <span class="ef">DB_PASSWORD=${DB_PASSWORD}</span>
-      - <span class="ef">DB_NAME=${DB_NAME}</span>
-      - <span class="ef">DB_MIGRATION_ENABLED=true</span>
-      - <span class="ef">S3_BUCKET_ID=${S3_BUCKET_ID}</span>
-      - <span class="ef">S3_ACCESS_KEY=${S3_ACCESS_KEY}</span>
-      - <span class="ef">S3_SECRET_KEY=${S3_SECRET_KEY}</span>
-      - <span class="ef">S3_REGION=${S3_REGION}</span>
-      - <span class="ef">S3_ENDPOINT=${S3_ENDPOINT}</span>
-      - <span class="ef">IS_FILE_RUNNER=true</span>
-      - <span class="ef">IS_RENDER_RUNNER=true</span>
-      - <span class="ef">IS_LOGS_RUNNER=true</span>
-  <span class="el">evolu</span>:
-    <span class="el">image</span>: <span class="ef">evoluhq/evolu:pr-5</span>
-    <span class="el">ports</span>: ["4000:4000"]
-# your machines. your footage. your rules.</pre>
+              class="mono fname">bash</span></div>
+          <pre class="mono em-code"><span class="el">curl -sSL https://ffmpeglab.com/sh/install.sh | bash</span>
         </div>
       </div>
     </section>
