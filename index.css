@@ -397,7 +397,7 @@
     /* ---------- Collaboration workspace ---------- */
     .collab {
       background: #FAF8FD;
-      border-top: 1px solid #ECE9F3;
+      /* border-top: 1px solid #ECE9F3; */
     }
 
     .collab .inner {
@@ -1175,7 +1175,7 @@
     /* ---------- Guides ---------- */
     .guides {
       background: #FAF8FD;
-      border-top: 1px solid #ECE9F3;
+      /* border-top: 1px solid #ECE9F3; */
     }
 
     .guides .inner {

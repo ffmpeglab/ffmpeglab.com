@@ -45,13 +45,13 @@
     addResponsiveFallback(section);
 
     var dock = buildDock(index);
-    var dockForm = dock.querySelector("form");
-    var dockInput = dock.querySelector("input");
-    var dockSubmit = dock.querySelector("button");
-    var dockCopy = dock.querySelector("[data-dock-copy]");
+    // var dockForm = dock.querySelector("form");
+    // var dockInput = dock.querySelector("input");
+    // var dockSubmit = dock.querySelector("button");
+    // var dockCopy = dock.querySelector("[data-dock-copy]");
     document.body.appendChild(dock);
 
-    syncInputs(fullInput, dockInput);
+    // syncInputs(fullInput);
 
     async function onSubmit(event) {
       event.preventDefault();
@@ -59,7 +59,7 @@
       if (!email || submitting) return;
 
       fullInput.value = email;
-      dockInput.value = email;
+      // dockInput.value = email;
       submitting = true;
       setLoading(true);
       if (fullError) fullError.hidden = true;
@@ -104,7 +104,7 @@
     }
 
     fullForm.addEventListener("submit", onSubmit);
-    dockForm.addEventListener("submit", onSubmit);
+    // dockForm.addEventListener("submit", onSubmit);
 
     var observer = new IntersectionObserver(
       function (entries) {
@@ -122,11 +122,11 @@
 
     function setLoading(isLoading) {
       fullSubmit.disabled = isLoading;
-      dockSubmit.disabled = isLoading;
+      // dockSubmit.disabled = isLoading;
       fullSubmit.textContent = isLoading ? "Joining…" : "Subscribe →";
-      dockSubmit.textContent = isLoading ? "…" : "Subscribe →";
+      // dockSubmit.textContent = isLoading ? "…" : "Subscribe →";
       fullSubmit.style.opacity = isLoading ? "0.72" : "1";
-      dockSubmit.style.opacity = isLoading ? "0.72" : "1";
+      // dockSubmit.style.opacity = isLoading ? "0.72" : "1";
     }
 
     function showSuccess() {
@@ -151,24 +151,24 @@
   function buildDock(index) {
     var dock = document.createElement("aside");
     dock.setAttribute("aria-label", "Newsletter signup");
-    dock.style.cssText = "position:fixed;z-index:999;left:16px;right:16px;bottom:18px;max-width:400px;margin:0 auto;padding:8px;border:1px solid rgba(255,255,255,.78);border-radius:22px;background:rgba(255,255,255,.64);box-shadow:0 24px 70px -24px rgba(33,27,58,.55);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);color:#211b3a;overflow:hidden;";
+    // dock.style.cssText = "position:fixed;z-index:999;left:16px;right:16px;bottom:18px;max-width:400px;margin:0 auto;padding:8px;border:1px solid rgba(255,255,255,.78);border-radius:22px;background:rgba(255,255,255,.64);box-shadow:0 24px 70px -24px rgba(33,27,58,.55);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);color:#211b3a;overflow:hidden;";
 
-    dock.innerHTML =
-      '<div style="position:relative;display:flex;gap:10px;flex-direction:column;width:100%;box-sizing:border-box;padding:11px;border:1px solid rgba(255,255,255,.65);border-radius:16px;background:rgba(255,255,255,.42);">' +
-        '<div style="display:flex;flex-direction:row">'+
-        '<div style="display:flex;width:46px;vertical-align:middle;"><span style="display:inline-block;width:40px;height:40px;border-radius:12px;background:#fc6d26;color:#fff;font-size:20px;line-height:40px;text-align:center;box-shadow:0 5px 12px rgba(252,109,38,.28);">✦</span></div>' +
-        '<div data-dock-copy style="display:table-cell;padding:0 12px;vertical-align:middle;white-space:nowrap;"><strong style="display:block;font-size:15px;line-height:1.2;">FFmpeg templates, delivered.</strong><span style="display:block;margin-top:3px;color:#655d72;font-size:12px;line-height:1.2;">Useful commands. New templates. No noise.</span></div>' +
-        '</div>'+
-        '<div style="display:flex;flex-direction:row">'+
-        '<div style="display:table-cell;width:410px;vertical-align:middle;">' +
-          '<form style="display:table;width:100%;">' +
-            '<label for="newsletter-dock-email-' + index + '" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Email address</label>' +
-            '<div style="display:table-cell;vertical-align:middle;"><input id="newsletter-dock-email-' + index + '" type="email" autocomplete="email" required placeholder="you@example.com" style="box-sizing:border-box;width:100%;height:44px;padding:0 13px;border:1px solid rgba(222,217,230,.9);border-radius:12px;background:rgba(255,255,255,.84);color:#211b3a;font-size:14px;outline:none;" /></div>' +
-            '<div style="display:table-cell;width:126px;padding-left:8px;vertical-align:middle;"><button type="submit" style="width:100%;height:44px;border:0;border-radius:12px;background:#211b3a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 15px rgba(33,27,58,.22);">Subscribe →</button></div>' +
-          '</form>' +
-        '</div>' +
-        '</div>'+
-      '</div>';
+    dock.innerHTML = ''
+      // '<div style="position:relative;display:flex;gap:10px;flex-direction:column;width:100%;box-sizing:border-box;padding:11px;border:1px solid rgba(255,255,255,.65);border-radius:16px;background:rgba(255,255,255,.42);">' +
+      //   '<div style="display:flex;flex-direction:row">'+
+      //   '<div style="display:flex;width:46px;vertical-align:middle;"><span style="display:inline-block;width:40px;height:40px;border-radius:12px;background:#fc6d26;color:#fff;font-size:20px;line-height:40px;text-align:center;box-shadow:0 5px 12px rgba(252,109,38,.28);">✦</span></div>' +
+      //   '<div data-dock-copy style="display:table-cell;padding:0 12px;vertical-align:middle;white-space:nowrap;"><strong style="display:block;font-size:15px;line-height:1.2;">FFmpeg templates, delivered.</strong><span style="display:block;margin-top:3px;color:#655d72;font-size:12px;line-height:1.2;">Useful commands. New templates. No noise.</span></div>' +
+      //   '</div>'+
+      //   '<div style="display:flex;flex-direction:row">'+
+      //   '<div style="display:table-cell;width:410px;vertical-align:middle;">' +
+      //     '<form style="display:table;width:100%;">' +
+      //       '<label for="newsletter-dock-email-' + index + '" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Email address</label>' +
+      //       '<div style="display:table-cell;vertical-align:middle;"><input id="newsletter-dock-email-' + index + '" type="email" autocomplete="email" required placeholder="you@example.com" style="box-sizing:border-box;width:100%;height:44px;padding:0 13px;border:1px solid rgba(222,217,230,.9);border-radius:12px;background:rgba(255,255,255,.84);color:#211b3a;font-size:14px;outline:none;" /></div>' +
+      //       '<div style="display:table-cell;width:126px;padding-left:8px;vertical-align:middle;"><button type="submit" style="width:100%;height:44px;border:0;border-radius:12px;background:#211b3a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 15px rgba(33,27,58,.22);">Subscribe →</button></div>' +
+      //     '</form>' +
+      //   '</div>' +
+      //   '</div>'+
+      // '</div>';
 
     if (!reduceMotion) {
       dock.animate(
@@ -182,14 +182,6 @@
     return dock;
   }
 
-  function syncInputs(first, second) {
-    function copy(source, target) {
-      target.value = source.value;
-      target.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-    first.addEventListener("input", function () { copy(first, second); });
-    second.addEventListener("input", function () { copy(second, first); });
-  }
 
   function morphDockIntoSection(dock, target, done) {
     if (reduceMotion) {

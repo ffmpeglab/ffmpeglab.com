@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FFmpegLab — The API-Native Media Engineering IDE</title>
+
+  <!-- Primary meta -->
+  <meta name="description"
+    content="FFmpegLab is the framework and platform for ffmpeg & media engineering. Query media catalogs with SQL, define filter graphs with YAML, orchestrate renders with Bash—backed by a collaborative workspace that scales from on device to cluster." />
+  <meta name="keywords"
+    content="FFmpeg Framework, video processing, media engineering, Supabase, PostgreSQL, S3, Whisper AI, self-hosted, open source video editor" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#FC6D26" />
+  <meta name="color-scheme" content="light" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="canonical" href="https://ffmpeglab.com/" />
+
+  <!-- Icons & manifest -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:url" content="https://ffmpeglab.com/" />
+  <meta property="og:title" content="FFmpegLab — The API-Native Media Engineering IDE" />
+  <meta property="og:description"
+    content="Orchestrate video pipelines natively—with SQL, YAML, and BASH. Query your entire media catalog, define complex filter graphs, and automate renders. Open source, self-hostable, and built for teams." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="FFmpegLab — the framework for media engineering" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FFmpegLab — the framework for media engineering" />
+  <meta name="twitter:description"
+    content="Orchestrate video pipelines natively—with SQL, YAML, and FFMPEG. Query your entire media catalog, define complex filter graphs, and automate renders. Open source, self-hostable, and built for teams." />
+  <meta name="twitter:image" content="https://ffmpeglab.com/og-image.png" />
+  <!-- Structured data -->
+  <link rel="stylesheet" href="/index.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "FFmpegLab",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web, Windows, macOS, Linux",
+        "description": "API-native media engineering IDE. SQL metadata queries, YAML filter graphs, Bash orchestration. Open source, self-hostable, collaborative.",
+        "url": "https://ffmpeglab.com/",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "offers": [
+          { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" }
+        ],
+        "featureList": [
+          "Native SQL API for media catalog queries",
+          "Declarative YAML rendering pipelines",
+          "Typescript, SQL, and Bash SDKs",
+          "Collaborative timeline with live comments",
+          "Self-hostable with Docker Compose",
+          "Supabase + PostgreSQL + S3 integration"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "name": "FFmpegLab",
+        "url": "https://ffmpeglab.com/"
+      }
+    ]
+  }
+  </script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="/newsletter.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script src="/theme.js"></script>
+  <meta name="msvalidate.01" content="729158CF04FFEFC908BF8054CD1E49A3" />
+</head>
+
+<body>
+  <!-- ===== Header ===== -->
+  <header class="site">
+    <div class="container bar">
+      <a href="/" class="mark">
+      <span class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span
+            class="lab">Lab</span></span></span></a>
+      <nav>
+        <a href="https://github.com/ffmpeglab" target="_blank">Github</a>
+        <a href="/articles/ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="/articles/self-hosted-video-editor-docker.html">Self-Hosting</a>
+        <a href="#guides">Guides</a>
+        <a href="https://api.ffmpeglab.com/api">API Docs</a>
+        <a href="/articles/ffmpeglab-s3-storage-api-keys-guide.html">FREE 50 GB S3 STORAGE</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-primary sm" href="/login">Sign in</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+      <div class="glow"></div>
+      <div class="container grid">
+        <div>
+          <h1 class="balance">FFmpeg guides &amp; templates</h1>
+          <p class="lede">Practical, copy-pasteable walkthroughs for the FFmpeg techniques behind every edit.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="/login">Start</a>
+            <a class="btn btn-ghost" href="#docs">Read the docs</a>
+          </div>
+          <p class="mono meta">SQL API · YAML API · BASH · Typescript SDK · postgresql · supabase · s3 · whisper ai · ffmpeg · self-hostable · open-source</p>
+        </div>
+        <div class="editor-mock hero-mock">
+          <div class="em-toolbar">
+            <span class="em-back"></span>
+            <span class="em-spacer"></span>
+            <span class="em-pill">Share</span>
+            <span class="em-pill">Renders</span>
+            <span class="em-pill active">{ } Code</span>
+            <span class="em-pill">Config</span>
+            <span class="em-icon"></span>
+          </div>
+          <div class="em-tabs">
+            <span class="em-tab active">Generated Code</span>
+            <span class="em-tab">Logs</span>
+            <span class="em-tab">Customize</span>
+          </div>
+          <div class="em-body">
+            <pre class="em-code"><span class="ef">-i</span> $MEDIA_1
+<span class="ef">-i</span> $MEDIA_2
+<span class="ef">-filter_complex</span>
+[<span class="en">0</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
+[<span class="en">1</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
+[<span class="el">v0?</span>][<span class="el">v1?</span>]<span class="ek">concat</span>=n=<span class="en">2</span>:v=<span class="en">1</span>:a=<span class="en">0</span>,<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">c1?</span>];
+[<span class="el">c1?</span>]<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">v_layer0</span>];
+[<span class="el">v_layer0</span>]<span class="ek">split</span>[<span class="el">v_main</span>][<span class="el">v_overlay</span>];[<span class="el">v_main</span>]<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">v_concat</span>];[<span class="el">v_overlay</span>]<span class="ek">nullsink</span>
+<span class="ek">aevalsrc</span>=<span class="en">0</span>:d=<span class="en">5</span>[<span class="el">s0</span>];[<span class="el">s0</span>]<span class="ek">adelay</span>=delays=<span class="en">0</span>|<span class="en">0</span>,<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a0?</span>];
+<span class="ek">aevalsrc</span>=<span class="en">0</span>:d=<span class="en">5</span>[<span class="el">s1</span>];[<span class="el">s1</span>]<span class="ek">adelay</span>=delays=<span class="en">5000</span>|<span class="en">5000</span>,<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a1?</span>];
+[<span class="el">a0?</span>][<span class="el">a1?</span>]<span class="ek">amix</span>=inputs=<span class="en">2</span>:duration=longest[<span class="el">a_concat</span>]
+<span class="ef">-aspect</span> <span class="en">16</span>/<span class="en">9</span>
+<span class="ef">-movflags</span> +faststart
+<span class="ef">-map</span> [<span class="el">v_concat</span>]
+<span class="ef">-map</span> [<span class="el">a_concat</span>]
+<span class="ef">-r</span> <span class="en">30</span>
+<span class="ef">-ss</span> <span class="en">00:00:00</span>
+<span class="ef">-to</span> <span class="en">00:00:10</span>
+<span class="ef">-y</span> $OUTPUT_PATH</pre>
+            <div class="em-preview">
+              <div class="em-screen"><span class="em-play">&#9654;</span></div>
+              <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span>
+              </div>
+              <span class="sk sk-line" style="width:70%"></span>
+              <span class="sk sk-line" style="width:55%"></span>
+            </div>
+          </div>
+          <div class="em-timeline">
+            <div class="em-ruler">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span
+                class="em-clip c"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SQL ===== -->
+    <section class="guides" id="sql">
+      <div class="container inner">
+        <h2 class="balance">SQL &amp; Supabase Templates</h2>
+        <p class="sub">Transform your Supabase into a multimedia powerhouse with a single sql query.</p>
+        <div class="guides-grid">
+          <a class="guide-card ribbon" href="/articles/ultimate-video-onboarding-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">Compression</div>
+              <div class="t">Ultimate Video Onboarding Pipeline – SQL Triggers &amp; Supabase Storage</div>
+              <div class="d">The complete end‑to‑end automated video and image onboarding pipeline. Upload once — get
+                thumbnails, resized videos, and real‑time notifications — all driven by PostgreSQL triggers and pgmq.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/audio-processing-podcast-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">Audio</div>
+              <div class="t">Audio Processing Pipeline for Podcasts – SQL Triggers &amp; Supabase Storage</div>
+              <div class="d">Build an automated audio processing pipeline that normalizes loudness, reduces noise,
+                converts formats, adds metadata, and generates waveforms for podcasts.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon"
+            href="/articles/automated-subtitle-generation-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">Whisper AI</div>
+              <div class="t">Automated Subtitle Generation &amp; Burn-in Pipeline – SQL + DNN</div>
+              <div class="d">Build an automated pipeline that uses Whisper AI to transcribe audio and burn subtitles
+                into videos using SQL triggers, pgmq, and Supabase Storage.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ai-upscaling-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">AI Upscaling Pipeline – SQL Triggers, DNN &amp; Supabase Storage</div>
+              <div class="d">Build an automated AI upscaling pipeline that uses DNN models to upscale videos 2x, 3x, or
+                4x using SQL triggers, pgmq, and Supabase Storage.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/video-labeling-dnn-pipeline-sql-triggers-supabase.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">Video Labeling with DNN Filters – Object Detection &amp; Classification Pipeline</div>
+              <div class="d">Build an automated video labeling pipeline that detects objects, faces, and scenes using
+                FFmpeg's DNN filters. SQL triggers + pgmq + Supabase Storage.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+    <section class="guides" id="guides">
+      <div class="container inner">
+        <h2 class="balance">FFMPEG Guides</h2>
+        <div class="guides-grid">
+          <a class="guide-card ribbon" href="/articles/ffmpeg-xfade-transitions-guide.html">
+            <div aria-hidden="true" class="media">
+              <video autoplay muted loop class="media-video" style="object-fit:cover;">
+                <source src="/media/xfade.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="content">
+              <span aria-label="Template included" class="template-ribbon">Template</span>
+              <div class="k">Transitions</div>
+              <div class="t">FFmpeg xfade transitions guide</div>
+              <div class="d">Syntax, duration &amp; offset, all 30+ presets, audio crossfades, and chaining transitions
+                across clips.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-ken-burns-zoompan-guide.html">
+            <div aria-hidden="true" class="media">
+              <video autoplay muted loop class="media-video">
+                <source src="/media/zoompan.mp4" type="video/mp4">
+              </video>
+            </div>
+            <span aria-label="New" class="template-ribbon">Template</span>
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">Ken Burns / Zoompan Effects – The Art of Motion</div>
+              <div class="d">Bring still images to life with smooth pan-and-zoom animations. Master the
+                <code>zoompan</code> filter to create Ken Burns effects, dynamic slideshows, and cinematic camera
+                movements.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-video-to-gif.html">
+            <div aria-hidden="true" class="media">
+              <video autoplay muted loop class="media-video">
+                <source src="/media/videotogif.mp4" type="video/mp4">
+              </video>
+            </div>
+            <span aria-label="Template included" class="template-ribbon">Template</span>
+            <div class="content">
+              <div class="k">GIF</div>
+              <div class="t">Convert video to GIF</div>
+              <div class="d">A quick one-liner plus the palettegen/paletteuse method for crisp, banding-free GIFs.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-audio-mixing-amix-guide.html">
+            <div aria-hidden="true" class="media">
+              <video autoplay muted loop class="media-video">
+                <source src="/media/audiomix.mp4" type="video/mp4">
+              </video>
+            </div>
+            <span aria-label="Template included" class="template-ribbon">Template</span>
+            <div class="content">
+              <div class="k">Audio</div>
+              <div class="t">Mixing audio with amix</div>
+              <div class="d">Layer music, voiceover, and effects; balance levels; duck with sidechaincompress; crossfade
+                tracks.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-filter-complex-effects.html">
+            <div aria-hidden="true" class="media">
+              <video autoplay muted loop class="media-video">
+                <source src="/media/filtercomplex.mp4" type="video/mp4">
+              </video>
+            </div>
+            <span aria-label="Template included" class="template-ribbon">Template</span>
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">filter_complex effects, by example</div>
+              <div class="d">Overlay, scale, pad, crop, color correction, and chroma key — chained into one custom
+                filter
+                graph.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-xstack-filter-guide.html">
+            <div aria-hidden="true" class="media">
+              <video autoplay muted loop class="media-video">
+                <source src="/media/xstack4.mp4" type="video/mp4">
+              </video>
+            </div>
+            <span aria-label="New" class="template-ribbon">Template</span>
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">xstack FFmpeg Filter – Create Video Mosaics &amp; Grids</div>
+              <div class="d">Stack multiple videos into custom layouts, split-screen grids, and collages — without the
+                complex overlay chains. Master the <code>xstack</code> filter.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-codecs-complete-guide.html">
+            <div class="content">
+              <span aria-label="New Article" class="template-ribbon">New</span>
+              <div class="k">Codec</div>
+              <div class="t">The complete FFmpeg codecs guide</div>
+              <div class="d">Every video and audio codec you need to know: H.264, H.265, VP9, AV1, AAC, MP3, lossless codecs, hardware acceleration, and how to pick the right one for your project. With practical commands and comparison tables.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-formats-complete-guide.html">
+            <div class="content">
+              <span aria-label="New Article" class="template-ribbon">New</span>
+              <div class="k">Format</div>
+              <div class="t">The complete FFmpeg formats guide</div>
+              <div class="d">Containers explained: MP4, MKV, WebM, MOV, AVI, MPEG‑TS, FLV, GIF, and audio-only containers like M4A and FLAC. Learn how to remux without re-encoding, use `faststart` for web streaming, and pick the perfect format for your project.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-tool-suite-guide.html">
+            <div class="content">
+              <span aria-label="New Article" class="template-ribbon">New</span>
+              <div class="k">Tools</div>
+              <div class="t">FFmpeg, ffprobe &amp; ffplay: the complete toolkit explained</div>
+              <div class="d">Stop copy‑pasting blindly. Understand how the `ffmpeg` command is structured, how stream specifiers let you target individual tracks, how to inspect files with `ffprobe`, and how to preview filters with `ffplay`.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-advanced-muxer-flags.html">
+            <div class="content">
+              <span aria-label="New Article" class="template-ribbon">New</span>
+              <div class="k">Muxer</div>
+              <div class="t">Muxer flags: MP4 brands, edit lists, timecodes, DASH, MKV cues & image sequences</div>
+              <div class="d">Remuxing is simple. <em>Controlling</em> the muxer is an art. Learn how to set the MP4 brand, fix editing problems with `use_editlist`, write timecode tracks, fragment for DASH, optimize MKV cues, and generate image sequences.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-blend-filter-guide.html">
+            <div class="content">
+              <span aria-label="New Article" class="template-ribbon">New</span>
+              <div class="k">Effects</div>
+              <div class="t">Blend FFmpeg Filter – 30+ Blend Modes for Creative Compositing</div>
+              <div class="d">Photoshop-style blending for video — multiply, screen, overlay, difference, and more. Master the <code>blend</code> filter for cinematic effects and motion graphics.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-codec-private-options.html">
+            <div class="content">
+              <span aria-label="New Article" class="template-ribbon">New</span>
+              <div class="k">Codec</div>
+              <div class="t">Codec private options: squeezing every bit of quality</div>
+              <div class="d">CRF and presets are just the beginning. Learn how to control reference frames (`refs`), B‑frame decision (`b-adapt`), lookahead (`rc-lookahead`), psychovisual tuning (`psy-rd`), deblocking, and niche encoders like MPEG‑2, MJPEG, PNG, and WMV.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/video-compression-ffmpeg-guide.html">
+            <div class="content">
+              <div class="k">Compression</div>
+              <div class="t">Video Compression with FFmpeg – Complete Guide to Reducing File Size</div>
+              <div class="d">Master CRF, codec selection, presets, two-pass encoding, and hardware acceleration to
+                reduce file size while preserving quality.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-bitstream-filters.html">
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">Bitstream Filters – The <code>-bsf</code> Power Tool</div>
+              <div class="d">Manipulate encoded streams without decoding or re-encoding. Master
+                <code>h264_mp4toannexb</code>, <code>h264_metadata</code>, <code>aac_adtstoasc</code>,
+                <code>noise</code>,
+                and more.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-video-denoising.html">
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">Video Denoising – Complete Guide to Noise Removal</div>
+              <div class="d">Remove grain, salt‑and‑pepper, and compression artifacts with FFmpeg's powerful denoise
+                filters. Compare <code>hqdn3d</code>, <code>nlmeans</code>, <code>vaguedenoiser</code>,
+                <code>bm3d</code>,
+                and more.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-optical-flow-motion-interpolation.html">
+
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">Optical Flow &amp; Motion Interpolation</div>
+              <div class="d">Create buttery-smooth slow motion, convert frame rates, and eliminate judder with the
+                <code>minterpolate</code> filter. Master motion estimation, compensation, and scene detection.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-scene-detection-automated-editing.html">
+
+            <div class="content">
+              <div class="k">Editing</div>
+              <div class="t">Scene Detection &amp; Automated Editing</div>
+              <div class="d">Automatically detect scene changes, split videos, extract thumbnails, and build highlight
+                reels with <code>scdet</code>, <code>select</code>, and <code>blackdetect</code>.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-advanced-audio-processing.html">
+
+            <div class="content">
+              <div class="k">Audio</div>
+              <div class="t">Advanced Audio Processing</div>
+              <div class="d">Master loudness normalization, noise reduction, sidechain compression, and creative audio
+                effects with FFmpeg's professional audio filter suite.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-color-spacing.html">
+
+            <div class="content">
+              <div class="k">Color</div>
+              <div class="t">Color Spaces, HDR, and Tone Mapping in FFmpeg</div>
+              <div class="d">Convert HDR video to SDR without washed-out colors. Master <code>zscale</code>,
+                <code>tonemap</code>, and proper color space conversion for HDR10, HLG, and Dolby Vision.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-stabilize-shaky-video.html">
+
+            <div class="content">
+              <div class="k">Stabilize</div>
+              <div class="t">Stabilize shaky video</div>
+              <div class="d">The two-pass vidstab workflow, smoothing and zoom tuning, and a quick deshake fallback.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-sidechain-compression.html">
+
+            <div class="content">
+              <div class="k">Audio</div>
+              <div class="t">Sidechain Compression & Audio Ducking in FFmpeg</div>
+              <div class="d">Auto-duck background music when voiceover plays, create pumping EDM effects, and build
+                professional audio mixes with the sidechaincompress filter.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-metadata.html">
+
+            <div class="content">
+              <div class="k">Metadata</div>
+              <div class="t">Metadata Preservation – Timecode, Reel Names &amp; EXIF</div>
+              <div class="d">Keep timecode, reel names, camera metadata, and EXIF data through transcoding, remuxing,
+                and
+                rewrapping. Master <code>-map_metadata</code>, <code>-movflags</code>, and the ffmetadata workflow.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-debugging-troubleshooting-guide.html">
+
+            <div class="content">
+              <div class="k">Debug</div>
+              <div class="t">FFmpeg Debugging &amp; Troubleshooting – Read Logs, Fix Errors Fast</div>
+              <div class="d">Stop staring at cryptic error messages. Master <code>-loglevel</code>, decode filtergraph
+                failures, debug stream mapping, and use the FFmpegLab IDE as your personal linting tool.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-mask-overlay-compositing.html">
+
+            <div class="content">
+              <div class="k">Editing</div>
+              <div class="t">Mask Overlay &amp; Advanced Compositing in FFmpeg</div>
+              <div class="d">Blur faces, create split screens, and composite videos like a pro. Master
+                <code>alphamerge</code>, <code>maskedmerge</code>, and the <code>overlay</code> filter with grayscale
+                masks.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-roi-encoding.html">
+
+            <div class="content">
+              <div class="k">Encoding</div>
+              <div class="t">ROI Encoding – Region of Interest Encoding</div>
+              <div class="d">Allocate more bitrate to faces, text, and critical regions while saving bandwidth on
+                backgrounds. Master the <code>addroi</code> filter and <code>qoffset</code> parameter.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-lens-correction.html">
+
+            <div class="content">
+              <div class="k">Effects</div>
+              <div class="t">Lens Correction &amp; Distortion – Remove or Add Effects</div>
+              <div class="d">Remove barrel distortion, fisheye, and pincushion from action cameras and wide-angle
+                lenses.
+                Or <strong>add</strong> creative distortion effects for music videos, dream sequences, and retro vibes.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-dynamic-runtime-commands.html">
+
+            <div class="content">
+              <div class="k">Editing</div>
+              <div class="t">Dynamic Runtime Commands &amp; Timeline Editing in FFmpeg</div>
+              <div class="d">Send interactive commands to FFmpeg while it's running to change filter parameters on the
+                fly. Master <code>sendcmd</code>, <code>zmq</code>, and timeline expressions for dynamic overlays,
+                opacity
+                fades, and real‑time adjustments.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-compress-video-reduce-file-size.html">
+
+            <div class="content">
+              <div class="k">Compress</div>
+              <div class="t">Compress video &amp; reduce file size</div>
+              <div class="d">CRF explained, H.264 vs H.265/HEVC, two-pass bitrate, downscaling, and shrinking audio.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-convert-video-format.html">
+            <div class="content">
+              <div class="k">Convert</div>
+              <div class="t">Convert video formats</div>
+              <div class="d">MP4, WebM, MOV, MKV — remux vs re-encode, extract audio, and export high-quality GIFs.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-trim-cut-video.html">
+
+            <div class="content">
+              <div class="k">Editing</div>
+              <div class="t">Trim, cut &amp; split video</div>
+              <div class="d">Lossless clipping with -ss/-to, frame-accurate cuts, splitting, and joining with concat.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-add-text-subtitles-video.html">
+
+            <div class="content">
+              <div class="k">Text</div>
+              <div class="t">Add text &amp; subtitles</div>
+              <div class="d">drawtext titles and lower-thirds, plus burning in or attaching SRT/ASS subtitles.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-speed-up-slow-down-video.html">
+
+            <div class="content">
+              <div class="k">Speed</div>
+              <div class="t">Speed up &amp; slow down video</div>
+              <div class="d">setpts and atempo for 2× cuts, timelapses, and smooth slow motion — with audio in sync.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-extract-frames-thumbnails.html">
+
+            <div class="content">
+              <div class="k">Frames</div>
+              <div class="t">Extract frames &amp; thumbnails</div>
+              <div class="d">Single stills, one frame per second, every Nth frame, auto thumbnails, and contact sheets.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-rotate-flip-video.html">
+
+            <div class="content">
+              <div class="k">Rotate</div>
+              <div class="t">Rotate &amp; flip video</div>
+              <div class="d">transpose, hflip and vflip for 90/180° turns and mirrors, plus lossless metadata rotation.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-fade-in-out.html">
+
+            <div class="content">
+              <div class="k">Fades</div>
+              <div class="t">Fade video &amp; audio in and out</div>
+              <div class="d">fade and afade for opening from black, ending on black, and ramping the soundtrack.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-crop-video.html">
+
+            <div class="content">
+              <div class="k">Crop</div>
+              <div class="t">Crop video</div>
+              <div class="d">crop=w:h:x:y with centering, square and 9:16 reframes, and removing black bars.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-resize-scale-video.html">
+
+            <div class="content">
+              <div class="k">Resize</div>
+              <div class="t">Resize &amp; scale video</div>
+              <div class="d">The scale filter, keeping aspect ratio, downscaling to 1080p/720p, and padding to size.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-merge-concatenate-videos.html">
+
+            <div class="content">
+              <div class="k">Merge</div>
+              <div class="t">Merge &amp; concatenate videos</div>
+              <div class="d">The concat demuxer for lossless joins and the concat filter for mismatched clips.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-extract-audio-from-video.html">
+
+            <div class="content">
+              <div class="k">Audio</div>
+              <div class="t">Extract audio from video</div>
+              <div class="d">Copy losslessly or convert to MP3, AAC, or WAV, and rip just a time range.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-remove-mute-audio.html">
+
+            <div class="content">
+              <div class="k">Audio</div>
+              <div class="t">Remove &amp; mute audio</div>
+              <div class="d">Strip sound with -an, mute a section with the volume filter, or replace the track.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-add-watermark-logo.html">
+
+            <div class="content">
+              <div class="k">Watermark</div>
+              <div class="t">Add a watermark or logo</div>
+              <div class="d">Overlay a PNG in any corner, control padding and opacity, or burn in a text watermark.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-change-frame-rate-fps.html">
+
+            <div class="content">
+              <div class="k">Frame rate</div>
+              <div class="t">Change frame rate (FPS)</div>
+              <div class="d">The fps filter, 60-to-30 conversion, constant frame rate, and minterpolate smoothing.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-loop-video.html">
+            <div class="content">
+              <div class="k">Loop</div>
+              <div class="t">Loop video</div>
+              <div class="d">-stream_loop to repeat clips, loop a still into video, loop to a duration, and boomerang.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-dnn-filters.html">
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">DNN Filters – AI-Powered Video Processing</div>
+              <div class="d">Super‑resolution, denoising, object detection, and image classification—all inside FFmpeg.
+                Master the <code>dnn_processing</code>, <code>dnn_detect</code>, and <code>dnn_classify</code> filters.
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Developer ===== -->
+    <section class="guides" id="guides">
+      <div class="container inner">
+        <h2 class="balance">Developer &amp; Product guides</h2>
+        <p class="sub">Practical, walkthroughs for the FFmpegLab platform.</p>
+        <div class="guides-grid">
+          <a class="guide-card ribbon" href="/articles/agent-first-setup-ffmpeglab-server.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">AI</div>
+              <div class="t">Agent-First Setup – FFmpegLab Server with Supabase</div>
+              <div class="d">Complete guide to setting up FFmpegLab Server using Supabase. Includes modular bash scripts
+                for automated setup of PostgreSQL, pgmq, S3 storage, and API keys.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/render-videos-using-sql-ffmpeglab.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">SQL</div>
+              <div class="t">Render Videos Using SQL – A Deep Dive into FFmpegLab Server</div>
+              <div class="d">Translate the SDK example into raw SQL. Learn how the database models work and how to
+                render videos by directly manipulating PostgreSQL.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/ffmpeg-env-vars-scalable-runners.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">DevOps &amp; Automation</div>
+              <div class="t">Environment Variables &amp; Scalable Runners – FFmpegLab Server Architecture</div>
+              <div class="d">Configure PostgreSQL, pgmq, S3 storage, and distribute rendering across multiple runners.
+                The complete guide to scaling FFmpegLab Server.</div>
+            </div>
+          </a>
+          <a class="guide-card ribbon" href="/articles/setting-up-supabase-storage-ffmpeglab.html">
+            <span aria-label="New" class="template-ribbon">New</span>
+            <div class="content">
+              <div class="k">Self-Hosting &amp; Storage</div>
+              <div class="t">Setting Up Supabase Storage with FFmpegLab – Auth, Buckets, TUS Uploads &amp; Per-User RLS
+              </div>
+              <div class="d">Configure user authentication with magic link login, create a storage bucket with per-user
+                RLS policies, and set up the <code>SUPABASE_STORAGE_BUCKET</code> environment variable for FFmpegLab.
+                Upload files Of any size.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-gui-libraries-comparison.html">
+            <div class="content">
+              <div class="k">Product</div>
+              <div class="t">FFmpeg GUI Libraries Compared – FFmpegLab vs. The Competition</div>
+              <div class="d">HandBrake, Shutter Encoder, StaxRip, and a dozen more—all compared. Plus, why FFmpegLab's
+                IDE-first, collaborative approach is a game-changer for teams and developers.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/mobile-web-video-editor.html">
+            <div class="content">
+              <div class="k">Product</div>
+              <div class="t">Mobile Web Video Editor – Edit Videos in Your Browser, No App Required</div>
+              <div class="d">Trim, crop, add effects, and export videos directly from your phone. FFmpegLab is a free,
+                privacy-first mobile web video editor that runs entirely in your browser using WebAssembly.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/figma-for-video-collaborative-editing.html">
+            <div class="content">
+              <div class="k">Product</div>
+              <div class="t">Figma for Video – Collaborative Video Editing with Templates &amp; Teams</div>
+              <div class="d">Collaborate in real-time, share templates, and version your video projects like design
+                teams
+                do. FFmpegLab brings Figma-style collaboration to video production.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/offline-private-video-editor.html">
+
+            <div class="content">
+              <div class="k">Privacy</div>
+              <div class="t">The offline, private video editor</div>
+              <div class="d">How OPFS + WebAssembly editing keeps footage on-device, with encrypted P2P sync and zero
+                tracking.</div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/self-hosted-video-editor-docker.html">
+            <div class="content">
+              <div class="k">Self-hosting GUI</div>
+              <div class="t">Self-host with Docker</div>
+              <div class="d">Bring your own backend for storage, rendering, and sync with a single Docker Compose file.
+              </div>
+            </div>
+          </a>
+          <a class="guide-card" href="/articles/ffmpeg-applications-startups.html">
+            <div class="content">
+              <div class="k">Business &amp; Technology</div>
+              <div class="t">Applications &amp; Startups Powered by FFmpeg</div>
+              <div class="d">From AI video editors to privacy-first converters, discover the startups and applications
+                built on FFmpeg. Learn how FFmpegLab enables the next generation of media companies.
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="newsletter" data-ffmpeglab-newsletter
+      data-form-name="ffmpeglab-newsletter" data-source="embedded-newsletter"
+      style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;color:#211b3a;font-family:Arial,Helvetica,sans-serif;">
+      <div data-liquid-light="orange" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="purple" aria-hidden="true"
+        style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;">
+      </div>
+      <div data-liquid-light="amber" aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:42%;bottom:-55px;width:180px;height:180px;border-radius:50%;background:rgba(252,211,77,0.32);filter:blur(55px);opacity:0.9;">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+        <div data-newsletter-glass
+          style="position:relative;overflow:hidden;padding:8px;border:1px solid rgba(255,255,255,0.75);border-radius:32px;background:rgba(255,255,255,0.58);box-shadow:0 32px 90px -38px rgba(33,27,58,0.42),inset 0 1px 0 rgba(255,255,255,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);">
+          <div
+            style="position:relative;display:table;width:100%;table-layout:fixed;border:1px solid rgba(255,255,255,0.55);border-radius:25px;background:rgba(255,255,255,0.34);overflow:hidden;">
+            <div style="display:table-cell;width:52%;padding:46px 34px 46px 46px;vertical-align:middle;">
+              <div
+                style="display:inline-block;padding:9px 14px;border:1px solid rgba(255,255,255,0.9);border-radius:999px;background:rgba(255,255,255,0.68);box-shadow:0 3px 10px rgba(33,27,58,0.06);font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;">
+                ✦&nbsp; Fresh from the render queue</div>
+              <h2
+                style="max-width:560px;margin:24px 0 0 0;color:#211b3a;font-size:46px;font-weight:800;line-height:1.04;letter-spacing:-1.6px;">
+                Better FFmpeg workflows, <span style="color:#fc6d26;">delivered.</span></h2>
+              <p style="max-width:560px;margin:20px 0 0 0;color:#5e566f;font-size:17px;line-height:1.7;">Get practical
+                commands, new templates, and deep-dive guides for the edits that are usually hardest to get right.</p>
+              <div style="margin-top:24px;color:#655d72;font-size:14px;font-weight:650;line-height:1.9;">✓&nbsp;
+                Copy-pasteable commands&nbsp;&nbsp;&nbsp; ✓&nbsp; Editor templates&nbsp;&nbsp;&nbsp; ✓&nbsp; No noise
+              </div>
+            </div>
+
+            <div style="display:table-cell;width:48%;padding:46px 46px 46px 20px;vertical-align:middle;">
+              <div data-newsletter-success hidden
+                style="min-height:154px;padding:28px;border:1px solid rgba(255,255,255,0.85);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);text-align:center;">
+                <span
+                  style="display:inline-block;width:54px;height:54px;border-radius:50%;background:#fc6d26;color:#ffffff;font-size:27px;font-weight:bold;line-height:54px;box-shadow:0 8px 20px rgba(252,109,38,0.28);">✓</span>
+                <h3 style="margin:16px 0 0 0;color:#211b3a;font-size:24px;line-height:1.2;">You’re on the list.</h3>
+                <p style="margin:8px 0 0 0;color:#655d72;font-size:14px;line-height:1.5;">The next useful FFmpeg idea is
+                  headed your way.</p>
+              </div>
+
+              <form data-newsletter-form
+                style="padding:12px;border:1px solid rgba(255,255,255,0.86);border-radius:24px;background:rgba(255,255,255,0.76);box-shadow:0 20px 55px -28px rgba(33,27,58,0.5);">
+                <div style="display:table;width:100%;table-layout:fixed;">
+                  <div style="display:table-cell;vertical-align:middle;">
+                    <label for="newsletter-embed-email"
+                      style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Email
+                      address</label>
+                    <input id="newsletter-embed-email" data-newsletter-email name="email" type="email"
+                      autocomplete="email" required placeholder="you@example.com"
+                      style="box-sizing:border-box;width:100%;height:56px;padding:0 16px;border:1px solid #ded9e6;border-radius:12px;background:rgba(255,255,255,0.88);color:#211b3a;font-family:Arial,Helvetica,sans-serif;font-size:16px;outline:none;" />
+                  </div>
+                  <div style="display:table-cell;width:150px;padding-left:12px;vertical-align:middle;">
+                    <button data-newsletter-submit type="submit"
+                      style="width:100%;height:56px;padding:0 16px;border:0;border-radius:12px;background:#211b3a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 9px 20px rgba(33,27,58,0.22);">Subscribe&nbsp;
+                      →</button>
+                  </div>
+                </div>
+                <div style="padding:10px 4px 2px 4px;color:#867e92;font-size:11px;line-height:1.4;">
+                  <span>One useful email at a time.</span>
+                  <span data-newsletter-error hidden style="float:right;color:#c53030;font-weight:700;">Something went
+                    wrong. Try again.</span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- ===== Closing CTA ===== -->
+    <section class="closing">
+      <div class="container inner">
+        <h2 class="balance">Ship faster than ever.</h2>
+        <p>Open Source · API-First · Built for Scale</p>
+        <div class="cta-row">
+          <a class="btn btn-white" href="https://platform.ffmpeglab.com/platform/login/redirect">
+            <img style="width: 250px;" alt="login with supabase" src="/connect-supabase-dark.png"/>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+
+  <!-- ===== Footer ===== -->
+  <footer class="site">
+    <div class="container cols">
+      <div>
+        <span class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span
+              class="lab">Lab</span></span></span>
+        <p class="blurb">The API-native media engineering IDE. SQL, YAML, and FFmpeg—all in one workspace.</p>
+      </div>
+      <div>
+        <div class="colhead">Social</div>
+        <ul>
+          <li><a href="https://github.com/ffmpeglab">Github</a></li>
+          <li><a href="https://www.linkedin.com/company/ffmpeglab">Linkedin</a></li>
+          <li><a href="https://www.youtube.com/@ffmpeglab">Youtube</a></li>
+          <li><a href="https://x.com/ffmpeglab">X</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="colhead">Resources</div>
+        <ul>
+          <li><a href="/articles/ffmpeg-xfade-transitions-guide.html">xfade transitions</a></li>
+          <li><a href="/articles/ffmpeg-filter-complex-effects.html">filter_complex effects</a></li>
+          <li><a href="/articles/ffmpeg-audio-mixing-amix-guide.html">Audio mixing</a></li>
+          <li><a href="/articles/self-hosted-video-editor-docker.html">Self-hosting</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="colhead">Company</div>
+        <ul>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/privacy/terms.html">Terms of Service</a></li>
+          <li><a href="https://github.com/ffmpeglab/server/issues/new">Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container row">
+        <p>© 2026 FFmpegLab. All rights reserved.</p>
+        <p class="mono built"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+            <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+          </svg> built on open-source FFmpeg</p>
+      </div>
+    </div>
+  </footer>
+  
+</body>
+
+</html>

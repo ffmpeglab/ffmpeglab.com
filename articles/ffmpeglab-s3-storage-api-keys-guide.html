@@ -163,6 +163,111 @@
     </div>
   </div>
 
+ <!-- ===== Zero Egress Storage ===== -->
+    <section id="storage"
+      style="position:relative;overflow:hidden;padding:96px 24px;background:#211b3a;color:#ffffff;font-family:'Kanit',Arial,Helvetica,sans-serif;">
+      <div aria-hidden="true"
+        style="pointer-events:none;position:absolute;left:-140px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(252,109,38,0.28);filter:blur(90px);">
+      </div>
+      <div aria-hidden="true"
+        style="pointer-events:none;position:absolute;right:-120px;bottom:-140px;width:380px;height:380px;border-radius:50%;background:rgba(116,78,197,0.35);filter:blur(90px);">
+      </div>
+
+      <div style="position:relative;width:100%;max-width:1180px;margin:0 auto;">
+        <div style="text-align:center;max-width:760px;margin:0 auto;">
+          <span
+            style="display:inline-block;padding:9px 16px;border:1px solid rgba(252,109,38,0.5);border-radius:999px;background:rgba(252,109,38,0.14);color:#fc6d26;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;">✦&nbsp;
+            Zero Egress Cost S3 Storage</span>
+          <h2 style="margin:22px 0 0 0;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;">
+            Store your media.
+            <span style="color:#fc6d26;">Never pay to move it.</span>
+          </h2>
+          <p style="margin:20px auto 0 auto;max-width:640px;color:#b8b0cc;font-size:18px;line-height:1.7;">
+            Every render, every download, every byte served to your users—<strong style="color:#fff;">$0 in egress fees. Forever.</strong> No surprise bills at the end of the month. No penalties for going viral.
+          </p>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:56px;align-items:stretch;justify-content:center;">
+
+          <!-- Free tier card -->
+          <div
+            style="flex:1 1 320px;max-width:400px;padding:36px 32px;border:1px solid rgba(255,255,255,0.14);border-radius:24px;background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);display:flex;flex-direction:column;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#b8b0cc;">Starter</div>
+            <div style="margin-top:14px;display:flex;align-items:baseline;gap:8px;">
+              <span style="font-size:64px;font-weight:800;line-height:1;color:#fff;">€0</span>
+              <span style="font-size:15px;color:#b8b0cc;">/ forever</span>
+            </div>
+            <div style="margin-top:10px;font-size:44px;font-weight:800;color:#fc6d26;">50 GB</div>
+            <ul style="list-style:none;margin:26px 0 0 0;padding:0;font-size:15px;line-height:2.1;color:#d5cfe2;">
+              <li>✓&nbsp; Full S3-compatible API</li>
+              <li>✓&nbsp; <strong style="color:#fc6d26;">Zero egress cost</strong> — always</li>
+              <li>✓&nbsp; Directly wired into your projects &amp; renders</li>
+              <li>✓&nbsp; No credit card required</li>
+            </ul>
+            <div style="margin-top:auto;padding-top:28px;">
+              <a href="/login"
+                style="display:block;text-align:center;padding:14px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.25);color:#fff;text-decoration:none;font-weight:700;font-size:15px;">Claim your 50 GB →</a>
+            </div>
+          </div>
+
+          <!-- Pro tier card (highlighted) -->
+          <div
+            style="flex:1 1 340px;max-width:430px;padding:36px 32px;border-radius:24px;background:linear-gradient(160deg,#fc6d26,#e04f0f);box-shadow:0 32px 80px -30px rgba(252,109,38,0.55);display:flex;flex-direction:column;position:relative;">
+            <span
+              style="position:absolute;top:-13px;right:24px;padding:6px 14px;border-radius:999px;background:#211b3a;color:#ffd9c4;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">Best value</span>
+            <div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.85);">Pro Storage</div>
+            <div style="margin-top:14px;display:flex;align-items:baseline;gap:8px;">
+              <span style="font-size:64px;font-weight:800;line-height:1;color:#fff;">€4</span>
+              <span style="font-size:15px;color:rgba(255,255,255,0.85);">/ month</span>
+            </div>
+            <div style="margin-top:10px;font-size:44px;font-weight:800;color:#fff;">1 TB</div>
+            <ul style="list-style:none;margin:26px 0 0 0;padding:0;font-size:15px;line-height:2.1;color:rgba(255,255,255,0.95);">
+              <li>✓&nbsp; Full S3-compatible API</li>
+              <li>✓&nbsp; <strong>Zero egress cost</strong> — serve unlimited traffic</li>
+              <li>✓&nbsp; Perfect for rendered output delivery &amp; archives</li>
+              <li>✓&nbsp; Works with any S3 client, SDK, or rclone</li>
+            </ul>
+            <div style="margin-top:auto;padding-top:28px;">
+              <a href="/login"
+                style="display:block;text-align:center;padding:14px 20px;border-radius:12px;background:#211b3a;color:#fff;text-decoration:none;font-weight:700;font-size:15px;box-shadow:0 10px 24px rgba(33,27,58,0.35);">Get 1 TB for €4/mo →</a>
+            </div>
+          </div>
+          <!-- Enterprise tier card -->
+          <div
+            style="flex:1 1 320px;max-width:400px;padding:36px 32px;border:1px solid rgba(255,255,255,0.14);border-radius:24px;background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);display:flex;flex-direction:column;">
+            <div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#b8b0cc;">Enterprise</div>
+            <div style="margin-top:14px;display:flex;align-items:baseline;gap:8px;">
+              <span style="font-size:64px;font-weight:800;line-height:1;color:#fff;">€3000</span>
+              <span style="font-size:15px;color:#b8b0cc;">/ month</span>
+            </div>
+            <div style="margin-top:10px;font-size:44px;font-weight:800;color:#fc6d26;">1 PB</div>
+            <ul style="list-style:none;margin:26px 0 0 0;padding:0;font-size:15px;line-height:2.1;color:#d5cfe2;">
+              <li>✓&nbsp; Full S3-compatible API</li>
+              <li>✓&nbsp; <strong>Zero egress cost</strong> — serve unlimited traffic</li>
+              <li>✓&nbsp; Perfect for any kind of large scale applications</li>
+              <li>✓&nbsp; Works with any S3 client, SDK, or rclone</li>
+            </ul>
+            <div style="margin-top:auto;padding-top:28px;">
+              <a href="/login"
+                style="display:block;text-align:center;padding:14px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.25);color:#fff;text-decoration:none;font-weight:700;font-size:15px;">Get 1 PB for €3000/mo →</a>
+            </div>
+          </div>
+
+
+        </div>
+
+        <!-- Comparison strip -->
+        <div
+          style="margin-top:48px;padding:28px 32px;border:1px solid rgba(255,255,255,0.12);border-radius:20px;background:rgba(255,255,255,0.04);text-align:center;">
+          <p style="margin:0;color:#b8b0cc;font-size:15px;line-height:1.8;">
+            Serving 10 TB of rendered video per month elsewhere could cost
+            <strong style="color:#ff8a8a;">~$900+</strong> in egress alone.
+            On FFmpegLab it costs <strong style="color:#fc6d26;">€0. Not a cent.</strong>
+          </p>
+          <a class="btn btn-ghost" href="/articles/ffmpeglab-s3-storage-api-keys-guide.html">Get your S3 Configuration</a>
+        </div>
+      </div>
+    </section>
   <main class="container prose">
     <p>FFmpegLab doesn't just render video — it gives you a free 50gb <strong>S3 object store</strong> attached to your account. Every project you render, every source file you upload, and every output you export can live in a bucket you control, addressed with the same API shape you already know from AWS S3, Cloudflare R2 or MinIO.</p>
 
@@ -591,7 +696,7 @@ echo "Ready: s3://$BUCKET/$PREFIX via $ENDPOINT"</pre>
   data-endpoint="/_ploy/form-submit"
   data-form-name="ffmpeglab-newsletter"
   data-source="embedded-newsletter"
-  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;border-top:1px solid #ded9e6;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
+  style="position:relative;min-width:0;overflow:hidden;padding:80px 24px;background:#f7f5fa;color:#211b3a;font-family:Arial,Helvetica,sans-serif;"
 >
   <div data-liquid-light="orange" aria-hidden="true" style="pointer-events:none;position:absolute;left:-110px;top:50%;width:320px;height:320px;margin-top:-160px;border-radius:50%;background:rgba(252,109,38,0.40);filter:blur(70px);opacity:0.9;"></div>
   <div data-liquid-light="purple" aria-hidden="true" style="pointer-events:none;position:absolute;right:-90px;top:10px;width:290px;height:290px;border-radius:50%;background:rgba(116,78,197,0.32);filter:blur(70px);opacity:0.9;"></div>
