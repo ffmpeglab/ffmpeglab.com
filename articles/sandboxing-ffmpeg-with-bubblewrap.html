@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How we sandboxed a public FFmpeg API with bubblewrap — FFmpegLab</title>
+  <meta name="description" content="A deep dive into how FFmpegLab runs user-submitted FFmpeg commands safely: bwrap namespaces, protocol whitelists, DNS pinning, per-render scratch dirs, and the small mistakes that turn a sandbox into a suggestion." />
+  <meta name="keywords" content="ffmpeg sandbox, bubblewrap bwrap, ffmpeg security, ssrf prevention, dns rebinding, ffmpeg api security, untrusted code execution" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="FFmpegLab" />
+  <meta name="theme-color" content="#FC6D26" />
+  <link rel="canonical" href="https://ffmpeglab.com/articles/sandboxing-ffmpeg-with-bubblewrap.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="FFmpegLab" />
+  <meta property="og:url" content="https://ffmpeglab.com/articles/sandboxing-ffmpeg-with-bubblewrap.html" />
+  <meta property="og:title" content="How we sandboxed a public FFmpeg API with bubblewrap" />
+  <meta property="og:description" content="Namespaces, protocol whitelists, DNS pinning — the layers that make 'run arbitrary FFmpeg' a safe feature." />
+  <meta property="og:image" content="https://ffmpeglab.com/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../blog.css" />
+  <script src="/theme.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "How we sandboxed a public FFmpeg API with bubblewrap",
+        "description": "Namespaces, protocol whitelists, DNS pinning — the layers that make 'run arbitrary FFmpeg' a safe feature.",
+        "image": "https://ffmpeglab.com/og-image.png",
+        "author": { "@type": "Organization", "name": "FFmpegLab" },
+        "publisher": { "@type": "Organization", "name": "FFmpegLab" },
+        "mainEntityOfPage": "https://ffmpeglab.com/articles/sandboxing-ffmpeg-with-bubblewrap.html",
+        "datePublished": "2026-06-23",
+        "dateModified": "2026-06-23"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="site">
+    <div class="container-wide bar">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <nav>
+        <a href="../index.html">Product</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="self-hosted-video-editor-docker.html">Self-Hosting</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+      </nav>
+      <a class="btn btn-primary sm" href="/login">Sign In</a>
+    </div>
+  </header>
+
+  <div class="article-head">
+    <div class="container inner">
+      <div class="breadcrumb"><a href="../index.html">Home</a> / Guides / Sandboxing FFmpeg</div>
+      <span class="eyebrow">Engineering</span>
+      <h1>How we sandboxed a public FFmpeg API with bubblewrap</h1>
+      <p class="dek">FFmpegLab exists so you can run <em>any</em> FFmpeg command in the cloud without owning a build server. That sentence is a security problem before it's a product. This is how we made it safe — and the four layers of defense that each have to work on their own.</p>
+      <div class="article-meta">Engineering deep-dive · ~10 min read</div>
+    </div>
+  </div>
+
+  <main class="container prose">
+    <p>FFmpeg is not a filter. It's a small operating system that happens to render video: it opens sockets, speaks HTTP, reads local files, writes to stdout, spawns threads, and will happily fetch a URL from a playlist you didn't write. When the whole product is <em>"give us an FFmpeg command, we'll run it"</em>, you can't defend by validating the command. The set of valid commands is unbounded by design. You have to run the command somewhere it can't hurt you.</p>
+
+    <div class="callout">
+      <h3>Key takeaways</h3>
+      <ul>
+        <li>Sandboxing is layered — the network namespace is the wall, the protocol whitelist is a smoke detector, and both are needed.</li>
+        <li><code>bubblewrap</code> (<code>bwrap</code>) gives us network, PID, mount, and user isolation without running as root.</li>
+        <li>Per-render scratch directories matter more than any command-line flag.</li>
+        <li>Server-side URL fetching needs DNS pinning, not a regex.</li>
+        <li>Any user-supplied value that ends up in a filesystem path is a path traversal waiting to happen.</li>
+      </ul>
+    </div>
+
+    <h2>The threat model, in one sentence</h2>
+    <p>Any authenticated user can submit any argv to FFmpeg, and any URL as media input. Our job is to make sure that giving someone that power doesn't give them the host.</p>
+    <p>Concretely, an attacker with an API key should not be able to:</p>
+    <ul>
+      <li>reach the cloud metadata endpoint at <code>169.254.169.254</code>, or any internal service on the VPC,</li>
+      <li>read files outside their own render's scratch directory,</li>
+      <li>write outside that directory,</li>
+      <li>read another tenant's media,</li>
+      <li>turn the runner into a free compute farm or a DDoS amplifier,</li>
+      <li>escape into the host kernel via an FFmpeg demuxer bug.</li>
+    </ul>
+    <p>That's the list. Everything below is how we knocked items off it.</p>
+
+    <h2>Layer 1: bubblewrap</h2>
+    <p><code>bwrap</code> is a low-level sandbox that creates Linux namespaces without requiring root. We wrap every FFmpeg invocation in it, one process per render:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">createFFmpeg.ts</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">function buildBwrapArgs(scratchDir: string, cmd: string[]): string[] {
+  return [
+    '--unshare-all',        // user, PID, mount, UTS, IPC, cgroup, net
+    '--die-with-parent',    // sandbox dies when Node dies
+    '--cap-drop', 'ALL',    // no Linux capabilities
+
+    '--clearenv',
+    '--setenv', 'PATH', '/usr/local/bin:/usr/bin:/bin',
+    '--setenv', 'HOME', scratchDir,
+
+    // binaries + shared libraries
+    '--ro-bind', '/usr', '/usr',
+    '--ro-bind-try', '/lib', '/lib',
+    '--ro-bind-try', '/lib64', '/lib64',
+    '--ro-bind-try', '/bin', '/bin',
+
+    // dynamic linker needs its cache to find libs
+    '--ro-bind-try', '/etc/ld.so.cache', '/etc/ld.so.cache',
+    '--ro-bind-try', '/etc/ld.so.conf', '/etc/ld.so.conf',
+    '--ro-bind-try', '/etc/ld.so.conf.d', '/etc/ld.so.conf.d',
+
+    '--proc', '/proc',
+    '--dev', '/dev',
+
+    // writable scratch — tmpfs FIRST, then the bind
+    '--tmpfs', '/tmp',
+    '--bind', scratchDir, scratchDir,
+
+    ffmpegPath,
+    ...cmd,
+  ];
+}</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <p>A few of these flags deserve their own paragraph:</p>
+
+    <h3><code>--unshare-all</code> is the wall</h3>
+    <p>It creates fresh namespaces for user, PID, mount, UTS, IPC, cgroup, and network. The child process sees a private PID space where it's PID 1, a private <code>/proc</code> that contains only itself, and a private network namespace with nothing but a loopback interface that isn't connected to the host's. That last part is the one that matters most: it doesn't matter what protocol <code>-i http://…</code> asks for, the kernel returns <code>ENETUNREACH</code> because there is no route. Argument parsing can't escape a missing network interface.</p>
+
+    <h3>Why <code>--ro-bind /usr</code> and not <code>--ro-bind / /</code></h3>
+    <p>The tempting shortcut is to bind the whole root filesystem read-only and only expose the scratch directory as writable. It's one line, and it dodges the "which library path did the base image move this week" problem entirely. We don't do it, because our runners sit inside a Kubernetes pod that also has:</p>
+    <ul>
+      <li><code>/var/run/secrets/kubernetes.io/serviceaccount/token</code> — a bearer token for the pod's ServiceAccount,</li>
+      <li><code>/run/secrets/*</code> — anything mounted by the orchestrator,</li>
+      <li>Vault-injected secrets, when they're enabled.</li>
+    </ul>
+    <p>None of those are needed by FFmpeg. All of them are readable by anything that can <code>open(2)</code> a path, and FFmpeg can read paths. A <code>file:</code> input pointed at a secret, piped through a <code>nullsink</code> filter, and echoed to stderr is a full exfiltration primitive — if the sandbox lets FFmpeg see the file in the first place.</p>
+    <p>So we bind only what FFmpeg needs: <code>/usr</code> for the binary and its shared libraries, <code>/lib</code> and <code>/lib64</code> for the symlink farm on Ubuntu-based images, <code>/bin</code> for the shell FFmpeg occasionally execs, and the four <code>/etc/ld.so*</code> files so the dynamic linker can find <code>libdrm.so.2</code> and friends. Everything else on the host filesystem is invisible inside the sandbox.</p>
+
+    <h3>Why the mount order matters</h3>
+    <p>bwrap applies mounts in the order they appear on the command line, and the last mount at a given path wins. If you write:</p>
+    <pre class="em-code">'--bind', scratchDir, scratchDir,
+'--tmpfs', '/tmp',</pre>
+    <p>and <code>scratchDir</code> happens to live under <code>/tmp</code> — which it does by default — the fresh empty tmpfs shadows the bind. FFmpeg enters the sandbox, sees an empty <code>/tmp</code>, and fails on the first <code>-i</code>. The fix is to declare <code>--tmpfs /tmp</code> first and then bind the scratch directory. Obvious in hindsight; hours of debugging the first time.</p>
+
+    <h2>Layer 2: the protocol whitelist</h2>
+    <p>bwrap handles the network, but defense in depth means we also constrain FFmpeg's own protocol set. We walk the final argv and inject <code>-protocol_whitelist file</code> before every <code>-i</code>:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">execEncode.ts</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">const tokens = typeof execCode === 'string'
+  ? parseCommand(execCode)
+  : execCode;
+
+const substituted = tokens.map((arg) => {
+  const s = String(arg);
+  return s.startsWith('$') ? (env[s.slice(1)] ?? s) : s;
+});
+
+const cmdProcessed: string[] = [];
+for (const arg of substituted) {
+  if (arg === '-i') {
+    cmdProcessed.push('-protocol_whitelist', 'file');
+  }
+  cmdProcessed.push(arg);
+}</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <p>Three things we learned the hard way:</p>
+    <ul>
+      <li><strong>The option is per-input, not global.</strong> <code>-protocol_whitelist file -i A -i B</code> only constrains A. You need one per <code>-i</code>. Injecting a single prefix at the top of the argv is a no-op for every input after the first.</li>
+      <li><strong>String substitution is the wrong tool.</strong> Doing <code>ncmd.replace('-i $MEDIA_1', ...)</code> breaks on <code>-i  $MEDIA_1</code> (two spaces), <code>-i\t$MEDIA_1</code>, or when the same placeholder appears twice — <code>String.prototype.replace</code> without a global flag only touches the first occurrence. Walk the token array instead.</li>
+      <li><strong>Placeholders can prefix-collide.</strong> With <code>String.replace</code>, substituting <code>-i $MEDIA_1</code> inside a command that also contains <code>-i $MEDIA_10</code> produces <code>-protocol_whitelist file -i /path/to/media-1</code> followed by a stray <code>0</code>. Tokenizing first and matching whole tokens avoids the whole class.</li>
+    </ul>
+
+    <p>Inside <code>bwrap --unshare-all</code>, this tripwire is redundant. Outside it — on a self-hosted deployment that forgot to enable the sandbox — it's the difference between "reads your VPC" and "fails cleanly."</p>
+
+    <h2>Layer 3: server-side URL fetching, done properly</h2>
+    <p>Users can submit a media URL as an input. That means our Node process is going to make an outbound HTTP request, on our network, with our network position. If we let the user choose the destination without checking it, we've built an SSRF engine with extra steps.</p>
+
+    <p>String-matching hostnames for "looks like an IP" doesn't work. <code>169.254.169.254.nip.io</code>, <code>http://2130706433/</code> (decimal <code>127.0.0.1</code>), <code>http://0x7f.0.0.1/</code>, and IPv6-mapped addresses all bypass a regex. What works is resolving the hostname ourselves, validating every returned address, and then <em>pinning</em> the connection to the address we validated:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">assertPublicUrl.ts</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">export async function assertPublicUrl(input: string | URL) {
+  const url = new URL(input.toString());
+
+  if (!ALLOWED_PROTOCOLS.has(url.protocol)) throw new BlockedUrlError(..., 'protocol');
+  if (url.username || url.password)         throw new BlockedUrlError(..., 'credentials');
+
+  const hostname = url.hostname;
+  const bare = hostname.replace(/^\[|\]$/g, '');
+
+  // IP literal — URL parser has normalised decimal/octal/hex forms
+  if (net.isIP(bare)) {
+    if (isBlockedAddress(bare)) throw new BlockedUrlError(..., 'ip');
+    return { url, addresses: [{ address: bare, family: net.isIP(bare) }] };
+  }
+
+  const records = await dns.lookup(hostname, { all: true, verbatim: true });
+  if (!records.length) throw new BlockedUrlError(..., 'dns');
+
+  // any blocked address rejects the whole set
+  const blocked = records.find((r) => isBlockedAddress(r.address));
+  if (blocked) throw new BlockedUrlError(..., 'ip');
+
+  return { url, addresses: records };
+}</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <p><code>isBlockedAddress</code> covers the IANA special-purpose registries for both families — RFC1918, CGNAT, loopback, link-local, multicast, ULA, the whole set — with the IPv4-mapped IPv6 form (<code>::ffff:127.0.0.1</code>) unwrapped and re-checked as IPv4, because Node's URL parser hands it to us in hex notation (<code>::ffff:7f00:1</code>) rather than dotted-quad.</p>
+
+    <h3>The part that actually stops DNS rebinding</h3>
+    <p>Validation alone is not enough. Between the moment we call <code>assertPublicUrl</code> and the moment Node opens the socket, the attacker's DNS server can change its answer. `https.get` re-resolves the hostname internally; if the second lookup returns a different IP than the first, we've validated one address and connected to another.</p>
+    <p>The fix is to hand Node a custom <code>lookup</code> function that returns the addresses we already checked:</p>
+
+    <div class="editor-mock"><div class="em-toolbar"><span class="em-back"></span><span class="em-spacer"></span><span class="em-pill">Share</span><span class="em-pill">Renders</span><span class="em-pill active">{ } Code</span><span class="em-pill">Config</span><span class="em-icon"></span></div><div class="em-tabs"><span class="em-tab active">pinnedLookup.ts</span><span class="em-tab">Logs</span><span class="em-tab">Customize</span></div><div class="em-body"><pre class="em-code">export function pinnedLookup(addresses: ResolvedPublicUrl['addresses']) {
+  return (_hostname, options, callback) => {
+    if (typeof options === 'function') {
+      callback = options;
+    }
+    if (options?.all) callback(null, addresses);
+    else callback(null, addresses[0].address, addresses[0].family);
+  };
+}
+
+// and in downloadFile:
+const { url: parsed, addresses } = await assertPublicUrl(url);
+client.get(parsed, { lookup: pinnedLookup(addresses) }, onResponse);</pre><div class="em-preview"><div class="em-screen"><span class="em-play">&#9654;</span></div><div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div><span class="sk sk-line" style="width:70%"></span><span class="sk sk-line" style="width:55%"></span></div></div><div class="em-timeline"><div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div></div></div>
+
+    <p>Two consequences:</p>
+    <ul>
+      <li>The socket connects to the IP we validated. The hostname argument is ignored inside the sandbox — there is no second DNS lookup.</li>
+      <li>Redirects are followed manually. Node doesn't follow them by default, which is convenient; if we ever want to enable it we'd have to re-run <code>assertPublicUrl</code> on every <code>Location</code>, because the target of a redirect is a new destination and needs its own validation.</li>
+    </ul>
+
+    <h2>Layer 4: paths, tenancy, and the boring stuff</h2>
+    <p>The interesting sandboxing lives in the process isolation. The bugs that produce bug-bounty reports live in the plainer layer above it.</p>
+
+    <h3>Per-render scratch directories</h3>
+    <p>Every render gets its own <code>documentDir/&lt;renderId&gt;/</code> directory. Inputs are downloaded into it, FFmpeg writes its output into it, the result is uploaded to S3, and the directory is deleted. Nothing is shared between renders. This is the property that makes cross-tenant traversal impossible to exploit even if a validation check is missed somewhere upstream: there simply isn't a path that reaches another tenant's data, because no two renders ever share a filesystem.</p>
+
+    <h3>Validation at the boundary, containment at the point of use</h3>
+    <p>User-supplied identifiers (<code>project.id</code>, <code>media.folderId</code>) are validated at the API boundary with a strict regex — either a UUID or a pipeline-generated slug like <code>audio-pipeline-extract_audio</code>. Rejecting on mismatch, rather than sanitising, means a malformed id never reaches the filesystem in the first place.</p>
+    <p>Behind that, every path-composition site goes through a containment helper:</p>
+    <pre class="em-code">export function safePath(...segments: string[]): string {
+  const base = fs.realpathSync(documentDir());
+  const full = path.resolve(base, ...segments);
+  if (full !== base && !full.startsWith(base + path.sep)) {
+    throw new Error(`path escapes documentDir: ${full}`);
+  }
+  return full;
+}</pre>
+    <p>Validation catches the requests we expect. <code>safePath</code> catches the ones we don't — a future refactor that adds a new code path, a regex that gets loosened for a legitimate reason, a symlink someone drops into the scratch tree. Either alone would work in the common case; together they fail closed when either is wrong.</p>
+
+    <h3>Stripping trusted fields from untrusted inputs</h3>
+    <p>Renders submitted through the API have their <code>bucket</code> and <code>key</code> fields removed before insert. Those fields are only ever supposed to be set by admin-authored pipeline templates, which create renders through a different code path. Enforcing that at the point of insert — rather than relying on the frontend not to send them — means a <code>curl</code> against the API can't point our S3 client at an object the caller doesn't own.</p>
+
+    <h3>Resource limits</h3>
+    <p>Every FFmpeg process runs with a wall-clock timeout and a SIGKILL fallback, and the runner container caps CPU and memory at the cgroup level. A filter graph that fans out 9000× and eats all available RAM on the node is a denial-of-service against every other tenant on that node, and no amount of namespace isolation helps if the process is allowed to run until the OOM killer arrives.</p>
+
+    <h2>What we got wrong the first time</h2>
+    <p>A few things looked correct on paper and weren't:</p>
+    <ul>
+      <li><strong><code>--no-net</code> is not a Deno flag.</strong> It doesn't exist. The <code>deno run</code> call for our YAML transpiler exits immediately with an "unexpected argument" error and every pipeline edit fails silently. The correct flag is <code>--deny-net</code>, or just not passing <code>--allow-net</code> at all, since network access is denied by default.</li>
+      <li><strong><code>--allow-read</code> with no path</strong> grants the whole filesystem. It's the same privilege as <code>-A</code> for reads; the flag rename doesn't scope anything. Real scoping looks like <code>--allow-read=/opt/ffmpeglab/sdk,/tmp/ffmpeglab</code>.</li>
+      <li><strong>bwrap's <code>--ro-bind /lib /lib</code> fails on symlinked <code>/lib</code>.</strong> On Ubuntu-based images, <code>/lib</code> is a symlink to <code>/usr/lib</code>; <code>--ro-bind</code> (not <code>--ro-bind-try</code>) can error, or silently do the wrong thing. Using <code>--ro-bind-try</code> for anything that might not be a real directory is cheap insurance.</li>
+      <li><strong>Sandboxing a <code>spawn</code> without a <code>--die-with-parent</code> equivalent leaves orphans.</strong> When the Node process exits uncleanly, the child keeps running with its namespace still attached. bwrap's <code>--die-with-parent</code> is the exact feature for this; we just had to remember to add it.</li>
+    </ul>
+
+    <h2>Putting it together</h2>
+    <p>The resulting stack, from the outside in:</p>
+    <ol>
+      <li><strong>API boundary</strong> — strict regex on identifiers, strip trusted fields from user-submitted data, reject rather than sanitise.</li>
+      <li><strong>URL validation</strong> — resolve, validate every address against the special-purpose registries, pin the socket to the validated IP, follow redirects manually.</li>
+      <li><strong>bwrap</strong> — <code>--unshare-all</code>, <code>--cap-drop ALL</code>, <code>--clearenv</code>, selective read-only binds, one writable scratch directory, <code>--die-with-parent</code>.</li>
+      <li><strong>FFmpeg argv</strong> — <code>-protocol_whitelist file</code> before every <code>-i</code>, injected by a token walk rather than string substitution.</li>
+      <li><strong>cgroup limits</strong> — CPU, memory, PID count, and a wall-clock kill.</li>
+    </ol>
+    <p>Each layer is independently sufficient for a subset of the threat model, and independently insufficient for the whole of it. The network namespace stops FFmpeg from reaching the metadata service; the protocol whitelist stops a legitimate-looking command from trying; the URL validator stops our own Node process from being the fetch. Take any one away and the others still hold, which is the property that matters in production — because "we wrote it correctly on the first try" is not a security control.</p>
+
+    <h2>Should you do this?</h2>
+    <p>If you're running a single-tenant video editor on your own machine — no. Run FFmpeg directly, keep your interface small, and save the complexity.</p>
+    <p>If you're running a service where one user's render shares a host with another user's data, and both users are authenticated but neither is trusted, then yes, and the four layers above are close to the minimum. <code>bwrap</code> is a small dependency, the container runtime provides most of the rest, and the URL validation is roughly a hundred lines of Node that you will never have to think about again — as long as nobody edits it without rerunning the tests.</p>
+  </main>
+
+  <section class="cta-band">
+    <div class="container inner">
+      <h2>Run FFmpeg in the cloud without owning a build server.</h2>
+      <p>Free in your browser — nothing to install, nothing to trust.</p>
+      <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor?showEditorTemplates=true">Try the editor</a></div>
+    </div>
+  </section>
+
+  <section class="related">
+    <div class="container inner">
+      <h2>Keep reading</h2>
+      <div class="related-grid">
+        <a class="related-card" href="/articles/ffmpeg-filter-complex-effects.html"><span class="k">Effects</span><span class="t">filter_complex by example</span><span class="d">Overlay, scale, crop, color, chroma key.</span></a>
+        <a class="related-card" href="/articles/offline-private-video-editor.html"><span class="k">Privacy</span><span class="t">Offline, private video editing</span><span class="d">Edit in-browser with zero uploads.</span></a>
+        <a class="related-card" href="/articles/self-hosted-video-editor-docker.html"><span class="k">Self-hosting</span><span class="t">Self-host with Docker</span><span class="d">Own the whole editing pipeline.</span></a>
+        <a class="related-card" href="/articles/ffmpeg-xfade-transitions-guide.html"><span class="k">Transitions</span><span class="t">xfade transitions guide</span><span class="d">30+ presets, duration, offset, crossfades.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="container-wide row">
+      <a href="../index.html" class="mark"><span class="glyph">&gt;</span><span class="word">FFmpeg<span class="lab">Lab</span></span></a>
+      <div class="links">
+        <a href="../index.html">Home</a>
+        <a href="ffmpeg-xfade-transitions-guide.html">Transitions</a>
+        <a href="ffmpeg-filter-complex-effects.html">Effects</a>
+        <a href="ffmpeg-audio-mixing-amix-guide.html">Audio</a>
+        <a href="offline-private-video-editor.html">Privacy</a>
+        <a href="self-hosted-video-editor-docker.html">Self-hosting</a>
+      </div>
+      <p class="copy">© 2026 FFmpegLab</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -7,6 +7,14 @@
       margin: 0;
       padding: 0;
     }
+    
+    .supabase {
+      background: linear-gradient(135deg, #249361, #3ECF8E);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: #3ECF8E; /* fallback */
+    }
 
     :root {
       --orange: #FC6D26;

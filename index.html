@@ -110,7 +110,7 @@
       <div class="glow"></div>
       <div class="container grid">
         <div>
-          <h1 class="balance">Orchestrate multimedia processing with FFMPEG, S3, PostgreSQL.</h1>
+          <h1 class="balance">Orchestrate multimedia processing with FFMPEG, S3 & SQL.</h1>
           <p class="lede">FFmpegLab is the framework for securing and running ffmpeg. Query your entire media catalog via SQL/API, define complex filter graphs with JSON, and run FFmpeg renders wrapped in the bubblewrap command line framework.</p>
           <div class="cta-row">
             <a class="btn btn-primary" href="/login">Start</a>
@@ -172,7 +172,6 @@
       </div>
     </section>
 
-
     <!-- ===== Stats band ===== -->
     <section class="stats-band">
       <div class="container inner">
@@ -198,6 +197,56 @@
       </div>
     </section>
    
+    <!-- ===== Self-host ===== -->
+    <section class="selfhost">
+      <div class="container grid">
+        <div>
+          <span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="6" x2="6" y1="3" y2="15" />
+              <circle cx="18" cy="6" r="3" />
+              <circle cx="6" cy="18" r="3" />
+              <path d="M18 9a9 9 0 0 1-9 9" />
+            </svg></span>
+          <h2 class="balance">Run it on your own infrastructure—or in the cloud</h2>
+          <p>Own your entire media pipeline end-to-end. Deploy with Docker Compose or Kubernetes, bring your own PostgreSQL, S3 storage, and render runners. Scale horizontally, automate with CI/CD, and keep full control of your data plane.</p>
+          <div class="cta-row">
+            <a class="btn btn-ghost" href="https://github.com/ffmpeglab/server">View on GitHub</a>
+            <a class="btn btn-ghost" href="/articles/agent-first-setup-ffmpeglab-server.html">Self Hosting Guide</a>
+          </div>
+          <div class="cta-row">
+            <a class="btn btn-ghost" href="https://api.ffmpeglab.com/api">Explore the API</a>
+          </div>
+        </div>
+        <div class="code-window">
+          <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
+              class="mono fname">bash</span></div>
+          <pre class="mono em-code"><span class="el">curl -sSL https://ffmpeglab.com/sh/install.sh | bash</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Closing CTA ===== -->
+    <section class="closing">
+      <div class="container inner">
+        <h2 class="balance">
+          Connect
+          <span class="supabase">Supabase</span>
+          to give your AI more powers than Claude Video.
+        </h2>
+        <div style="background-color: black; border-radius: 20px; padding: 5px; max-width: 800px; margin: 10px auto;">
+          <img src="https://raw.githubusercontent.com/ffmpeglab/server/refs/heads/main/sdk/yaml/examples/dnn-labeling.svg" />
+        </div>
+        <p>Open Source · API-First · Built for Scale</p>
+        <div class="cta-row">
+          <a class="btn btn-white" href="https://platform.ffmpeglab.com/platform/login/redirect">
+            <img style="width: 250px;" alt="login with supabase" src="connect-supabase-dark.png"/>
+          </a>
+        </div>
+      </div>
+    </section>
+
+
          <!-- ===== GitHub Integration ===== -->
     <section id="github"
       style="position:relative;overflow:hidden;padding:96px 24px;background:#f7f5fa;color:#211b3a;font-family:'Kanit',Arial,Helvetica,sans-serif;">
@@ -227,48 +276,6 @@
         <div style="display:flex;gap:14px;justify-content:center;margin-top:36px;flex-wrap:wrap;">
           <a href="/articles/github-actions-video-pipeline.html" class="btn btn-primary">Read the GitHub guide →</a>
           <a href="https://github.com/ffmpeglab" target="_blank" class="btn btn-ghost">Example repos on GitHub</a>
-        </div>
-      </div>
-    </section>
-    <!-- ===== Self-host ===== -->
-    <section class="selfhost">
-      <div class="container grid">
-        <div>
-          <span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <line x1="6" x2="6" y1="3" y2="15" />
-              <circle cx="18" cy="6" r="3" />
-              <circle cx="6" cy="18" r="3" />
-              <path d="M18 9a9 9 0 0 1-9 9" />
-            </svg></span>
-          <h2 class="balance">Run it on your own infrastructure—or in the cloud</h2>
-          <p>Own your entire media pipeline end-to-end. Deploy with Docker Compose or Kubernetes, bring your own PostgreSQL, S3 storage, and render runners. Scale horizontally, automate with CI/CD, and keep full control of your data plane.</p>
-          <div class="cta-row">
-            <a class="btn btn-ghost" href="https://github.com/ffmpeglab/server">View on GitHub</a>
-            <a class="btn btn-ghost" href="/articles/self-hosted-video-editor-docker.html">Self-hosting GUI</a>
-          </div>
-          <div class="cta-row">
-            <a class="btn btn-ghost" href="https://api.ffmpeglab.com/api">Explore the API</a>
-            <a class="btn btn-ghost" href="/articles/agent-first-setup-ffmpeglab-server.html">Agentic AI Setup Guide</a>
-          </div>
-        </div>
-        <div class="code-window">
-          <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span
-              class="mono fname">bash</span></div>
-          <pre class="mono em-code"><span class="el">curl -sSL https://ffmpeglab.com/sh/install.sh | bash</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Closing CTA ===== -->
-    <section class="closing">
-      <div class="container inner">
-        <h2 class="balance">Ship faster than ever with supabase platform integration.</h2>
-        <p>Open Source · API-First · Built for Scale</p>
-        <div class="cta-row">
-          <a class="btn btn-white" href="https://platform.ffmpeglab.com/platform/login/redirect">
-            <img style="width: 250px;" alt="login with supabase" src="connect-supabase-dark.png"/>
-          </a>
         </div>
       </div>
     </section>
