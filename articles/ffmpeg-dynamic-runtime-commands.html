@@ -214,9 +214,17 @@ ffmpeg -i background.mp4 -i logo.png \
       </div>
     </div>
 
+    <section class="cta-band">
+      <div class="container inner">
+        <h2>Dynamic runtime sencmd example with git</h2>
+        <p>Free in your browser.</p>
+        <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/market/9054076a-6d9e-4bd9-a01a-d88759907125">Dynamic Runtime sendcmd Template</a></div>
+      </div>
+    </section>
+
     <p><strong>Important:</strong> The <code>sendcmd</code> filter must be placed <em>before</em> the filter it's controlling in the filtergraph. In the example above, <code>sendcmd</code> is applied to the overlay stream (<code>[1:v]</code>) before it's passed to <code>overlay</code>.</p>
 
-    <h2 id="zmq">Method 2: <code>zmq</code> – Interactive Real‑Time Commands</h2>
+    <h2 id="zmq">Method 2: <code>zmq</code> - Interactive Real-Time Commands</h2>
 
     <p>If you need to <strong>tweak parameters live</strong>—while encoding a stream, or during a recording session—<code>zmq</code> (ZeroMQ) is your friend. It sets up a socket that listens for commands you send from another terminal (or from a script).</p>
 
