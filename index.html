@@ -106,71 +106,734 @@
 
   <main>
     <!-- ===== Hero ===== -->
-    <section class="hero">
-      <div class="glow"></div>
-      <div class="container grid">
-        <div>
-          <h1 class="balance">Open Source FFmpeg REST API</h1>
-          <p class="lede">FFmpegLab is the framework for securing and running ffmpeg. Query your entire media catalog via SQL/API, define complex filter graphs with JSON, and run FFmpeg renders wrapped in the bubblewrap command line framework.</p>
-          <div class="cta-row">
-            <a class="btn btn-primary" href="/login">Start</a>
-            <a class="btn btn-ghost" href="/articles/#guides">Read the docs</a>
-          </div>
-          <p class="mono meta">postgresql · supabase · s3 · whisper ai · ffmpeg · self-hostable · open-source  · pgmq  · bubblewrap </p>
+    <!--
+  Hero: comment -> AI resolve -> code updates
+
+  1) Append the style block to your stylesheet (it builds on your existing
+     .editor-mock / .em-* / .hero rules and must come AFTER them).
+  2) Replace your current <section class="hero"> with the one below.
+  3) Keep the script block at the end of the body (or defer it).
+-->
+
+<style>
+  /* ---------- Hero demo: comments -> AI resolve -> code update ---------- */
+  .editor-mock.demo { position: relative; }
+
+  /* code pane: lines are blocks so they can be diffed one by one */
+  .editor-mock.demo .em-body { height: 15rem; }
+  .editor-mock.demo .em-code {
+    white-space: normal;
+    max-height: none;
+    overflow: hidden;
+    padding-right: .6rem;
+  }
+  .demo .cl {
+    display: block;
+    position: relative;
+    white-space: pre;
+    padding-left: 1.1rem;
+    margin-left: -.2rem;
+    border-radius: .2rem;
+    transition: background .8s ease, opacity .4s ease;
+  }
+  .demo .cl::before {
+    content: "";
+    position: absolute;
+    left: .2rem;
+    width: .6rem;
+    text-align: center;
+  }
+  .demo .cl.add {
+    background: rgba(143, 207, 155, .14);
+    animation: dm-in .5s ease both;
+  }
+  .demo .cl.add::before { content: "+"; color: #8FCF9B; }
+  .demo .cl.del {
+    background: rgba(224, 122, 122, .16);
+    text-decoration: line-through;
+    text-decoration-color: rgba(224, 122, 122, .7);
+    opacity: .75;
+  }
+  .demo .cl.del::before { content: "\2212"; color: #E07A7A; }
+  @keyframes dm-in {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* status pill in the tab row */
+  .dm-status {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding-bottom: .5rem;
+    font: 600 .58rem ui-monospace, monospace;
+    color: #6F6A87;
+    transition: color .3s;
+  }
+  .dm-status i {
+    width: .4rem;
+    height: .4rem;
+    border-radius: 9999px;
+    background: #4A4460;
+    transition: background .3s;
+  }
+  .dm-status[data-state="busy"] { color: #FCA46B; }
+  .dm-status[data-state="busy"] i { background: var(--orange); animation: dm-pulse 1s infinite; }
+  .dm-status[data-state="ok"] { color: #8FCF9B; }
+  .dm-status[data-state="ok"] i { background: #8FCF9B; }
+  @keyframes dm-pulse { 50% { opacity: .3; } }
+
+  /* render version badge on the preview */
+  .demo .em-screen { position: relative; }
+  .dm-ver {
+    position: absolute;
+    top: .5rem;
+    left: .5rem;
+    padding: .15rem .45rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .1);
+    color: #D6D2E6;
+    font: 700 .55rem ui-monospace, monospace;
+  }
+  .dm-ver.pop { animation: dm-pop .55s ease; }
+  @keyframes dm-pop {
+    0%   { transform: scale(.6); background: var(--orange); color: #fff; }
+    60%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+
+  /* timeline stage: shared coordinate frame for playhead, markers, popovers */
+  .dm-stage { position: relative; }
+  .dm-lane { position: relative; height: 2.1rem; }
+  .dm-tracks { display: flex; flex-direction: column; gap: .4rem; margin-top: .1rem; }
+  .dm-track { display: flex; gap: .5rem; height: 1.1rem; }
+  .dm-track .em-clip { height: 100%; }
+  .dm-clip { height: 100%; border-radius: .35rem; }
+  .dm-clip.voice { width: 68%; background: #89A956; }
+  .dm-clip.music { width: 86%; background: #C29454; }
+  .dm-clip.text  { width: 22%; margin-left: 12%; background: #2E3A66; }
+
+  .dm-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--px, 18%);
+    width: 2px;
+    margin-left: -1px;
+    background: var(--orange);
+    box-shadow: 0 0 8px rgba(252, 109, 38, .6);
+    transition: left .8s cubic-bezier(.4, 0, .2, 1);
+    z-index: 3;
+    pointer-events: none;
+  }
+  .dm-playhead::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: -3px;
+    border: 4px solid transparent;
+    border-top-color: var(--orange);
+  }
+
+  /* round "+" at the playhead */
+  .dm-plus {
+    position: absolute;
+    left: var(--px, 18%);
+    top: .5rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    margin-left: -.7rem;
+    display: grid;
+    place-items: center;
+    border-radius: 9999px;
+    background: #F4F2FA;
+    color: #15121F;
+    font: 700 .95rem/1 system-ui, sans-serif;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 4px 10px rgba(0, 0, 0, .4);
+    opacity: 0;
+    transform: scale(.5);
+    transition: opacity .25s, transform .35s cubic-bezier(.3, 1.6, .5, 1), left .8s cubic-bezier(.4, 0, .2, 1);
+    z-index: 4;
+  }
+  .dm-plus.show { opacity: 1; transform: scale(1); }
+  .dm-plus span { display: block; transition: transform .3s; }
+  .dm-plus.open span { transform: rotate(45deg); }
+
+  /* avatar markers */
+  .dm-marker {
+    position: absolute;
+    left: var(--x);
+    top: .3rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    margin-left: -.85rem;
+    display: grid;
+    place-items: center;
+    border: 2px solid rgba(255, 255, 255, .9);
+    border-radius: 9999px;
+    color: #fff;
+    font: 700 .62rem system-ui, sans-serif;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .45);
+    opacity: 0;
+    transform: scale(.4);
+    transition: opacity .25s, transform .4s cubic-bezier(.3, 1.6, .5, 1), box-shadow .3s, border-color .3s;
+    z-index: 4;
+  }
+  .dm-marker.show { opacity: 1; transform: scale(1); }
+  .dm-marker.sel {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(252, 109, 38, .25), 0 4px 14px rgba(252, 109, 38, .6);
+    transform: scale(1.12);
+  }
+  .dm-marker.done::after {
+    content: "\2713";
+    position: absolute;
+    right: -.35rem;
+    bottom: -.3rem;
+    width: .8rem;
+    height: .8rem;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid #0F0D17;
+    border-radius: 9999px;
+    background: #3ECF8E;
+    color: #0D2A1C;
+    font-size: .5rem;
+  }
+  .dm-av-m { background: #B54D21; }
+  .dm-av-l { background: #2C5F9E; }
+
+  .dm-avatar {
+    flex: 0 0 auto;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: grid;
+    place-items: center;
+    border-radius: 9999px;
+    color: #fff;
+    font: 700 .58rem system-ui, sans-serif;
+  }
+
+  /* glass surfaces (comment bar + popover) */
+  .dm-glass {
+    background: rgba(34, 30, 51, .72);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, .16);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .12);
+  }
+
+  /* "Write a comment" pill */
+  .dm-composer {
+    position: absolute;
+    top: 3.25rem;
+    left: clamp(.25rem, calc(var(--px, 18%) - 7.5rem), calc(100% - 15.25rem));
+    width: 15rem;
+    height: 2.3rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: 0 .7rem 0 .35rem;
+    border-radius: 9999px;
+    opacity: 0;
+    transform: translateY(-6px) scale(.96);
+    pointer-events: none;
+    transition: opacity .25s, transform .3s, left .8s cubic-bezier(.4, 0, .2, 1);
+    z-index: 5;
+  }
+  .dm-composer.show { opacity: 1; transform: none; }
+  .dm-typed {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #EDEAF7;
+    font-size: .7rem;
+  }
+  .dm-typed:empty::before { content: "Write a comment\2026"; color: #8C87A3; }
+  .dm-typed.typing::after {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: .8em;
+    margin-left: 1px;
+    vertical-align: -.1em;
+    background: #fff;
+    animation: dm-caret 1s steps(1) infinite;
+  }
+  @keyframes dm-caret { 50% { opacity: 0; } }
+  .dm-send { width: 1rem; height: 1rem; color: #A9A4C2; transition: color .2s; }
+  .dm-send.ready { color: var(--orange); }
+
+  /* comment popover */
+  .dm-pop {
+    position: absolute;
+    top: 3.4rem;
+    left: clamp(.25rem, calc(var(--px, 18%) - 8.5rem), calc(100% - 17.25rem));
+    width: 17rem;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    padding: .65rem .75rem;
+    border-radius: 1.1rem;
+    opacity: 0;
+    transform: translateY(-6px) scale(.94);
+    pointer-events: none;
+    transition: opacity .3s, transform .35s cubic-bezier(.3, 1.4, .5, 1);
+    z-index: 5;
+  }
+  .dm-pop.show { opacity: 1; transform: none; }
+  .dm-pop-head { display: flex; align-items: center; gap: .45rem; font-size: .66rem; }
+  .dm-pop-head b { color: #fff; }
+  .dm-at { color: #8C87A3; font-weight: 500; }
+  .dm-pop-text { font-size: .72rem; line-height: 1.35; color: #E8E5F3; }
+  .dm-actions { display: flex; align-items: center; gap: .5rem; min-height: 1.4rem; }
+  .dm-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    height: 1.4rem;
+    padding: 0 .55rem;
+    border: 1px solid rgba(252, 109, 38, .5);
+    border-radius: 9999px;
+    background: rgba(252, 109, 38, .16);
+    color: #FCA46B;
+    font: 700 .6rem ui-monospace, monospace;
+    transition: transform .15s, background .3s, color .3s, border-color .3s;
+  }
+  .dm-chip.press { transform: scale(.92); }
+  .dm-pop[data-state="done"] .dm-chip {
+    border-color: rgba(143, 207, 155, .5);
+    background: rgba(143, 207, 155, .14);
+    color: #8FCF9B;
+  }
+  .dm-msg {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #A9A4C2;
+    font-size: .6rem;
+  }
+  .dm-bar {
+    height: .3rem;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, .1);
+    opacity: 0;
+    transition: opacity .25s;
+  }
+  .dm-pop[data-state="running"] .dm-bar { opacity: 1; }
+  .dm-bar i {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #FC6D26, #FCA46B);
+  }
+
+  /* fake cursor */
+  .dm-cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.1rem;
+    height: 1.1rem;
+    opacity: 0;
+    transform: translate(70%, 60%);
+    transition: transform .75s cubic-bezier(.3, .7, .2, 1), opacity .3s;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .dm-cursor.show { opacity: 1; }
+  .dm-cursor svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .6)); }
+  .dm-cursor::after {
+    content: "";
+    position: absolute;
+    left: -.4rem;
+    top: -.4rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 2px solid rgba(252, 109, 38, .9);
+    border-radius: 9999px;
+    opacity: 0;
+  }
+  .dm-cursor.click::after { animation: dm-click .45s ease-out; }
+  @keyframes dm-click {
+    0%   { opacity: .9; transform: scale(.3); }
+    100% { opacity: 0;  transform: scale(1.6); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dm-playhead, .dm-plus, .dm-marker, .dm-composer, .dm-pop, .dm-cursor { transition: none; }
+    .dm-status i, .dm-ver.pop, .demo .cl.add { animation: none; }
+  }
+</style>
+
+<section class="hero">
+  <div class="glow"></div>
+  <div class="container grid">
+    <div>
+      <h1 class="balance">Open Source FFmpeg API & Coding Agent</h1>
+      <p class="lede">FFmpegLab is the framework for securing and running ffmpeg. Query your entire media catalog via SQL/API, define complex filter graphs with JSON, and run FFmpeg renders wrapped in the bubblewrap command line framework.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/login">Start</a>
+        <a class="btn btn-ghost" href="/articles/#guides">Read the docs</a>
+      </div>
+      <p class="mono meta">postgresql · supabase · s3 · whisper ai · ffmpeg · self-hostable · open-source  · pgmq  · bubblewrap </p>
+    </div>
+
+    <!-- Animated demo: a teammate comments, AI resolves it, the FFmpeg code updates -->
+    <div class="editor-mock hero-mock demo" id="heroDemo" role="img"
+         aria-label="Product demo: teammates comment on the timeline, AI resolves each comment, and the generated FFmpeg code updates.">
+      <div class="em-toolbar">
+        <span class="em-back"></span>
+        <span class="em-spacer"></span>
+        <span class="em-pill">Share</span>
+        <span class="em-pill">Renders</span>
+        <span class="em-pill active">{ } Code</span>
+        <span class="em-pill">Config</span>
+        <span class="em-icon"></span>
+      </div>
+
+      <div class="em-tabs">
+        <span class="em-tab active">Generated Code</span>
+        <span class="em-tab">Logs</span>
+        <span class="em-tab">Customize</span>
+        <span class="dm-status" id="dmStatus" data-state="idle"><i></i><span id="dmStatusText">in sync</span></span>
+      </div>
+
+      <div class="em-body">
+        <pre class="em-code" id="dmCode">
+<div class="cl" data-id="i1"><span class="ef">-i</span> $MEDIA_1</div>
+<div class="cl" data-id="i2"><span class="ef">-i</span> $MEDIA_2</div>
+<div class="cl" data-id="fc"><span class="ef">-filter_complex</span></div>
+<div class="cl" data-id="s0">[<span class="en">0</span>:v]<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>[<span class="el">v0</span>];</div>
+<div class="cl" data-id="s1">[<span class="en">1</span>:v]<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>[<span class="el">v1</span>];</div>
+<div class="cl" data-id="join">[<span class="el">v0</span>][<span class="el">v1</span>]<span class="ek">concat</span>=n=<span class="en">2</span>:v=<span class="en">1</span>:a=<span class="en">0</span>[<span class="el">v_concat</span>];</div>
+<div class="cl" data-id="vol">[<span class="en">0</span>:a]<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a0</span>];[<span class="en">1</span>:a]<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a1</span>];</div>
+<div class="cl" data-id="mix">[<span class="el">a0</span>][<span class="el">a1</span>]<span class="ek">amix</span>=inputs=<span class="en">2</span>:duration=longest[<span class="el">a_concat</span>]</div>
+<div class="cl" data-id="m1"><span class="ef">-map</span> [<span class="el">v_concat</span>]</div>
+<div class="cl" data-id="m2"><span class="ef">-map</span> [<span class="el">a_concat</span>]</div>
+<div class="cl" data-id="r"><span class="ef">-r</span> <span class="en">30</span></div>
+<div class="cl" data-id="y"><span class="ef">-y</span> $OUTPUT_PATH</div></pre>
+
+        <div class="em-preview">
+          <div class="em-screen"><span class="dm-ver" id="dmVer">v1</span><span class="em-play">&#9654;</span></div>
+          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
+          <span class="sk sk-line" style="width:70%"></span>
+          <span class="sk sk-line" style="width:55%"></span>
         </div>
-        <div class="editor-mock hero-mock">
-          <div class="em-toolbar">
-            <span class="em-back"></span>
-            <span class="em-spacer"></span>
-            <span class="em-pill">Share</span>
-            <span class="em-pill">Renders</span>
-            <span class="em-pill active">{ } Code</span>
-            <span class="em-pill">Config</span>
-            <span class="em-icon"></span>
+      </div>
+
+      <div class="em-timeline">
+        <div class="dm-stage" id="dmStage" style="--px:18%">
+          <div class="em-ruler">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
           </div>
-          <div class="em-tabs">
-            <span class="em-tab active">Generated Code</span>
-            <span class="em-tab">Logs</span>
-            <span class="em-tab">Customize</span>
+
+          <div class="dm-lane">
+            <span class="dm-plus" id="dmPlus"><span>+</span></span>
+            <span class="dm-marker dm-av-m" id="dmM1" style="--x:30%">M</span>
+            <span class="dm-marker dm-av-l" id="dmM2" style="--x:64%">L</span>
           </div>
-          <div class="em-body">
-            <pre class="em-code"><span class="ef">-i</span> $MEDIA_1
-<span class="ef">-i</span> $MEDIA_2
-<span class="ef">-filter_complex</span>
-[<span class="en">0</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
-[<span class="en">1</span>:v]<span class="ek">loop</span>=loop=<span class="en">150</span>:size=<span class="en">1</span>:start=<span class="en">0</span>,<span class="ek">setdar</span>=<span class="en">16</span>/<span class="en">9</span>,<span class="ek">scale</span>=<span class="en">1280</span>:<span class="en">720</span>:force_original_aspect_ra
-[<span class="el">v0?</span>][<span class="el">v1?</span>]<span class="ek">concat</span>=n=<span class="en">2</span>:v=<span class="en">1</span>:a=<span class="en">0</span>,<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">c1?</span>];
-[<span class="el">c1?</span>]<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">v_layer0</span>];
-[<span class="el">v_layer0</span>]<span class="ek">split</span>[<span class="el">v_main</span>][<span class="el">v_overlay</span>];[<span class="el">v_main</span>]<span class="ek">settb</span>=expr=<span class="en">1</span>/<span class="en">30</span>[<span class="el">v_concat</span>];[<span class="el">v_overlay</span>]<span class="ek">nullsink</span>
-<span class="ek">aevalsrc</span>=<span class="en">0</span>:d=<span class="en">5</span>[<span class="el">s0</span>];[<span class="el">s0</span>]<span class="ek">adelay</span>=delays=<span class="en">0</span>|<span class="en">0</span>,<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a0?</span>];
-<span class="ek">aevalsrc</span>=<span class="en">0</span>:d=<span class="en">5</span>[<span class="el">s1</span>];[<span class="el">s1</span>]<span class="ek">adelay</span>=delays=<span class="en">5000</span>|<span class="en">5000</span>,<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a1?</span>];
-[<span class="el">a0?</span>][<span class="el">a1?</span>]<span class="ek">amix</span>=inputs=<span class="en">2</span>:duration=longest[<span class="el">a_concat</span>]
-<span class="ef">-aspect</span> <span class="en">16</span>/<span class="en">9</span>
-<span class="ef">-movflags</span> +faststart
-<span class="ef">-map</span> [<span class="el">v_concat</span>]
-<span class="ef">-map</span> [<span class="el">a_concat</span>]
-<span class="ef">-r</span> <span class="en">30</span>
-<span class="ef">-ss</span> <span class="en">00:00:00</span>
-<span class="ef">-to</span> <span class="en">00:00:10</span>
-<span class="ef">-y</span> $OUTPUT_PATH</pre>
-            <div class="em-preview">
-              <div class="em-screen"><span class="em-play">&#9654;</span></div>
-              <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span>
-              </div>
-              <span class="sk sk-line" style="width:70%"></span>
-              <span class="sk sk-line" style="width:55%"></span>
+
+          <div class="dm-tracks">
+            <div class="dm-track"><span class="em-clip a"></span><span class="em-clip b"></span><span class="em-clip c"></span></div>
+            <div class="dm-track"><span class="dm-clip voice"></span></div>
+            <div class="dm-track"><span class="dm-clip music"></span></div>
+            <div class="dm-track"><span class="dm-clip text"></span></div>
+          </div>
+
+          <span class="dm-playhead" id="dmPlayhead"></span>
+
+          <!-- "Write a comment" pill -->
+          <div class="dm-composer dm-glass" id="dmComposer">
+            <span class="dm-avatar" id="dmComposerAv">M</span>
+            <span class="dm-typed" id="dmTyped"></span>
+            <svg class="dm-send" id="dmSend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+          </div>
+
+          <!-- comment popover with the AI "Resolve" chip -->
+          <div class="dm-pop dm-glass" id="dmPop" data-state="idle">
+            <div class="dm-pop-head">
+              <span class="dm-avatar" id="dmPopAv">M</span>
+              <b id="dmPopName">Maya</b>
+              <span class="dm-at" id="dmPopAt">at 0:04.2</span>
             </div>
-          </div>
-          <div class="em-timeline">
-            <div class="em-ruler">
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            <p class="dm-pop-text" id="dmPopText"></p>
+            <div class="dm-actions">
+              <span class="dm-chip" id="dmChip"><span>&#10022;</span><span id="dmChipLabel">Resolve</span></span>
+              <span class="dm-msg" id="dmMsg"></span>
             </div>
-            <div class="em-track"><span class="em-clip a"></span><span class="em-clip b"></span><span
-                class="em-clip c"></span></div>
+            <div class="dm-bar"><i id="dmFill"></i></div>
           </div>
         </div>
       </div>
-    </section>
+
+      <span class="dm-cursor" id="dmCursor" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5 3 2Z" fill="#fff" stroke="#15121F" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </span>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var root = document.getElementById('heroDemo');
+  if (!root) return;
+  var $ = function (id) { return document.getElementById(id); };
+
+  var el = {
+    code: $('dmCode'), stage: $('dmStage'), plus: $('dmPlus'),
+    m1: $('dmM1'), m2: $('dmM2'),
+    composer: $('dmComposer'), composerAv: $('dmComposerAv'), typed: $('dmTyped'), send: $('dmSend'),
+    pop: $('dmPop'), popAv: $('dmPopAv'), popName: $('dmPopName'), popAt: $('dmPopAt'),
+    popText: $('dmPopText'), chip: $('dmChip'), chipLabel: $('dmChipLabel'),
+    msg: $('dmMsg'), fill: $('dmFill'),
+    status: $('dmStatus'), statusText: $('dmStatusText'), ver: $('dmVer'), cursor: $('dmCursor')
+  };
+
+  // The lines in the markup are the "before" state.
+  var LINES = Array.prototype.map.call(el.code.children, function (d) {
+    return [d.dataset.id, d.innerHTML];
+  });
+
+  // The "after" lines the AI writes.
+  var NEXT = {
+    join: '[<span class="el">v0</span>][<span class="el">v1</span>]<span class="ek">xfade</span>=transition=fade:duration=<span class="en">1</span>:offset=<span class="en">4</span>[<span class="el">v_concat</span>];',
+    vol: '[<span class="en">0</span>:a]<span class="ek">volume</span>=<span class="en">10</span>[<span class="el">a0</span>];[<span class="en">1</span>:a]<span class="ek">volume</span>=<span class="en">3</span>[<span class="el">a1</span>];'
+  };
+
+  var COMMENTS = [
+    { x: '30%', time: '0:04.2', who: 'Maya', ch: 'M', cls: 'dm-av-m', marker: 'm1',
+      text: 'Make this a 1s crossfade', line: 'join', html: NEXT.join, ver: 'v2', done: 'xfade \u00b7 fade \u00b7 1s' },
+    { x: '64%', time: '0:08.6', who: 'Leo', ch: 'L', cls: 'dm-av-l', marker: 'm2',
+      text: 'Music is too loud', line: 'vol', html: NEXT.vol, ver: 'v3', done: 'volume 10 \u2192 3' }
+  ];
+
+  function renderCode(over) {
+    el.code.innerHTML = '';
+    LINES.forEach(function (l) {
+      var d = document.createElement('div');
+      d.className = 'cl';
+      d.dataset.id = l[0];
+      d.innerHTML = (over && over[l[0]]) || l[1];
+      el.code.appendChild(d);
+    });
+  }
+
+  function setStatus(state, text) {
+    el.status.dataset.state = state;
+    el.statusText.textContent = text;
+  }
+  function setPx(x) { el.stage.style.setProperty('--px', x); }
+  function setAvatar(node, c) { node.className = 'dm-avatar ' + c.cls; node.textContent = c.ch; }
+  function setVer(v) {
+    el.ver.textContent = v;
+    el.ver.classList.remove('pop');
+    void el.ver.offsetWidth;
+    el.ver.classList.add('pop');
+  }
+
+  function reset() {
+    renderCode();
+    setPx('18%');
+    ['plus', 'm1', 'm2'].forEach(function (k) { el[k].classList.remove('show', 'open', 'sel', 'done'); });
+    el.composer.classList.remove('show');
+    el.pop.classList.remove('show');
+    el.pop.dataset.state = 'idle';
+    el.typed.textContent = '';
+    el.typed.classList.remove('typing');
+    el.send.classList.remove('ready');
+    el.chipLabel.textContent = 'Resolve';
+    el.msg.textContent = '';
+    el.fill.style.width = '0%';
+    el.ver.textContent = 'v1';
+    el.ver.classList.remove('pop');
+    el.cursor.classList.remove('show', 'click');
+    setStatus('idle', 'in sync');
+  }
+
+  // Reduced motion: show the finished state, no animation.
+  function staticFinal() {
+    renderCode({ join: NEXT.join, vol: NEXT.vol });
+    setPx('64%');
+    el.m1.classList.add('show', 'done');
+    el.m2.classList.add('show', 'done');
+    el.ver.textContent = 'v3';
+    setStatus('ok', '2 comments resolved');
+  }
+
+  var token = 0;
+  var running = false;
+
+  async function scenario(t) {
+    var w = function (ms) {
+      return new Promise(function (res, rej) {
+        setTimeout(function () { t === token ? res() : rej('cancel'); }, ms);
+      });
+    };
+    var progress = function (from, to, ms) {
+      return new Promise(function (res, rej) {
+        var start = performance.now();
+        (function tick() {
+          if (t !== token) return rej('cancel');
+          var k = Math.min(1, (performance.now() - start) / ms);
+          var p = from + (to - from) * k;
+          el.fill.style.width = p + '%';
+          el.chipLabel.textContent = Math.round(p) + '%';
+          if (k < 1) requestAnimationFrame(tick); else res();
+        })();
+      });
+    };
+    var moveTo = function (target) {
+      var rb = root.getBoundingClientRect();
+      var b = target.getBoundingClientRect();
+      el.cursor.style.transform = 'translate(' + (b.left - rb.left + b.width / 2) + 'px,' + (b.top - rb.top + b.height / 2) + 'px)';
+      el.cursor.classList.add('show');
+    };
+    var click = async function () {
+      el.cursor.classList.remove('click');
+      void el.cursor.offsetWidth;
+      el.cursor.classList.add('click');
+      await w(450);
+    };
+    // Old line struck through, new line appears, then settles.
+    var applyChange = async function (id, html) {
+      var old = el.code.querySelector('[data-id="' + id + '"]');
+      if (!old) return;
+      var add = document.createElement('div');
+      add.className = 'cl add';
+      add.dataset.id = id + '-new';
+      add.innerHTML = html;
+      old.classList.add('del');
+      old.after(add);
+      await w(1500);
+      old.remove();
+      add.dataset.id = id;
+      await w(1600);
+      add.classList.remove('add');
+    };
+
+    reset();
+    el.cursor.style.transform = 'translate(' + root.clientWidth * 0.8 + 'px,' + root.clientHeight * 0.3 + 'px)';
+    await w(900);
+
+    for (var i = 0; i < COMMENTS.length; i++) {
+      var c = COMMENTS[i];
+      var marker = el[c.marker];
+
+      // 1. scrub to the moment
+      setPx(c.x);
+      await w(950);
+
+      // 2. click "+" and write the comment
+      el.plus.classList.add('show');
+      await w(350);
+      moveTo(el.plus);
+      await w(850);
+      await click();
+      el.plus.classList.add('open');
+      setAvatar(el.composerAv, c);
+      el.composer.classList.add('show');
+      await w(500);
+      el.typed.classList.add('typing');
+      for (var n = 1; n <= c.text.length; n++) {
+        el.typed.textContent = c.text.slice(0, n);
+        await w(40);
+      }
+      el.send.classList.add('ready');
+      await w(350);
+      moveTo(el.send);
+      await w(850);
+      await click();
+
+      // 3. comment posted -> marker + popover
+      el.composer.classList.remove('show');
+      el.plus.classList.remove('show', 'open');
+      el.typed.classList.remove('typing');
+      el.send.classList.remove('ready');
+      marker.classList.add('show', 'sel');
+      setAvatar(el.popAv, c);
+      el.popName.textContent = c.who;
+      el.popAt.textContent = 'at ' + c.time;
+      el.popText.textContent = c.text;
+      el.chipLabel.textContent = 'Resolve';
+      el.msg.textContent = '';
+      el.fill.style.width = '0%';
+      el.pop.dataset.state = 'idle';
+      el.pop.classList.add('show');
+      await w(300);
+      el.typed.textContent = '';
+      await w(700);
+
+      // 4. AI resolves it
+      moveTo(el.chip);
+      await w(850);
+      el.chip.classList.add('press');
+      await click();
+      el.chip.classList.remove('press');
+      el.pop.dataset.state = 'running';
+      setStatus('busy', 'AI editing\u2026');
+
+      el.msg.textContent = 'Reading comment\u2026';
+      await progress(0, 22, 700);
+      el.msg.textContent = 'Rewriting filter_complex\u2026';
+      await progress(22, 60, 1000);
+      var change = applyChange(c.line, c.html);
+      el.msg.textContent = 'Rendering preview\u2026';
+      await progress(60, 100, 1300);
+      await change;
+
+      // 5. resolved
+      el.pop.dataset.state = 'done';
+      el.chipLabel.textContent = '\u2713 Resolved';
+      el.msg.textContent = c.done;
+      marker.classList.add('done');
+      setVer(c.ver);
+      setStatus('ok', 'updated');
+      await w(1700);
+
+      el.pop.classList.remove('show');
+      marker.classList.remove('sel');
+      el.cursor.classList.remove('show');
+      await w(700);
+    }
+
+    await w(3200);
+  }
+
+  async function loop() {
+    var t = ++token;
+    try {
+      while (t === token) await scenario(t);
+    } catch (e) {
+      if (e !== 'cancel') console.error(e);
+    }
+  }
+
+  function start() { if (!running) { running = true; loop(); } }
+  function stop() { running = false; token++; }
+
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    staticFinal();
+    return;
+  }
+
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      entries[0].isIntersecting ? start() : stop();
+    }, { threshold: 0.3 }).observe(root);
+  } else {
+    start();
+  }
+})();
+</script>
 
     <!-- ===== Stats band ===== -->
     <section class="stats-band">
