@@ -158,40 +158,7 @@
 
     <p><strong>Basic usage:</strong></p>
 
-    <div class="editor-mock">
-      <div class="em-toolbar">
-        <span class="em-back"></span><span class="em-spacer"></span>
-        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
-        <span class="em-pill active">{ } Code</span>
-        <span class="em-pill">Config</span><span class="em-icon"></span>
-      </div>
-      <div class="em-tabs">
-        <span class="em-tab active">Generated Code</span>
-        <span class="em-tab">Logs</span>
-        <span class="em-tab">Customize</span>
-      </div>
-      <div class="em-body">
-        <pre class="em-code"># Basic loudness normalization (single pass)
-ffmpeg -i input.wav -af "loudnorm" output.wav</pre>
-        <div class="em-preview">
-          <div class="em-screen"><span class="em-play">▶</span></div>
-          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
-          <span class="sk sk-line" style="width:70%"></span>
-          <span class="sk sk-line" style="width:55%"></span>
-        </div>
-      </div>
-      <div class="em-timeline">
-        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      </div>
-    </div>
-
-  <section class="cta-band">
-    <div class="container inner">
-      <h2>Audionorm example.</h2>
-        <p>Server only template.</p>
-      <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/market/1e05726a-da1f-43a6-be04-ac97e0fd63de">Audionorm Template</a></div>
-    </div>
-  </section>
+    <iframe style="border: 0; width:100%; height: 480px;" src="https://webapp.ffmpeglab.com/webapp/editor/market/1e05726a-da1f-43a6-be04-ac97e0fd63de?showCode=true&isFullScreen=true&isEmbed=true"></iframe>
 
     <p><strong>The Two‑Pass Method (Recommended):</strong> For best results, run <code>loudnorm</code> twice—first to measure, second to apply[reference:2].</p>
 
@@ -241,40 +208,9 @@ ffmpeg -i input.wav -af "loudnorm=I=-16:LRA=11:TP=-1.5:measured_I=-23.5:measured
 
     <p><strong>Basic usage:</strong></p>
 
-    <div class="editor-mock">
-      <div class="em-toolbar">
-        <span class="em-back"></span><span class="em-spacer"></span>
-        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
-        <span class="em-pill active">{ } Code</span>
-        <span class="em-pill">Config</span><span class="em-icon"></span>
-      </div>
-      <div class="em-tabs">
-        <span class="em-tab active">Generated Code</span>
-        <span class="em-tab">Logs</span>
-        <span class="em-tab">Customize</span>
-      </div>
-      <div class="em-body">
-        <pre class="em-code"># Basic noise reduction (10dB reduction, -40dB noise floor)
-ffmpeg -i input.wav -af "afftdn=nr=10:nf=-40" output.wav</pre>
-        <div class="em-preview">
-          <div class="em-screen"><span class="em-play">▶</span></div>
-          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
-          <span class="sk sk-line" style="width:70%"></span>
-          <span class="sk sk-line" style="width:55%"></span>
-        </div>
-      </div>
-      <div class="em-timeline">
-        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      </div>
-    </div>
+    
+    <iframe style="border: 0; width:100%; height: 480px;" src="https://webapp.ffmpeglab.com/webapp/editor/market/b84fd21f-370e-43e6-a407-81802ee15167?showCode=true&isFullScreen=true&isEmbed=true"></iframe>
 
-    <section class="cta-band">
-      <div class="container inner">
-        <h2>Noise reduction example.</h2>
-        <p>Server only template.</p>
-        <div class="row"><a class="btn-white" href="https://webapp.ffmpeglab.com/webapp/editor/market/b84fd21f-370e-43e6-a407-81802ee15167">Noise reduction Template</a></div>
-      </div>
-    </section>
 
     <p>As documented in the FFmpeg source: <em>"Reduce white noise by 10dB, and use previously measured noise floor of -40dB"</em>[reference:5].</p>
 
