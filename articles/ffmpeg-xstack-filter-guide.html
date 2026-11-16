@@ -323,38 +323,7 @@
 
     <p>This is the most common use case — four videos in a 2×2 grid.</p>
 
-    <div class="editor-mock">
-      <div class="em-toolbar">
-        <span class="em-back"></span><span class="em-spacer"></span>
-        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
-        <span class="em-pill active">{ } Code</span>
-        <span class="em-pill">Config</span><span class="em-icon"></span>
-      </div>
-      <div class="em-tabs">
-        <span class="em-tab active">Generated Code</span>
-        <span class="em-tab">Logs</span>
-        <span class="em-tab">Customize</span>
-      </div>
-      <div class="em-body">
-        <pre class="em-code"># 2x2 grid with column-major layout
-ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 \
--filter_complex "[0:v]setpts=PTS-STARTPTS,scale=qvga[a0]; \
-                 [1:v]setpts=PTS-STARTPTS,scale=qvga[a1]; \
-                 [2:v]setpts=PTS-STARTPTS,scale=qvga[a2]; \
-                 [3:v]setpts=PTS-STARTPTS,scale=qvga[a3]; \
-                 [a0][a1][a2][a3]xstack=inputs=4:layout=0_0|0_h0|w0_0|w0_h0[out]" \
--map "[out]" -c:v libx264 -t 30 output_2x2.mkv</pre>
-        <div class="em-preview">
-          <div class="em-screen"><span class="em-play">▶</span></div>
-          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
-          <span class="sk sk-line" style="width:70%"></span>
-          <span class="sk sk-line" style="width:55%"></span>
-        </div>
-      </div>
-      <div class="em-timeline">
-        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      </div>
-    </div>
+    <iframe style="border: 0; width:100%; height: 480px;" src="https://webapp.ffmpeglab.com/webapp/editor/market/2150476b-e865-447a-843e-68bdb279bf25?showCode=true&isFullScreen=true&isEmbed=true"></iframe>
 
     <p><strong>Explanation:</strong></p>
     <ul>

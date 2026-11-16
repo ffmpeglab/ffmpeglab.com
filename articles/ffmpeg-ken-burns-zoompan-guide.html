@@ -334,32 +334,7 @@
 
     <p>Let's create a simple zoom-in effect on an image, from 1.0x to 1.5x over 5 seconds at 25 fps (125 frames).</p>
 
-    <div class="editor-mock">
-      <div class="em-toolbar">
-        <span class="em-back"></span><span class="em-spacer"></span>
-        <span class="em-pill">Share</span><span class="em-pill">Renders</span>
-        <span class="em-pill active">{ } Code</span>
-        <span class="em-pill">Config</span><span class="em-icon"></span>
-      </div>
-      <div class="em-tabs">
-        <span class="em-tab active">Generated Code</span>
-        <span class="em-tab">Logs</span>
-        <span class="em-tab">Customize</span>
-      </div>
-      <div class="em-body">
-        <pre class="em-code"># Zoom in from 1.0x to 1.5x over 5 seconds
-ffmpeg -i image.jpg -vf "zoompan=z='min(zoom+0.01,1.5)':d=125:s=1920x1080:fps=25" -c:v libx264 -crf 18 -t 5 zoom_in.mp4</pre>
-        <div class="em-preview">
-          <div class="em-screen"><span class="em-play">▶</span></div>
-          <div class="em-prev-row"><span class="sk sk-line" style="width:38%"></span><span class="sk-pill"></span></div>
-          <span class="sk sk-line" style="width:70%"></span>
-          <span class="sk sk-line" style="width:55%"></span>
-        </div>
-      </div>
-      <div class="em-timeline">
-        <div class="em-ruler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      </div>
-    </div>
+    <iframe style="border: 0; width:100%; height: 480px;" src="https://webapp.ffmpeglab.com/webapp/editor/market/67e99e79-2a0b-481a-988c-3aaa83876d72?showCode=true&isFullScreen=true&isEmbed=true"></iframe>
 
     <p><strong>Explanation:</strong></p>
     <ul>
